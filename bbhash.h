@@ -1,4 +1,4 @@
-// b library
+// BooPHF library
 // intended to be a minimal perfect hash function with fast and low memory construction, at the cost of (slightly) higher bits/elem than other state of the art libraries once built.
 // should work with arbitray large number of elements, based on a cascade of  "collision-free" bit arrays
 
@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <math.h>
+
 #include <array>
 #include <unordered_map>
 #include <vector>
@@ -350,9 +351,7 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 			uint64_t s1 = s[ 0 ];
 			const uint64_t s0 = s[ 1 ];
 			s[ 0 ] = s0;
-            #pragma GCC diagnostic ignored "-Wuninitialized" // remove the "may be uninitialized" message
 			s1 ^= s1 << 23; // a
-            #pragma GCC diagnostic ignored "-Wuninitialized"
 			return ( s[ 1 ] = ( s1 ^ s0 ^ ( s1 >> 17 ) ^ ( s0 >> 26 ) ) ) + s0; // b, c
 		}
 
@@ -655,7 +654,7 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 
 		 // epsilon =  64 / _nb_bits_per_rank_sample   bits
 		// additional size for rank is epsilon * _size
-		static const uint64_t _nb_bits_per_rank_sample = 512; //512 seems ok
+		static const uint64_t _nb_bits_per_rank_sample = 256; //512 seems ok
 		std::vector<uint64_t> _ranks;
 	};
 
@@ -877,7 +876,7 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 
 					if(level == i) //insert into lvl i
 					{
-						//	__sync_fetch_and_add(& _cptLevel,1);
+							__sync_fetch_and_add(& _cptLevel,1);
 
 						if(_fastmode && i == _fastModeLevel)
 						{
@@ -1066,16 +1065,15 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 			for (int ii=0; ii<(_nb_levels-1) &&  ii < maxlevel ; ii++ )
 			{
 
-                //calc le hash suivant
-                if ( ii == 0)
-                    hash_raw = _hasher.h0(bbhash,val);
-                else
-                {
-                    if ( ii == 1)
-                        hash_raw = _hasher.h1(bbhash,val);
-                    else
-                        hash_raw = _hasher.next(bbhash);
-                }
+				//calc le hash suivant
+				 if ( ii == 0)
+					hash_raw = _hasher.h0(bbhash,val);
+				else if ( ii == 1)
+					hash_raw = _hasher.h1(bbhash,val);
+				else
+				{
+					hash_raw = _hasher.next(bbhash);
+				}
 
 
 				if( _levels[ii].get(hash_raw) )
@@ -1127,11 +1125,10 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 			t_arg.level = i;
 			if(_fastmode && i >= (_fastModeLevel+1))
 			{
-
-
-				typedef decltype(setLevelFastmode.begin()) fastmode_it_type;
-				t_arg.it_p =  std::static_pointer_cast<void>(std::make_shared<fastmode_it_type>(setLevelFastmode.begin()));
-				t_arg.until_p =  std::static_pointer_cast<void>(std::make_shared<fastmode_it_type>(setLevelFastmode.end()));
+				auto data_iterator = boomphf::range(static_cast<const elem_t*>( &setLevelFastmode[0]), static_cast<const elem_t*>( (&setLevelFastmode[0]) +setLevelFastmode.size()));
+                typedef decltype(data_iterator.begin()) fastmode_it_type;
+				t_arg.it_p =  std::static_pointer_cast<void>(std::make_shared<fastmode_it_type>(data_iterator.begin()));
+				t_arg.until_p =  std::static_pointer_cast<void>(std::make_shared<fastmode_it_type>(data_iterator.end()));
 
                 /* we'd like to do t_arg.it = data_iterator.begin() but types are different;
                     so, casting to (void*) because of that; and we remember the type in the template */
@@ -1148,7 +1145,6 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 			for(int ii=0;ii<_num_thread;ii++)
 			{
 				pthread_join(tab_threads[ii], NULL);
-
 			}
 			//printf("\ngoing to level %i  : %llu elems  %.2f %%  expected : %.2f %% \n",i,_cptLevel,100.0* _cptLevel/(float)_nelem,100.0* pow(_proba_collision,i) );
 

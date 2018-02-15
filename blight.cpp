@@ -22,7 +22,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "graphLight.h"
+#include <pthread.h>
+#include "ksl.h"
 
 
 
@@ -31,11 +32,17 @@ using namespace std;
 
 
 int main(int argc, char ** argv){
-	graphLight GL("lol.fa", 12, 5);
-	cout<<GL.getUnitig(0)<<endl;
-	cout<<GL.getUnitig(1)<<endl;
-	cout<<GL.getUnitig(2)<<endl;
-	cout<<GL.getUnitig(3)<<endl;
+	cout<<"go"<<endl;
+	kmer_Set_Light ksl(31,4, 2,2);
+	ksl.create_super_buckets("lambda_virus.unitigs.fa");
+	cout<<"super bucket created"<<endl;
+	ksl.read_super_buckets("_out");
+	cout<<"bucket loaded"<<endl;
+	ksl.create_mphf();
+	cout<<"mphf constructed"<<endl;
+	ksl.fill_positions();
+	cout<<"position  filled"<<endl;
+
 	return 0;
 }
 
