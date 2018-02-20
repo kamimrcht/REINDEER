@@ -33,8 +33,9 @@ using namespace std;
 
 int main(int argc, char ** argv){
 	cout<<"go"<<endl;
-	kmer_Set_Light ksl(31,4, 2,2);
+	kmer_Set_Light ksl(6,4, 2,2);
 	ksl.create_super_buckets("lambda_virus.unitigs.fa");
+	//~ ksl.create_super_buckets("swag");
 	cout<<"super bucket created"<<endl;
 	ksl.read_super_buckets("_out");
 	cout<<"bucket loaded"<<endl;
@@ -42,7 +43,9 @@ int main(int argc, char ** argv){
 	cout<<"mphf constructed"<<endl;
 	ksl.fill_positions();
 	cout<<"position  filled"<<endl;
-
+	ksl.multiple_query("GTCAGCGAGGACGGGTATCCGGTTTCCGTCTTCACGGACTTCGTTGCTTTCCAGTTTAGCAATACGCTTACTCCCATCCGAGATAACACCTTCGTAATACTCACGCTGCTCGTTGAGTTTTGATTTTGCTGTTTCAAGCTCAACACGCAGTTTCCCTACTGTTAGCGCAATATCCTCGTTCTCCTGGTCGCGGCGTTTGATGT");
+	//~ ksl.multiple_query("CATGCATGCTAGCTGCATGCTAGCTGCATGCATGCTAGCTGCA");
+	//~ ksl.multiple_query("ATTCGATGC");
 	return 0;
 }
 

@@ -17,7 +17,7 @@ using namespace std;
 
 
 
-#define kmer __uint128_t
+#define kmer uint64_t
 
 
 
@@ -106,8 +106,8 @@ string getCanonical(const string& str){
 }
 
 
-uint64_t str2num(const string& str){
-	uint64_t res(0);
+kmer str2num(const string& str){
+	kmer res(0);
 	for(uint i(0);i<str.size();i++){
 		res<<=2;
 		switch (str[i]){
@@ -165,6 +165,15 @@ void kmer_Set_Light::updateK(kmer& min, char nuc){
 
 
 
+kmer min_k (const kmer& k1,const kmer& k2){
+	if(k1<=k2){
+		return k1;
+	}
+	return k2;
+}
+
+
+
 
 
 
@@ -191,6 +200,7 @@ void kmer_Set_Light::create_super_buckets(const string& input_file){
 	while(not inUnitigs.eof()){
 		getline(inUnitigs,useless);
 		getline(inUnitigs,ref);
+		//~ cout<<ref<<endl;
 		//FOREACH UNITIG
 		if(not ref.empty() and not useless.empty()){
 			super_minimizer=kmer=minimizer=mmer="";
@@ -201,7 +211,7 @@ void kmer_Set_Light::create_super_buckets(const string& input_file){
 				kmer=getCanonical(ref.substr(i,k));
 				minimizer=(getCanonical(kmer.substr(0,m)));
 				//COMPUTE KMER MINIMIZER
-				for(uint j(1);j+m<=kmer.size();++j){
+				for(uint j(1);j+m<kmer.size();++j){
 					mmer=getCanonical(kmer.substr(j,m));
 					minimizer=min_accordingtoXS(minimizer,mmer);
 				}
@@ -209,16 +219,23 @@ void kmer_Set_Light::create_super_buckets(const string& input_file){
 					super_minimizer=minimizer;
 				}else{
 					if(super_minimizer!=minimizer){
-						*(out_files[xs(str2num(minimizer))%number_superbuckets])<<">"+(minimizer)+"\n"<<ref.substr(last_position,i-last_position+k-1)<<"\n";
+						*(out_files[xs(str2num(minimizer))%number_superbuckets])<<">"+(super_minimizer)+"\n"<<ref.substr(last_position,i-last_position+k-1)<<"\n";
 						last_position=i;
 						super_minimizer=minimizer;
 					}
 				}
 			}
-			if(i-last_position+k-1!=0){
-				*(out_files[xs(str2num(minimizer))%number_superbuckets])<<">"+(minimizer)+"\n"<<ref.substr(last_position,i-last_position+k-1)<<"\n";
+			if(ref.size()-last_position>k-1){
+				//~ cout<<"NADINE"<<endl;
+				//~ cout<<ref.substr(last_position)<<endl;
+				//~ cout<<minimizer<<endl;
+				*(out_files[xs(str2num(minimizer))%number_superbuckets])<<">"+(minimizer)+"\n"<<ref.substr(last_position)<<"\n";
 			}
 		}
+	}
+	for(uint i(0);i<number_superbuckets;++i){
+		out_files[i]->close();
+		delete(out_files[i]);
 	}
 }
 
@@ -232,11 +249,11 @@ void kmer_Set_Light::read_super_buckets(const string& input_file){
 		while(not in.eof()){
 			getline(in,useless);
 			getline(in,line);
-			useless=useless.substr(1);
-			//~ cout<<useless<<endl;
-			uint minimizer(str2num(useless));
-			//~ cout<<minimizer<<" "<<buckets.size()<<endl;;
-			buckets[minimizer]+=line;
+			if(not useless.empty()){
+				useless=useless.substr(1);
+				uint minimizer(str2num(useless));
+				buckets[minimizer]+=line;
+			}
 		}
 	}
 }
@@ -248,19 +265,31 @@ void kmer_Set_Light::create_mphf(){
 	//~ cin.get();
 	for(uint BC(0);BC<buckets.size();++BC){
 		//~ cout<<"bucket go"<<endl;
+		if(buckets[BC].size()==0){
+			buckets_size.push_back(0);
+			continue;
+		}
 		auto anchors=new vector<kmer>;
-		kmer seq(str2num(buckets[BC].substr(0,k))),rcSeq(rcb(seq,k)),canon(min(seq,rcSeq));
+		kmer seq(str2num(buckets[BC].substr(0,k))),rcSeq(rcb(seq,k)),canon(min_k(seq,rcSeq));
 		anchors->push_back(canon);
-		for(uint j(1);j+k<buckets[BC].size();++j){
+		for(uint j(0);j+k<buckets[BC].size();++j){
 			if(buckets[BC][j+k]=='\n'){
 				cout<<"endl"<<endl;
 				j+=k;
-				seq=(str2num(buckets[BC].substr(j,k))),rcSeq=(rcb(seq,k)),canon=(min(seq,rcSeq));
+				seq=(str2num(buckets[BC].substr(j,k))),rcSeq=(rcb(seq,k)),canon=(min_k(seq,rcSeq));
+				if(canon==108885600827890225){
+					cout<<"FOUND IT"<<endl;
+					cin.get();
+				}
 				anchors->push_back(canon);
 			}else{
 				updateK(seq,buckets[BC][j+k]);
 				updateRCK(rcSeq,buckets[BC][j+k]);
-				canon=(min(seq, rcSeq));
+				canon=(min_k(seq, rcSeq));
+				if(canon==108885600827890225){
+			cout<<"FOUND IT"<<endl;
+			cin.get();
+		}
 				anchors->push_back(canon);
 			}
 
@@ -268,7 +297,7 @@ void kmer_Set_Light::create_mphf(){
 		//~ cout<<"gomphf"<<endl;
 		//~ cout<<anchors->size()<<endl;;
 		auto data_iterator3 = boomphf::range(static_cast<const kmer*>(&(*anchors)[0]), static_cast<const kmer*>((&(*anchors)[0])+anchors->size()));
-		kmer_MPHF[BC]= boomphf::mphf<kmer,hasher>(anchors->size(),data_iterator3,1,gammaFactor,false);
+		kmer_MPHF[BC]= boomphf::mphf<kmer,hasher>(anchors->size(),data_iterator3,8,gammaFactor,false);
 		//~ cout<<"sucess"<<endl;
 		buckets_size.push_back(anchors->size());
 
@@ -280,44 +309,103 @@ void kmer_Set_Light::create_mphf(){
 
 
 void kmer_Set_Light::fill_positions(){
+	cout<<"FILL POSITION"<<endl;
 	for(uint BC(0);BC<buckets.size();++BC){
-		//~ cout<<1<<endl;
+		if(buckets_size[BC]==0){
+			continue;
+		}
 		positions[BC].resize(buckets_size[BC]);
-		kmer seq(str2num(buckets[BC].substr(0,k))),rcSeq(rcb(seq,k)),canon(min(seq,rcSeq));
+		kmer seq(str2num(buckets[BC].substr(0,k))),rcSeq(rcb(seq,k)),canon(min_k(seq,rcSeq));
 		//~ cout<<(uint64_t)seq<<endl;
 		//~ cout<<kmer_MPHF[BC].lookup(canon)<<endl;
+		if(canon==108885600827890225){
+			cout<<"FOUND IT"<<endl;
+			cin.get();
+		}
+		//~ cout<<(uint64_t)seq<<" "<<(uint64_t)rcSeq<<endl;
+		//~ cin.get();
 		positions[BC][kmer_MPHF[BC].lookup(canon)]=0;
-		for(uint j(1);j+k<buckets[BC].size();++j){
+		//~ cout<<getCanonical(buckets[BC].substr(0,k))<<endl;
+		//~ cout<<BC<<endl;
+		//~ cout<<kmer_MPHF[BC].lookup(canon)<<endl;
+		for(uint j(0);j+k<buckets[BC].size();++j){
 			//~ cout<<2<<endl;
 			updateK(seq,buckets[BC][j+k]);
 			updateRCK(rcSeq,buckets[BC][j+k]);
-			canon=(min(seq, rcSeq));
-			positions[BC][kmer_MPHF[BC].lookup(canon)]=j;
+			//~ cout<<(uint64_t)seq<<" "<<(uint64_t)rcSeq<<endl;
+			//~ cin.get();
+			canon=(min_k(seq, rcSeq));
+			//~ cout<<buckets[BC].substr(j+1,k)<<endl;
+			//~ cout<<BC<<endl;
+			//~ cout<<kmer_MPHF[BC].lookup(canon)<<endl;
+			//~ cout<<(uint64_t)canon<<endl;
+			//~ cout<<(uint64_t)str2num(buckets[BC].substr(j+1,k))<<endl;
+			//~ cout<<j+1<<endl;
+			positions[BC][kmer_MPHF[BC].lookup(canon)]=j+1;
 		}
 	}
 }
 
 
 
-bool kmer_Set_Light::exists(const string& query){
-	uint32_t mini;
+bool kmer_Set_Light::exists(const string& query2){
+	cout<<endl<<"GO QUERY"<<endl;
+	string query=getCanonical(query2);
+	string minimizer, mmer;
 	for(uint j(0);j<query.size();++j){
-		kmer seq(str2num(query.substr(0,m))),rcSeq(rcb(seq,m)),canon(min(seq,rcSeq));
-		mini=canon;
-		for(uint ii(0);ii+k<query.size();++ii){
-			updateK(seq,query[ii+k]);
-			updateRCK(rcSeq,query[ii+k]);
-			canon=(min(seq, rcSeq));
-			mini=min(mini,(uint32_t)canon);
+		minimizer=(getCanonical(query.substr(0,m)));
+		//COMPUTE KMER MINIMIZER
+		for(uint j(0);j+m<query.size();++j){
+			mmer=getCanonical(query.substr(j,m));
+			minimizer=min_accordingtoXS(minimizer,mmer);
 		}
 	}
-	uint32_t pos( positions[mini][kmer_MPHF[mini].lookup(str2num(query))]);
-	if(query.substr(pos,k)==query){
+	cout<<query<<endl;
+	cout<<minimizer<<endl;
+	uint32_t mini((str2num(minimizer)));
+	cout<<mini<<endl;
+	//~ cout<<kmer_MPHF[mini].lookup(str2num(query))<<endl;
+	//~ cout<<positions[mini].size()<<endl;
+	cout<<(uint64_t)str2num(query)<<endl;
+	cout<<kmer_MPHF[mini].lookup(str2num(query))<<endl;
+	uint32_t pos(positions[mini][kmer_MPHF[mini].lookup(str2num(query))]);
+	cout<<pos<<endl;
+	cout<<buckets[mini].substr(pos,k)<<endl;
+	cout<<buckets[mini]<<endl;
+	if(buckets[mini].substr(pos,k)==query){
 		return true;
 	}
-	if(query.substr(pos,k)==revComp(query)){
+	if(buckets[mini].substr(pos,k)==revComp(query)){
 		return true;
 	}
 	return false;
-
 }
+
+
+
+void kmer_Set_Light::multiple_query(const string& query){
+	string Q;
+	for(uint i(0);i+k<=query.size();++i){
+		Q=query.substr(i,k);
+		cout<<"aller"<<endl;
+		cout<<Q<<endl;
+		cout<<revComp(Q)<<endl;
+		if(exists(Q)){
+			cout<<"1"<<endl;
+		}else{
+			cout<<"0"<<endl;
+			exit(0);
+		}
+	}
+	cout<<"THE REAL END"<<endl;
+}
+
+
+
+
+
+
+
+
+
+

@@ -20,7 +20,7 @@ using namespace std;
 
 
 
-#define kmer __uint128_t
+#define kmer uint64_t
 
 
 
@@ -39,7 +39,8 @@ public:
 	uint minimizer_number;
 	uint coreNumber;
 	uint gammaFactor;
-	kmer offsetUpdateAnchor=1<<(2*k);
+	kmer offsetUpdateAnchor=1;
+
 
 	vector<string> buckets;
 	vector<MPHF> kmer_MPHF;
@@ -49,6 +50,7 @@ public:
 		k=k_val;
 		m=m_val;
 		n=n_val;
+		offsetUpdateAnchor<<=2*k;
 		number_superbuckets=1<<n;
 		minimizer_number=1<<(2*m);
 		coreNumber=coreNumber_val;
@@ -66,6 +68,8 @@ public:
 	void updateRCK(kmer& min, char nuc);
 	void fill_positions();
 	bool exists(const string& query);
+	void multiple_query(const string& query);
+
 
 
 };
