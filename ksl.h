@@ -44,7 +44,7 @@ public:
 
 	vector<string> buckets;
 	vector<MPHF> kmer_MPHF;
-	vector<vector<uint32_t>> positions;
+	vector<vector<bool>> positions;
 	vector<uint> buckets_size;
 	kmer_Set_Light(uint k_val,uint m_val, uint n_val,uint coreNumber_val){
 		k=k_val;

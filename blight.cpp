@@ -36,12 +36,13 @@ using namespace chrono;
 
 int main(int argc, char ** argv){
 	cout<<"START"<<endl;
-	kmer_Set_Light ksl(31,4, 2,8);
+	kmer_Set_Light ksl(31,4,3,8);
 
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
 
-	//~ ksl.create_super_buckets("lambda_virus.unitigs.fa");
-	ksl.create_super_buckets("ecoli.31.unitigs.fa");
+	ksl.create_super_buckets("lambda_virus.unitigs.fa");
+	//~ ksl.create_super_buckets("ecoli.31.unitigs.fa");
+	//~ ksl.create_super_buckets("cel.31.unitigs.fa");
 	//~ ksl.create_super_buckets("swag");
 	cout<<"Super bucket created"<<endl;
 	ksl.read_super_buckets("_out");
@@ -60,6 +61,7 @@ int main(int argc, char ** argv){
 
 	ksl.multiple_query("lambda_virus.unitigs.fa");
 	//~ ksl.multiple_query("ecoli.31.unitigs.fa");
+	//~ ksl.multiple_query("swag");
 
 	high_resolution_clock::time_point t3 = high_resolution_clock::now();
 	duration<double> time_span2 = duration_cast<duration<double>>(t3 - t2);
