@@ -23,29 +23,51 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
+
 #include "ksl.h"
 
 
 
 using namespace std;
+using namespace chrono;
+
 
 
 
 int main(int argc, char ** argv){
-	cout<<"go"<<endl;
-	kmer_Set_Light ksl(6,4, 2,2);
-	ksl.create_super_buckets("lambda_virus.unitigs.fa");
+	cout<<"START"<<endl;
+	kmer_Set_Light ksl(31,4, 2,8);
+
+	high_resolution_clock::time_point t1 = high_resolution_clock::now();
+
+	//~ ksl.create_super_buckets("lambda_virus.unitigs.fa");
+	ksl.create_super_buckets("ecoli.31.unitigs.fa");
 	//~ ksl.create_super_buckets("swag");
-	cout<<"super bucket created"<<endl;
+	cout<<"Super bucket created"<<endl;
 	ksl.read_super_buckets("_out");
-	cout<<"bucket loaded"<<endl;
+	cout<<"Bucket loaded"<<endl;
 	ksl.create_mphf();
-	cout<<"mphf constructed"<<endl;
+	cout<<"Mphf constructed"<<endl;
 	ksl.fill_positions();
-	cout<<"position  filled"<<endl;
-	ksl.multiple_query("GTCAGCGAGGACGGGTATCCGGTTTCCGTCTTCACGGACTTCGTTGCTTTCCAGTTTAGCAATACGCTTACTCCCATCCGAGATAACACCTTCGTAATACTCACGCTGCTCGTTGAGTTTTGATTTTGCTGTTTCAAGCTCAACACGCAGTTTCCCTACTGTTAGCGCAATATCCTCGTTCTCCTGGTCGCGGCGTTTGATGT");
-	//~ ksl.multiple_query("CATGCATGCTAGCTGCATGCTAGCTGCATGCATGCTAGCTGCA");
-	//~ ksl.multiple_query("ATTCGATGC");
+	cout<<"Position  filled"<<endl;
+
+	high_resolution_clock::time_point t2 = high_resolution_clock::now();
+	duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
+	cout << "It took me " << time_span.count() << " seconds.";
+	cout << endl;
+
+	//~ cin.get();
+
+	ksl.multiple_query("lambda_virus.unitigs.fa");
+	//~ ksl.multiple_query("ecoli.31.unitigs.fa");
+
+	high_resolution_clock::time_point t3 = high_resolution_clock::now();
+	duration<double> time_span2 = duration_cast<duration<double>>(t3 - t2);
+	cout << "It took me " << time_span2.count() << " seconds.";
+	cout << endl;
+
+
+
 	return 0;
 }
 

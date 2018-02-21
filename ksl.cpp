@@ -243,6 +243,7 @@ void kmer_Set_Light::create_super_buckets(const string& input_file){
 
 void kmer_Set_Light::read_super_buckets(const string& input_file){
 	string useless,line;
+	uint64_t total_size(0);
 	uint number_superbuckets_by_buckets(minimizer_number/number_superbuckets);
 	for(uint SBC(0);SBC<number_superbuckets;++SBC){
 		ifstream in(input_file+to_string(SBC));
@@ -253,9 +254,11 @@ void kmer_Set_Light::read_super_buckets(const string& input_file){
 				useless=useless.substr(1);
 				uint minimizer(str2num(useless));
 				buckets[minimizer]+=line;
+				total_size+=line.size();
 			}
 		}
 	}
+	cout<<total_size<<endl;
 }
 
 
@@ -277,19 +280,19 @@ void kmer_Set_Light::create_mphf(){
 				cout<<"endl"<<endl;
 				j+=k;
 				seq=(str2num(buckets[BC].substr(j,k))),rcSeq=(rcb(seq,k)),canon=(min_k(seq,rcSeq));
-				if(canon==108885600827890225){
-					cout<<"FOUND IT"<<endl;
-					cin.get();
-				}
+				//~ if(canon==108885600827890225){
+					//~ cout<<"FOUND IT"<<endl;
+					//~ cin.get();
+				//~ }
 				anchors->push_back(canon);
 			}else{
 				updateK(seq,buckets[BC][j+k]);
 				updateRCK(rcSeq,buckets[BC][j+k]);
 				canon=(min_k(seq, rcSeq));
-				if(canon==108885600827890225){
-			cout<<"FOUND IT"<<endl;
-			cin.get();
-		}
+				//~ if(canon==108885600827890225){
+			//~ cout<<"FOUND IT"<<endl;
+			//~ cin.get();
+		//~ }
 				anchors->push_back(canon);
 			}
 
@@ -318,10 +321,10 @@ void kmer_Set_Light::fill_positions(){
 		kmer seq(str2num(buckets[BC].substr(0,k))),rcSeq(rcb(seq,k)),canon(min_k(seq,rcSeq));
 		//~ cout<<(uint64_t)seq<<endl;
 		//~ cout<<kmer_MPHF[BC].lookup(canon)<<endl;
-		if(canon==108885600827890225){
-			cout<<"FOUND IT"<<endl;
-			cin.get();
-		}
+		//~ if(canon==108885600827890225){
+			//~ cout<<"FOUND IT"<<endl;
+			//~ cin.get();
+		//~ }
 		//~ cout<<(uint64_t)seq<<" "<<(uint64_t)rcSeq<<endl;
 		//~ cin.get();
 		positions[BC][kmer_MPHF[BC].lookup(canon)]=0;
@@ -349,7 +352,7 @@ void kmer_Set_Light::fill_positions(){
 
 
 bool kmer_Set_Light::exists(const string& query2){
-	cout<<endl<<"GO QUERY"<<endl;
+	//~ cout<<endl<<"GO QUERY"<<endl;
 	string query=getCanonical(query2);
 	string minimizer, mmer;
 	for(uint j(0);j<query.size();++j){
@@ -360,18 +363,18 @@ bool kmer_Set_Light::exists(const string& query2){
 			minimizer=min_accordingtoXS(minimizer,mmer);
 		}
 	}
-	cout<<query<<endl;
-	cout<<minimizer<<endl;
+	//~ cout<<query<<endl;
+	//~ cout<<minimizer<<endl;
 	uint32_t mini((str2num(minimizer)));
-	cout<<mini<<endl;
+	//~ cout<<mini<<endl;
 	//~ cout<<kmer_MPHF[mini].lookup(str2num(query))<<endl;
 	//~ cout<<positions[mini].size()<<endl;
-	cout<<(uint64_t)str2num(query)<<endl;
-	cout<<kmer_MPHF[mini].lookup(str2num(query))<<endl;
+	//~ cout<<(uint64_t)str2num(query)<<endl;
+	//~ cout<<kmer_MPHF[mini].lookup(str2num(query))<<endl;
 	uint32_t pos(positions[mini][kmer_MPHF[mini].lookup(str2num(query))]);
-	cout<<pos<<endl;
-	cout<<buckets[mini].substr(pos,k)<<endl;
-	cout<<buckets[mini]<<endl;
+	//~ cout<<pos<<endl;
+	//~ cout<<buckets[mini].substr(pos,k)<<endl;
+	//~ cout<<buckets[mini]<<endl;
 	if(buckets[mini].substr(pos,k)==query){
 		return true;
 	}
@@ -383,20 +386,31 @@ bool kmer_Set_Light::exists(const string& query2){
 
 
 
-void kmer_Set_Light::multiple_query(const string& query){
-	string Q;
-	for(uint i(0);i+k<=query.size();++i){
-		Q=query.substr(i,k);
-		cout<<"aller"<<endl;
-		cout<<Q<<endl;
-		cout<<revComp(Q)<<endl;
-		if(exists(Q)){
-			cout<<"1"<<endl;
-		}else{
-			cout<<"0"<<endl;
-			exit(0);
+void kmer_Set_Light::multiple_query(const string& query_file){
+	ifstream in(query_file);
+
+	string query,Q;
+	uint TP(0),FP(0);
+
+	while(not in.eof()){
+		getline(in,query);
+		getline(in,query);
+		for(uint i(0);i+k<=query.size();++i){
+			Q=query.substr(i,k);
+			//~ cout<<"aller"<<endl;
+			//~ cout<<Q<<endl;
+			//~ cout<<revComp(Q)<<endl;
+			if(exists(Q)){
+				TP++;
+			}else{
+				FP++;
+			}
 		}
 	}
+
+	cout<<"Good kmer: "<<TP<<endl;
+	cout<<"Erroneous kmers: "<<FP<<endl;
+
 	cout<<"THE REAL END"<<endl;
 }
 

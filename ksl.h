@@ -54,7 +54,7 @@ public:
 		number_superbuckets=1<<n;
 		minimizer_number=1<<(2*m);
 		coreNumber=coreNumber_val;
-		gammaFactor=10;
+		gammaFactor=2;
 		buckets.resize(minimizer_number);
 		kmer_MPHF.resize(minimizer_number);
 		positions.resize(minimizer_number);
