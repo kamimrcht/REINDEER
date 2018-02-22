@@ -26,6 +26,7 @@ typedef boomphf::mphf<  kmer, hasher  > MPHF;
 
 
 
+
 uint64_t nuc2int(char c){
 	switch(c){
 		/*
@@ -174,9 +175,6 @@ kmer min_k (const kmer& k1,const kmer& k2){
 
 
 
-
-
-
 void kmer_Set_Light::updateRCK(kmer& min, char nuc){
 	min>>=2;
 	min+=(nuc2intrc(nuc)<<(2*k-2));
@@ -219,7 +217,7 @@ void kmer_Set_Light::create_super_buckets(const string& input_file){
 					super_minimizer=minimizer;
 				}else{
 					if(super_minimizer!=minimizer){
-						*(out_files[xs(str2num(minimizer))%number_superbuckets])<<">"+(super_minimizer)+"\n"<<ref.substr(last_position,i-last_position+k-1)<<"\n";
+						*(out_files[xs(str2num(super_minimizer))%number_superbuckets])<<">"+(super_minimizer)+"\n"<<ref.substr(last_position,i-last_position+k-1)<<"\n";
 						last_position=i;
 						super_minimizer=minimizer;
 					}
@@ -229,7 +227,7 @@ void kmer_Set_Light::create_super_buckets(const string& input_file){
 				//~ cout<<"NADINE"<<endl;
 				//~ cout<<ref.substr(last_position)<<endl;
 				//~ cout<<minimizer<<endl;
-				*(out_files[xs(str2num(minimizer))%number_superbuckets])<<">"+(minimizer)+"\n"<<ref.substr(last_position)<<"\n";
+				*(out_files[xs(str2num(super_minimizer))%number_superbuckets])<<">"+(super_minimizer)+"\n"<<ref.substr(last_position)<<"\n";
 			}
 		}
 	}
@@ -242,36 +240,41 @@ void kmer_Set_Light::create_super_buckets(const string& input_file){
 
 
 void kmer_Set_Light::read_super_buckets(const string& input_file){
-	string useless,line;
 	uint64_t total_size(0);
 	uint number_superbuckets_by_buckets(minimizer_number/number_superbuckets);
-	//~ #pragma omp parallel for num_threads(8)
-	for(uint SBC=0;SBC<number_superbuckets;++SBC){
-		ifstream in(input_file+to_string(SBC));
-		while(not in.eof()){
-			getline(in,useless);
-			getline(in,line);
-			if(not useless.empty()){
-				useless=useless.substr(1);
-				uint minimizer(str2num(useless));
-				buckets[minimizer]+=line;
-				total_size+=line.size();
+	#pragma omp parallel num_threads(8)
+	{
+		string useless,line;
+		#pragma omp for
+		for(uint SBC=0;SBC<number_superbuckets;++SBC){
+			//~ cin.get();cout<<SBC<<endl;
+			ifstream in(input_file+to_string(SBC));
+			while(not in.eof()){
+				getline(in,useless);
+				getline(in,line);
+				if(not useless.empty()){
+					useless=useless.substr(1);
+					uint minimizer(str2num(useless));
+					//~ cout<<minimizer<<endl;
+					buckets[minimizer]+=line;
+					#pragma omp atomic
+					total_size+=line.size();
+				}
 			}
 		}
 	}
-	cout<<total_size<<endl;
+	cout<<"Total size of the partitionned graph: "<<intToString(total_size)<<endl;
 }
 
 
 
 void kmer_Set_Light::create_mphf(){
-	//~ cout<<buckets.size()<<endl;
-	//~ cin.get();
-	//~ #pragma omp parallel for num_threads(8)
+	uint64_t max_size(0);
+	#pragma omp parallel for num_threads(1)
 	for(uint BC=(0);BC<buckets.size();++BC){
-		//~ cout<<"bucket go"<<endl;
-		if(buckets[BC].size()==0){
-			buckets_size.push_back(0);
+		if(buckets[BC].size()<100000000){
+		//~ if(buckets[BC].size()==0){
+			buckets_size[BC]=0;
 			continue;
 		}
 		auto anchors=new vector<kmer>;
@@ -282,33 +285,24 @@ void kmer_Set_Light::create_mphf(){
 				cout<<"endl"<<endl;
 				j+=k;
 				seq=(str2num(buckets[BC].substr(j,k))),rcSeq=(rcb(seq,k)),canon=(min_k(seq,rcSeq));
-				//~ if(canon==108885600827890225){
-					//~ cout<<"FOUND IT"<<endl;
-					//~ cin.get();
-				//~ }
 				anchors->push_back(canon);
 			}else{
 				updateK(seq,buckets[BC][j+k]);
 				updateRCK(rcSeq,buckets[BC][j+k]);
 				canon=(min_k(seq, rcSeq));
-				//~ if(canon==108885600827890225){
-			//~ cout<<"FOUND IT"<<endl;
-			//~ cin.get();
-		//~ }
 				anchors->push_back(canon);
 			}
 
 		}
-		//~ cout<<"gomphf"<<endl;
-		//~ cout<<anchors->size()<<endl;;
+		//~ cout<<anchors->size()<<endl;
+		max_size=max(max_size,anchors->size());
 		auto data_iterator3 = boomphf::range(static_cast<const kmer*>(&(*anchors)[0]), static_cast<const kmer*>((&(*anchors)[0])+anchors->size()));
 		kmer_MPHF[BC]= boomphf::mphf<kmer,hasher>(anchors->size(),data_iterator3,8,gammaFactor,false);
-		//~ cout<<"sucess"<<endl;
-		buckets_size.push_back(anchors->size());
+		buckets_size[BC]=anchors->size();
 
 		delete anchors;
 	}
-	//~ cout<<"the end"<<endl;
+	cout<<"Largest bucket: "<<intToString(max_size)<<endl;
 }
 
 
@@ -344,7 +338,7 @@ uint32_t bool_to_int(uint n_bits_to_encode,uint pos,const vector<bool>& V){
 void kmer_Set_Light::fill_positions(){
 	//TODO MULTITHREAD OMG
 	//~ cout<<"FILL POSITION"<<endl;
-	//~ #pragma omp parallel for num_threads(8)
+	#pragma omp parallel for num_threads(8)
 	for(uint BC=(0);BC<buckets.size();++BC){
 		if(buckets_size[BC]==0){
 			continue;
@@ -436,6 +430,7 @@ void kmer_Set_Light::multiple_query(const string& query_file){
 				FP++;
 			}
 		}
+		//~ cout<<TP<<" "<<FP<<endl;
 	}
 
 	cout<<"Good kmer: "<<TP<<endl;

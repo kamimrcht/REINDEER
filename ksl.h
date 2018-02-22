@@ -56,6 +56,7 @@ public:
 		coreNumber=coreNumber_val;
 		gammaFactor=2;
 		buckets.resize(minimizer_number);
+		buckets_size.resize(minimizer_number);
 		kmer_MPHF.resize(minimizer_number);
 		positions.resize(minimizer_number);
 	}
