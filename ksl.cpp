@@ -115,14 +115,16 @@ kmer str2num(const string& str){
 			case 'A':res+=0;break;
 			case 'C':res+=1;break;
 			case 'G':res+=2;break;
-			default:res+=3;break;
+			case 'T':res+=3;break;
+			default:cout<<"bug"<<"!"<<endl;
+	exit(0);
 		}
 	}
 	return res;
 }
 
 
-uint32_t xs(uint32_t y){
+uint64_t xs(uint64_t y){
 	y^=(y<<13); y^=(y>>17);y=(y^=(y<<15)); return y;
 }
 
@@ -181,6 +183,21 @@ void kmer_Set_Light::updateRCK(kmer& min, char nuc){
 }
 
 
+ hash<kmer> k_hash;
+
+
+uint32_t kmer_Set_Light::minimizer_according_xs(kmer seq){
+	uint32_t min,mmer;
+	min=seq%minimizer_number;
+	for(uint i(0);i<k-m;i++){
+		seq>>=2;
+		mmer=seq%minimizer_number;
+		min=((k_hash(min)<=k_hash(mmer))?min:mmer);
+	}
+	return min;
+}
+
+
 
 void kmer_Set_Light::create_super_buckets(const string& input_file){
 	ifstream inUnitigs(input_file);
@@ -194,40 +211,37 @@ void kmer_Set_Light::create_super_buckets(const string& input_file){
 		out_files.push_back(out);
 	}
 	string ref,useless;
-	string super_minimizer,kmer,minimizer,mmer;
+	kmer super_minimizer,minimizer;
 	while(not inUnitigs.eof()){
 		getline(inUnitigs,useless);
 		getline(inUnitigs,ref);
 		//~ cout<<ref<<endl;
 		//FOREACH UNITIG
 		if(not ref.empty() and not useless.empty()){
-			super_minimizer=kmer=minimizer=mmer="";
+			super_minimizer=minimizer=minimizer_number;
 			uint last_position(0);
 			//FOREACH KMER
+			kmer seq(str2num(ref.substr(0,k))),rcSeq(rcb(seq,k)),canon(min_k(seq,rcSeq));
+			minimizer=min(minimizer_according_xs(seq),minimizer_according_xs(rcSeq));
+			super_minimizer=minimizer;
 			uint i(0);
-			for(;i+k<=ref.size();++i){
-				kmer=getCanonical(ref.substr(i,k));
-				minimizer=(getCanonical(kmer.substr(0,m)));
+			for(;i+k<ref.size();++i){
+				updateK(seq,ref[i+k]);
+				updateRCK(rcSeq,ref[i+k]);
+				//~ canon=(min_k(seq, rcSeq));
 				//COMPUTE KMER MINIMIZER
-				for(uint j(1);j+m<kmer.size();++j){
-					mmer=getCanonical(kmer.substr(j,m));
-					minimizer=min_accordingtoXS(minimizer,mmer);
-				}
-				if(super_minimizer==""){
+				minimizer=min(minimizer_according_xs(seq),minimizer_according_xs(rcSeq));
+				if(super_minimizer!=minimizer){
+					*(out_files[xs((super_minimizer))%number_superbuckets])<<">"+to_string(super_minimizer)+"\n"<<ref.substr(last_position,i-last_position+k)<<"\n";
+					last_position=i+1;
 					super_minimizer=minimizer;
-				}else{
-					if(super_minimizer!=minimizer){
-						*(out_files[xs(str2num(super_minimizer))%number_superbuckets])<<">"+(super_minimizer)+"\n"<<ref.substr(last_position,i-last_position+k-1)<<"\n";
-						last_position=i;
-						super_minimizer=minimizer;
-					}
 				}
 			}
 			if(ref.size()-last_position>k-1){
 				//~ cout<<"NADINE"<<endl;
 				//~ cout<<ref.substr(last_position)<<endl;
 				//~ cout<<minimizer<<endl;
-				*(out_files[xs(str2num(super_minimizer))%number_superbuckets])<<">"+(super_minimizer)+"\n"<<ref.substr(last_position)<<"\n";
+				*(out_files[xs((super_minimizer))%number_superbuckets])<<">"+to_string(super_minimizer)+"\n"<<ref.substr(last_position)<<"\n";
 			}
 		}
 	}
@@ -254,9 +268,9 @@ void kmer_Set_Light::read_super_buckets(const string& input_file){
 				getline(in,line);
 				if(not useless.empty()){
 					useless=useless.substr(1);
-					uint minimizer(str2num(useless));
+					uint minimizer(stoi(useless));
 					//~ cout<<minimizer<<endl;
-					buckets[minimizer]+=line;
+					buckets[minimizer]+=(line+'\n');
 					#pragma omp atomic
 					total_size+=line.size();
 				}
@@ -270,22 +284,27 @@ void kmer_Set_Light::read_super_buckets(const string& input_file){
 
 void kmer_Set_Light::create_mphf(){
 	uint64_t max_size(0);
+	uint64_t anchors_number(0);
 	#pragma omp parallel for num_threads(1)
 	for(uint BC=(0);BC<buckets.size();++BC){
-		if(buckets[BC].size()<100000000){
-		//~ if(buckets[BC].size()==0){
+		if(buckets[BC].size()==0){
 			buckets_size[BC]=0;
 			continue;
 		}
 		auto anchors=new vector<kmer>;
 		kmer seq(str2num(buckets[BC].substr(0,k))),rcSeq(rcb(seq,k)),canon(min_k(seq,rcSeq));
 		anchors->push_back(canon);
+		//~ cout<<canon<<endl;
+		//~ cout<<BC<<endl;
 		for(uint j(0);j+k<buckets[BC].size();++j){
 			if(buckets[BC][j+k]=='\n'){
-				cout<<"endl"<<endl;
-				j+=k;
-				seq=(str2num(buckets[BC].substr(j,k))),rcSeq=(rcb(seq,k)),canon=(min_k(seq,rcSeq));
-				anchors->push_back(canon);
+				//~ cout<<"endl"<<endl;
+				j+=k+1;
+				if(j+k<buckets[BC].size()){
+					seq=(str2num(buckets[BC].substr(j,k))),rcSeq=(rcb(seq,k)),canon=(min_k(seq,rcSeq));
+					anchors->push_back(canon);
+				}
+				--j;
 			}else{
 				updateK(seq,buckets[BC][j+k]);
 				updateRCK(rcSeq,buckets[BC][j+k]);
@@ -296,6 +315,7 @@ void kmer_Set_Light::create_mphf(){
 		}
 		//~ cout<<anchors->size()<<endl;
 		max_size=max(max_size,anchors->size());
+		anchors_number+=anchors->size();
 		auto data_iterator3 = boomphf::range(static_cast<const kmer*>(&(*anchors)[0]), static_cast<const kmer*>((&(*anchors)[0])+anchors->size()));
 		kmer_MPHF[BC]= boomphf::mphf<kmer,hasher>(anchors->size(),data_iterator3,8,gammaFactor,false);
 		buckets_size[BC]=anchors->size();
@@ -303,6 +323,7 @@ void kmer_Set_Light::create_mphf(){
 		delete anchors;
 	}
 	cout<<"Largest bucket: "<<intToString(max_size)<<endl;
+	cout<<"Number of kmer: "<<intToString(anchors_number)<<endl;
 }
 
 
@@ -324,7 +345,10 @@ uint32_t bool_to_int(uint n_bits_to_encode,uint pos,const vector<bool>& V){
 	uint32_t res(0);
 	uint32_t acc(1);
 	for(uint i(0);i<n_bits_to_encode;++i){
+		//~ cout<<i<<endl;
+		//~ cout<<pos<<endl;
 		//~ cout<<i+pos*n_bits_to_encode<<endl;
+		//~ cout<<V.size()<<endl;
 		if(V[i+pos*n_bits_to_encode]){
 			res+=acc;
 		}
@@ -343,7 +367,7 @@ void kmer_Set_Light::fill_positions(){
 		if(buckets_size[BC]==0){
 			continue;
 		}
-		uint n_bits_to_encode(log2(buckets_size[BC])+1);
+		uint n_bits_to_encode(log2(buckets[BC].size())+1);
 		//~ cout<<n_bits_to_encode<<endl;
 		positions[BC].resize(buckets_size[BC]*n_bits_to_encode,0);
 		kmer seq(str2num(buckets[BC].substr(0,k))),rcSeq(rcb(seq,k)),canon(min_k(seq,rcSeq));
@@ -354,10 +378,22 @@ void kmer_Set_Light::fill_positions(){
 			//~ }
 			//~ cout<<endl;
 		for(uint j(0);j+k<buckets[BC].size();++j){
-			updateK(seq,buckets[BC][j+k]);
-			updateRCK(rcSeq,buckets[BC][j+k]);
-			canon=(min_k(seq, rcSeq));
-			int_to_bool(n_bits_to_encode,j+1,kmer_MPHF[BC].lookup(canon),positions[BC]);
+			if(buckets[BC][j+k]=='\n'){
+				j+=k+1;
+				if(j+k<buckets[BC].size()){
+					seq=(str2num(buckets[BC].substr(j,k))),rcSeq=(rcb(seq,k)),canon=(min_k(seq,rcSeq));
+					--j;
+					int_to_bool(n_bits_to_encode,j+1,kmer_MPHF[BC].lookup(canon),positions[BC]);
+				}
+			}else{
+				updateK(seq,buckets[BC][j+k]);
+				updateRCK(rcSeq,buckets[BC][j+k]);
+				canon=(min_k(seq, rcSeq));
+				//~ cout<<j+1<<endl;
+				int_to_bool(n_bits_to_encode,j+1,kmer_MPHF[BC].lookup(canon),positions[BC]);
+			}
+
+
 			//~ cout<<"encode"<<j+1<<" "<<kmer_MPHF[BC].lookup(canon)<<endl;
 			//~ for(uint ii(0);ii<positions[BC].size();++ii){
 				//~ cout<<positions[BC][ii];
@@ -369,40 +405,7 @@ void kmer_Set_Light::fill_positions(){
 
 
 
-bool kmer_Set_Light::exists(const string& query2){
-	//~ cout<<endl<<"GO QUERY"<<endl;
-	string query=getCanonical(query2);
-	string minimizer, mmer;
-	for(uint j(0);j<query.size();++j){
-		minimizer=(getCanonical(query.substr(0,m)));
-		//COMPUTE KMER MINIMIZER
-		for(uint j(0);j+m<query.size();++j){
-			mmer=getCanonical(query.substr(j,m));
-			minimizer=min_accordingtoXS(minimizer,mmer);
-		}
-	}
-	uint32_t mini((str2num(minimizer)));
-	//~ cout<<kmer_MPHF[mini].lookup(str2num(query))<<endl;
-	int32_t hash(kmer_MPHF[mini].lookup(str2num(query)));
-	if(hash<0){
-		return 0;
-	}
-	uint pos(bool_to_int( ((uint32_t)log2(buckets_size[mini])+1), hash, positions[mini]));
-	//~ uint32_t pos(positions[mini][]);
-	//~ cout<<buckets[mini]<<endl;
-	if(buckets[mini].substr(pos,k)==query){
-		return true;
-	}
-	if(buckets[mini].substr(pos,k)==revComp(query)){
-		return true;
-	}
-	//~ cout<<buckets[mini].substr(pos,k)<<endl;
-	//~ cout<<query<<endl;
-	//~ cout<<revComp(query)<<endl;
-	//~ cin.get();
 
-	return false;
-}
 
 
 
@@ -419,18 +422,82 @@ void kmer_Set_Light::multiple_query(const string& query_file){
 			getline(in,query);
 			getline(in,query);
 		}
-		for(uint i(0);i+k<=query.size();++i){
-			Q=query.substr(i,k);
-			//~ cout<<"aller"<<endl;
-			//~ cout<<Q<<endl;
-			//~ cout<<revComp(Q)<<endl;
-			if(exists(Q)){
+		//~ for(uint i(0);i+k<=query.size();++i){
+			//~ Q=query.substr(i,k);
+			//~ if(exists(Q)){
+				//~ TP++;
+			//~ }else{
+				//~ FP++;
+			//~ }
+		//~ }
+		if(query.size()<k){
+			break;
+		}
+		kmer seq(str2num(query.substr(0,k))),rcSeq(rcb(seq,k)),canon(min_k(seq,rcSeq));
+		uint i(0);
+		canon=(min_k(seq, rcSeq));
+			//COMPUTE KMER MINIMIZER
+			uint32_t minimizer=min(minimizer_according_xs(seq),minimizer_according_xs(rcSeq));
+			int32_t hash(kmer_MPHF[minimizer].lookup(canon));
+			//~ cout<<minimizer<<endl;
+			if(hash<0){
+				//~ cout<<hash<<endl;
+				//~ cout<<1<<endl;
+				//~ cout<<canon<<endl;
+				FP++;
+			}else{
+				uint pos(bool_to_int( ((uint32_t)log2(buckets[minimizer].size())+1), hash, positions[minimizer]));
+				if(str2num(buckets[minimizer].substr(pos,k))==seq or str2num(buckets[minimizer].substr(pos,k))==rcSeq){
+					TP++;
+
+				}else{
+					//~ cout<<query.substr(i+1,k)<<endl;
+					//~ cout<<buckets[minimizer].substr(pos,k)<<endl;
+					//~ cout<<revComp(buckets[minimizer].substr(pos,k))<<endl;
+					//~ cout<<canon<<endl;
+					//~ cout<<minimizer<<endl;
+					FP++;
+					//~ exit(0);
+					//~ cin.get();
+				}
+			}
+		for(;i+k<query.size();++i){
+			updateK(seq,query[i+k]);
+			updateRCK(rcSeq,query[i+k]);
+			canon=(min_k(seq, rcSeq));
+			//COMPUTE KMER MINIMIZER
+			uint32_t minimizer=min(minimizer_according_xs(seq),minimizer_according_xs(rcSeq));
+			//~ cout<<1<<endl;
+			int32_t hash(kmer_MPHF[minimizer].lookup(canon));
+			//~ cout<<2<<endl;
+			if(hash<0){
+				FP++;
+				//~ cout<<2<<endl;
+				//~ cout<<canon<<endl;
+				//~ exit(0);
+				//~ cin.get();
+				continue;
+			}
+			//~ cout<<3<<endl;
+			//~ cout<<minimizer<<endl;
+			uint pos(bool_to_int( ((uint32_t)log2(buckets[minimizer].size())+1), hash, positions[minimizer]));
+			//~ cout<<4<<endl;
+			if(str2num(buckets[minimizer].substr(pos,k))==seq or str2num(buckets[minimizer].substr(pos,k))==rcSeq){
+
 				TP++;
 			}else{
+				//~ cout<<query.substr(i+1,k)<<endl;
+				//~ cout<<buckets[minimizer].substr(pos,k)<<endl;
+				//~ cout<<revComp(buckets[minimizer].substr(pos,k))<<endl;
+				//~ cout<<canon<<endl;
+				//~ cout<<minimizer<<endl;
+				//~ cout<<pos<<endl;
 				FP++;
+				//~ exit(0);
+				//~ cin.get();
 			}
+			//~ cout<<5<<endl;
 		}
-		//~ cout<<TP<<" "<<FP<<endl;
 	}
 
 	cout<<"Good kmer: "<<TP<<endl;

@@ -70,6 +70,7 @@ public:
 	void fill_positions();
 	bool exists(const string& query);
 	void multiple_query(const string& query);
+	uint32_t minimizer_according_xs(kmer seq);
 
 
 
