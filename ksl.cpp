@@ -183,6 +183,19 @@ void kmer_Set_Light::updateRCK(kmer& min, char nuc){
 }
 
 
+
+uint32_t knuth_hash (uint32_t x){
+	return x*2654435761;
+}
+
+size_t hash2(int i1)
+{
+    size_t ret = i1;
+    ret *= 2654435761U;
+    return ret ^ 69;
+}
+
+
  hash<kmer> k_hash;
 
 
@@ -362,6 +375,7 @@ uint32_t bool_to_int(uint n_bits_to_encode,uint pos,const vector<bool>& V){
 void kmer_Set_Light::fill_positions(){
 	//TODO MULTITHREAD OMG
 	//~ cout<<"FILL POSITION"<<endl;
+	uint64_t total_size(0);
 	#pragma omp parallel for num_threads(8)
 	for(uint BC=(0);BC<buckets.size();++BC){
 		if(buckets_size[BC]==0){
@@ -370,6 +384,8 @@ void kmer_Set_Light::fill_positions(){
 		uint n_bits_to_encode(log2(buckets[BC].size())+1);
 		//~ cout<<n_bits_to_encode<<endl;
 		positions[BC].resize(buckets_size[BC]*n_bits_to_encode,0);
+		#pragma omp atomic
+		total_size+=buckets_size[BC]*n_bits_to_encode;
 		kmer seq(str2num(buckets[BC].substr(0,k))),rcSeq(rcb(seq,k)),canon(min_k(seq,rcSeq));
 
 		//~ positions[BC][kmer_MPHF[BC].lookup(canon)].assign(temp.begin(),temp.end());
@@ -401,6 +417,7 @@ void kmer_Set_Light::fill_positions(){
 			//~ cout<<endl;
 		}
 	}
+	cout<<"Total Positions size: (Bytes) "<<intToString(total_size/8)<<endl;
 }
 
 
