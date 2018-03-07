@@ -55,13 +55,13 @@ public:
 		k=k_val;
 		m=m_val;
 		n=n_val;
-		bit_saved_sub=1;
+		bit_saved_sub=8;
 		positions_to_check=1<<bit_saved_sub;
 		offsetUpdateAnchor<<=2*k;
 		number_superbuckets=1<<n;
 		minimizer_number=1<<(2*m);
 		coreNumber=coreNumber_val;
-		gammaFactor=100;
+		gammaFactor=2;
 		bucketSeq.resize(minimizer_number);
 		//~ buckets.resize(minimizer_number);
 		Valid_kmer.resize(minimizer_number);

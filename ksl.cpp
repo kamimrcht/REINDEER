@@ -421,6 +421,8 @@ void kmer_Set_Light::read_super_buckets(const string& input_file){
 		}
 	}
 	cout<<"Total size of the partitionned graph: "<<intToString(total_size)<<endl;
+	cout<<"Size of the partitionned graph in MB: "<<intToString(total_size/(4*1024*1024))<<endl;
+	cout<<"Space used for separators in MB: "<<intToString(total_size/(8*1024*1024))<<endl;
 }
 
 
@@ -756,8 +758,8 @@ void kmer_Set_Light::multiple_query(const string& query_file){
 			if(hash<0){
 				#pragma omp atomic
 				FP++;
-				cout<<"fail MPHF"<<endl;
-				cin.get();
+				//~ cout<<"fail MPHF"<<endl;
+				//~ cin.get();
 			}else{
 				//~ TP++;
 				//~ continue;
@@ -786,7 +788,7 @@ void kmer_Set_Light::multiple_query(const string& query_file){
 							j+=k-1;
 							if(2*(j+k)<bucketSeq[minimizer].size()){
 								//~ cout<<"first2"<<endl;
-								seqR=(get_kmer(minimizer,j)),rcSeqR=(rcb(seqR,k)),canon=(min_k(seqR,rcSeqR));
+								seqR=(get_kmer(minimizer,j+1)),rcSeqR=(rcb(seqR,k)),canon=(min_k(seqR,rcSeqR));
 								//~ --j;
 								canonR=(min_k(seqR, rcSeqR));
 								//~ int_to_bool(n_bits_to_encode,(j+1)/positions_to_check,kmer_MPHF[BC].lookup(canon),positions[BC]);
@@ -796,8 +798,9 @@ void kmer_Set_Light::multiple_query(const string& query_file){
 							//~ updateRCK(rcSeqR,buckets[minimizer][j+k]);
 							seqR=update_kmer(j+k,minimizer,seq);
 							rcSeqR=(rcb(seqR,k));
+							canonR=(min_k(seqR, rcSeqR));
 						}
-						canonR=(min_k(seqR, rcSeqR));
+
 						if(canon==canonR){
 							#pragma omp atomic
 							TP++;
@@ -809,14 +812,15 @@ void kmer_Set_Light::multiple_query(const string& query_file){
 						#pragma omp atomic
 						FP++;
 						//~ cout<<2<<endl;
+						//~ cin.get();
 					}
 				}
 			}
 			for(;i+k<query.size();++i){
 				//~ cout<<"the res"<<endl;
-				cout<<"QUREY"<<endl;
+				//~ cout<<"QUREY"<<endl;
 				updateK(seq,query[i+k]);
-				print_kmer(seq);
+				//~ print_kmer(seq);
 				updateRCK(rcSeq,query[i+k]);
 				canon=(min_k(seq, rcSeq));
 				//COMPUTE KMER MINIMIZER
@@ -826,7 +830,7 @@ void kmer_Set_Light::multiple_query(const string& query_file){
 				if(hash<0){
 					#pragma omp atomic
 					FP++;
-					cout<<"fail MPHF"<<endl;
+					//~ cout<<"fail MPHF"<<endl;
 					continue;
 				}
 				//~ TP++;
@@ -841,7 +845,7 @@ void kmer_Set_Light::multiple_query(const string& query_file){
 				//~ seqR=str2num(buckets[minimizer].substr(pos,k));
 				//~ cout<<pos<<endl;
 				seqR=(get_kmer(minimizer,pos));
-				print_kmer(seqR);
+				//~ print_kmer(seqR);
 				rcSeqR=rcb(seqR,k);
 				canonR=(min_k(seqR, rcSeqR));
 				if(canon==canonR){
@@ -850,9 +854,9 @@ void kmer_Set_Light::multiple_query(const string& query_file){
 					//~ cout<<"sucess"<<endl;
 					continue;
 				}
-				cout<<TP<<endl;
-				cout<<"FAIL"<<endl;
-				cin.get();
+				//~ cout<<TP<<endl;
+				//~ cout<<"FAIL"<<endl;
+				//~ cin.get();
 				uint j;
 				bool found(false);
 				for(j=(pos);j<pos+positions_to_check;++j){
@@ -861,7 +865,7 @@ void kmer_Set_Light::multiple_query(const string& query_file){
 						j+=k-1;
 						if(2*(j+k)<bucketSeq[minimizer].size()){
 							//~ seqR=(str2num(buckets[minimizer].substr(j,k))),rcSeqR=(rcb(seqR,k)),canonR=(min_k(seqR,rcSeqR));
-							seqR=(seqR=(get_kmer(minimizer,j))),rcSeqR=(rcb(seqR,k)),canonR=(min_k(seqR,rcSeqR));
+							seqR=(seqR=(get_kmer(minimizer,j+1))),rcSeqR=(rcb(seqR,k)),canonR=(min_k(seqR,rcSeqR));
 							//~ --j;
 							canonR=(min_k(seqR, rcSeqR));
 							//~ int_to_bool(n_bits_to_encode,(j+1)/positions_to_check,kmer_MPHF[BC].lookup(canon),positions[BC]);
@@ -869,8 +873,8 @@ void kmer_Set_Light::multiple_query(const string& query_file){
 					}else{
 						//~ updateK(seqR,buckets[minimizer][j+k]);
 						//~ updateRCK(rcSeqR,buckets[minimizer][j+k]);
-						seq=update_kmer(j+k,minimizer,seq);
-						rcSeq=(rcb(seq,k));
+						seqR=update_kmer(j+k,minimizer,seqR);
+						rcSeqR=(rcb(seqR,k));
 						canonR=(min_k(seqR, rcSeqR));
 					}
 					if(canon==canonR){
@@ -884,7 +888,7 @@ void kmer_Set_Light::multiple_query(const string& query_file){
 				if(not found){
 					#pragma omp atomic
 					FP++;
-					//~ cout<<5<<endl;
+					//~ cout<<5;
 					//~ cout<<pos<<endl;
 				}
 			}
