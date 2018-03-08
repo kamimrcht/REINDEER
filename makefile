@@ -12,7 +12,7 @@ all: $(EXEC)
 blight: blight.o ksl.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-blight.o: blight.cpp
+blight.o: blight.cpp ksl.h
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 ksl.o: ksl.cpp

@@ -41,6 +41,7 @@ public:
 	uint gammaFactor;
 	uint bit_saved_sub;
 	uint positions_to_check;
+	uint64_t number_kmer;
 	kmer offsetUpdateAnchor=1;
 
 
@@ -56,6 +57,7 @@ public:
 		m=m_val;
 		n=n_val;
 		bit_saved_sub=8;
+		number_kmer=0;
 		positions_to_check=1<<bit_saved_sub;
 		offsetUpdateAnchor<<=2*k;
 		number_superbuckets=1<<n;
@@ -65,7 +67,7 @@ public:
 		bucketSeq.resize(minimizer_number);
 		//~ buckets.resize(minimizer_number);
 		Valid_kmer.resize(minimizer_number);
-		buckets_size.resize(minimizer_number);
+		buckets_size.resize(minimizer_number,0);
 		abundance_minimizer.resize(minimizer_number);
 		kmer_MPHF.resize(minimizer_number);
 		positions.resize(minimizer_number);

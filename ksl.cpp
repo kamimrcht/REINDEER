@@ -380,14 +380,21 @@ void kmer_Set_Light::read_super_buckets(const string& input_file){
 					uint minimizer(stoi(useless));
 					str2bool(line,minimizer);
 					#pragma omp atomic
+					number_kmer+=line.size()-k+1;
+					#pragma omp atomic
 					total_size+=line.size();
 				}
 			}
 		}
 	}
+	cout<<"Kmer in graph: "<<intToString(number_kmer)<<endl;
 	cout<<"Total size of the partitionned graph: "<<intToString(total_size)<<endl;
 	cout<<"Size of the partitionned graph in MB: "<<intToString(total_size/(4*1024*1024))<<endl;
-	cout<<"Space used for separators in MB: "<<intToString(total_size/(8*1024*1024))<<endl;
+	cout<<"Size of the partitionned graph in bit per kmer: "<<intToString((2*total_size)/(number_kmer))<<endl;
+	if(not Valid_kmer.empty()){
+		cout<<"Space used for separators in MB: "<<intToString(total_size/(8*1024*1024))<<endl;
+		cout<<"Space used for separators in bit per kmer: "<<intToString(total_size/(number_kmer))<<endl;
+	}
 }
 
 
@@ -532,7 +539,7 @@ void kmer_Set_Light::fill_positions(){
 		if(buckets_size[BC]==0){
 			continue;
 		}
-		int n_bits_to_encode((ceil(log2(bucketSeq[BC].size()+1))-bit_saved_sub));
+		int n_bits_to_encode((ceil(log2(bucketSeq[BC].size()/2+1))-bit_saved_sub));
 		if(n_bits_to_encode<1){n_bits_to_encode=1;}
 		positions[BC].resize(buckets_size[BC]*n_bits_to_encode,0);
 		#pragma omp atomic
@@ -554,6 +561,7 @@ void kmer_Set_Light::fill_positions(){
 		}
 	}
 	cout<<"Total Positions size: (MBytes) "<<intToString(total_size/(8*1024*1024))<<endl;
+	cout<<"Total Positions size: bit per kmer "<<intToString(total_size/number_kmer)<<endl;
 }
 
 
@@ -595,7 +603,7 @@ void kmer_Set_Light::multiple_query(const string& query_file){
 				#pragma omp atomic
 				FP++;
 			}else{
-				int n_bits_to_encode((ceil(log2(bucketSeq[minimizer].size()+1))-bit_saved_sub));
+				int n_bits_to_encode((ceil(log2(bucketSeq[minimizer].size()/2+1))-bit_saved_sub));
 				if(n_bits_to_encode<1){n_bits_to_encode=1;}
 				uint pos(bool_to_int( n_bits_to_encode, hash, positions[minimizer]));
 				pos=correct_pos(minimizer,(positions_to_check)*pos);
@@ -612,8 +620,8 @@ void kmer_Set_Light::multiple_query(const string& query_file){
 						if(not Valid_kmer.empty() and not Valid_kmer[minimizer][j+1]){
 							j+=k-1;
 							if(2*(j+k)<bucketSeq[minimizer].size()){
-								seqR=(get_kmer(minimizer,j+1)),rcSeqR=(rcb(seqR,k)),canon=(min_k(seqR,rcSeqR));
-								canonR=(min_k(seqR, rcSeqR));
+								seqR=(get_kmer(minimizer,j+1)),rcSeqR=(rcb(seqR,k)),canonR=(min_k(seqR,rcSeqR));
+								//~ canonR=(min_k(seqR, rcSeqR));
 							}
 						}else{
 							seqR=update_kmer(j+k,minimizer,seq);
@@ -646,7 +654,7 @@ void kmer_Set_Light::multiple_query(const string& query_file){
 					FP++;
 					continue;
 				}
-				int n_bits_to_encode((ceil(log2(bucketSeq[minimizer].size()+1))-bit_saved_sub));
+				int n_bits_to_encode((ceil(log2(bucketSeq[minimizer].size()/2+1))-bit_saved_sub));
 				if(n_bits_to_encode<1){n_bits_to_encode=1;}
 				uint pos(bool_to_int( n_bits_to_encode, hash, positions[minimizer]));
 				pos=correct_pos(minimizer,(positions_to_check)*pos);
@@ -665,7 +673,7 @@ void kmer_Set_Light::multiple_query(const string& query_file){
 						j+=k-1;
 						if(2*(j+k)<bucketSeq[minimizer].size()){
 							seqR=(seqR=(get_kmer(minimizer,j+1))),rcSeqR=(rcb(seqR,k)),canonR=(min_k(seqR,rcSeqR));
-							canonR=(min_k(seqR, rcSeqR));
+							//~ canonR=(min_k(seqR, rcSeqR));
 						}
 					}else{
 						seqR=update_kmer(j+k,minimizer,seqR);
