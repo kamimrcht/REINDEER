@@ -19,7 +19,6 @@ using namespace std;
 
 
 string SEQOFINTERESET("TCAGCGAGGACGGGTATCCGGTTTCCGTCTT");
-#define kmer uint64_t
 
 
 
@@ -126,8 +125,11 @@ kmer str2num(const string& str){
 }
 
 
+//~ uint64_t xs(uint64_t y){
+	//~ y^=(y<<13); y^=(y>>17);y=(y^=(y<<15)); return y;
+//~ }
 uint64_t xs(uint64_t y){
-	y^=(y<<13); y^=(y>>17);y=(y^=(y<<15)); return y;
+	return y;
 }
 
 
@@ -211,7 +213,6 @@ size_t hash2(int i1)
 }
 
 
- hash<kmer> k_hash;
 
 
 uint32_t kmer_Set_Light::minimizer_according_xs(kmer seq){
@@ -229,7 +230,7 @@ uint32_t kmer_Set_Light::minimizer_according_xs(kmer seq){
 				mini=((xs(mini)<=xs(mmer))?mini:mmer);
 			}
 		}
-		//~ min=((xs(min)<=xs(mmer))?min:mmer);
+		//~ mini=((xs(mini)<=xs(mmer))?mini:mmer);
 	}
 	return mini;
 }
@@ -284,7 +285,7 @@ void kmer_Set_Light::create_super_buckets(const string& input_file){
 	#pragma omp parallel num_threads(coreNumber)
 	{
 		string ref,useless;
-		kmer super_minimizer,minimizer;
+		minimizer_type super_minimizer,minimizer;
 		while(not inUnitigs.eof()){
 			#pragma omp critical(dataupdate)
 			{
@@ -307,17 +308,17 @@ void kmer_Set_Light::create_super_buckets(const string& input_file){
 					//COMPUTE KMER MINIMIZER
 					minimizer=minimizer_according_xs(canon);
 					if(super_minimizer!=minimizer){
-						omp_set_lock(&(lock[xs((super_minimizer))%number_superbuckets]));
-						*(out_files[xs((super_minimizer))%number_superbuckets])<<">"+to_string(super_minimizer)+"\n"<<ref.substr(last_position,i-last_position+k)<<"\n";
+						omp_set_lock(&(lock[((super_minimizer))/bucket_per_superBuckets]));
+						*(out_files[((super_minimizer))/bucket_per_superBuckets])<<">"+to_string(super_minimizer)+"\n"<<ref.substr(last_position,i-last_position+k)<<"\n";
 						last_position=i+1;
-						omp_unset_lock(&(lock[xs((super_minimizer))%number_superbuckets]));
+						omp_unset_lock(&(lock[((super_minimizer))/bucket_per_superBuckets]));
 						super_minimizer=minimizer;
 					}
 				}
 				if(ref.size()-last_position>k-1){
-					omp_set_lock(&(lock[xs((super_minimizer))%number_superbuckets]));
-					*(out_files[xs((super_minimizer))%number_superbuckets])<<">"+to_string(super_minimizer)+"\n"<<ref.substr(last_position)<<"\n";
-					omp_unset_lock(&(lock[xs((super_minimizer))%number_superbuckets]));
+					omp_set_lock(&(lock[((super_minimizer))/bucket_per_superBuckets]));
+					*(out_files[((super_minimizer))/bucket_per_superBuckets])<<">"+to_string(super_minimizer)+"\n"<<ref.substr(last_position)<<"\n";
+					omp_unset_lock(&(lock[((super_minimizer))/bucket_per_superBuckets]));
 				}
 			}
 		}
@@ -365,8 +366,9 @@ void kmer_Set_Light::str2bool(const string& str,uint mini){
 
 void kmer_Set_Light::read_super_buckets(const string& input_file){
 	uint64_t total_size(0);
+	uint BC(0);
 	uint number_superbuckets_by_buckets(minimizer_number/number_superbuckets);
-	#pragma omp parallel num_threads(coreNumber)
+	#pragma omp parallel num_threads(1)
 	{
 		string useless,line;
 		#pragma omp for
@@ -382,19 +384,37 @@ void kmer_Set_Light::read_super_buckets(const string& input_file){
 					#pragma omp atomic
 					number_kmer+=line.size()-k+1;
 					#pragma omp atomic
+					number_super_kmer++;
+					#pragma omp atomic
 					total_size+=line.size();
 				}
 			}
+			remove((input_file+to_string(SBC)).c_str());
+			create_mphf(BC,BC+bucket_per_superBuckets);
+			fill_positions(BC,BC+bucket_per_superBuckets);
+			BC+=bucket_per_superBuckets;
+			cout<<"-"<<flush;
 		}
 	}
+	cout<<endl;
+	cout<<"----------------------INDEX RECAP----------------------------"<<endl;
 	cout<<"Kmer in graph: "<<intToString(number_kmer)<<endl;
+	cout<<"Super Kmer in graph: "<<intToString(number_super_kmer)<<endl;
+	cout<<"Average size of Super Kmer: "<<intToString(total_size/(number_super_kmer))<<endl;
 	cout<<"Total size of the partitionned graph: "<<intToString(total_size)<<endl;
 	cout<<"Size of the partitionned graph in MB: "<<intToString(total_size/(4*1024*1024))<<endl;
-	cout<<"Size of the partitionned graph in bit per kmer: "<<intToString((2*total_size)/(number_kmer))<<endl;
-	if(not Valid_kmer.empty()){
+	cout<<"Size of the partitionned graph in bit per kmer: "<<((double)(2*total_size)/(number_kmer))<<endl;
+	bit_per_kmer+=((double)(2*total_size)/(number_kmer));
+	cout<<"Largest MPHF: "<<intToString(largest_MPHF)<<endl;
+	cout<<"Total Positions size: (MBytes) "<<intToString(positions_total_size/(8*1024*1024))<<endl;
+	cout<<"Total Positions size: bit per kmer "<<((double)positions_total_size/number_kmer)<<endl;
+	bit_per_kmer+=((double)positions_total_size/number_kmer);
+	if(not light_mode){
 		cout<<"Space used for separators in MB: "<<intToString(total_size/(8*1024*1024))<<endl;
-		cout<<"Space used for separators in bit per kmer: "<<intToString(total_size/(number_kmer))<<endl;
+		cout<<"Space used for separators in bit per kmer: "<<((double)total_size/(number_kmer))<<endl;
+		bit_per_kmer+=((double)total_size/(number_kmer));
 	}
+	cout<<"Bits per kmer (without bbhash): "<<bit_per_kmer<<endl;
 }
 
 
@@ -467,12 +487,12 @@ void kmer_Set_Light::print_kmer(kmer num){
 
 
 
-void kmer_Set_Light::create_mphf(){
-	uint64_t max_size(0);
+void kmer_Set_Light::create_mphf(uint begin_BC,uint end_BC){
 	uint64_t anchors_number(0);
 	//~ cout<<"go"<<endl;
 	#pragma omp parallel for num_threads(coreNumber)
-	for(uint BC=(0);BC<bucketSeq.size();++BC){
+	for(uint BC=(begin_BC);BC<end_BC;++BC){
+		//~ cout<<BC<<endl;
 		if(bucketSeq[BC].size()==0){
 			buckets_size[BC]=0;
 			continue;
@@ -495,16 +515,13 @@ void kmer_Set_Light::create_mphf(){
 
 			}
 		}
-		max_size=max(max_size,anchors->size());
+		largest_MPHF=max(largest_MPHF,anchors->size());
 		anchors_number+=anchors->size();
 		auto data_iterator3 = boomphf::range(static_cast<const kmer*>(&(*anchors)[0]), static_cast<const kmer*>((&(*anchors)[0])+anchors->size()));
 		kmer_MPHF[BC]= boomphf::mphf<kmer,hasher>(anchors->size(),data_iterator3,coreNumber,gammaFactor,false);
 		buckets_size[BC]=anchors->size();
-
 		delete anchors;
 	}
-	cout<<"Largest bucket: "<<intToString(max_size)<<endl;
-	cout<<"Number of kmer: "<<intToString(anchors_number)<<endl;
 }
 
 
@@ -532,10 +549,10 @@ uint32_t bool_to_int(uint n_bits_to_encode,uint pos,const vector<bool>& V){
 
 
 
-void kmer_Set_Light::fill_positions(){
-	uint64_t total_size(0);
+void kmer_Set_Light::fill_positions(uint begin_BC,uint end_BC){
+	//~ uint64_t total_size(0);
 	#pragma omp parallel for num_threads(coreNumber)
-	for(uint BC=(0);BC<bucketSeq.size();++BC){
+	for(uint BC=(begin_BC);BC<end_BC;++BC){
 		if(buckets_size[BC]==0){
 			continue;
 		}
@@ -543,7 +560,7 @@ void kmer_Set_Light::fill_positions(){
 		if(n_bits_to_encode<1){n_bits_to_encode=1;}
 		positions[BC].resize(buckets_size[BC]*n_bits_to_encode,0);
 		#pragma omp atomic
-		total_size+=buckets_size[BC]*n_bits_to_encode;
+		positions_total_size+=buckets_size[BC]*n_bits_to_encode;
 		kmer seq(get_kmer(BC,0)),rcSeq(rcb(seq,k)),canon(min_k(seq,rcSeq));
 		for(uint j(0);2*(j+k)<bucketSeq[BC].size();j++){
 			if(not Valid_kmer.empty() and not Valid_kmer[BC][j+1]){
@@ -559,9 +576,11 @@ void kmer_Set_Light::fill_positions(){
 				int_to_bool(n_bits_to_encode,(j+1)/positions_to_check,kmer_MPHF[BC].lookup(canon),positions[BC]);
 			}
 		}
+		if(light_mode){
+			Valid_kmer[BC].clear();
+			vector<bool>().swap(Valid_kmer[BC]);
+		}
 	}
-	cout<<"Total Positions size: (MBytes) "<<intToString(total_size/(8*1024*1024))<<endl;
-	cout<<"Total Positions size: bit per kmer "<<intToString(total_size/number_kmer)<<endl;
 }
 
 
@@ -582,6 +601,9 @@ int64_t kmer_Set_Light::correct_pos(uint32_t mini, uint64_t p){
 
 
 void kmer_Set_Light::multiple_query(const string& query_file){
+	if(light_mode){
+		Valid_kmer.clear();
+	}
 	ifstream in(query_file);
 	uint TP(0),FP(0);
 	#pragma omp parallel num_threads(coreNumber)
@@ -602,6 +624,7 @@ void kmer_Set_Light::multiple_query(const string& query_file){
 			if(hash<0){
 				#pragma omp atomic
 				FP++;
+				//~ cout<<1<<endl;
 			}else{
 				int n_bits_to_encode((ceil(log2(bucketSeq[minimizer].size()/2+1))-bit_saved_sub));
 				if(n_bits_to_encode<1){n_bits_to_encode=1;}
@@ -617,14 +640,14 @@ void kmer_Set_Light::multiple_query(const string& query_file){
 					uint j;
 					bool found(false);
 					for(j=(pos);j<pos+positions_to_check;++j){
-						if(not Valid_kmer.empty() and not Valid_kmer[minimizer][j+1]){
+						if(not light_mode and not Valid_kmer[minimizer][j+1]){
 							j+=k-1;
 							if(2*(j+k)<bucketSeq[minimizer].size()){
 								seqR=(get_kmer(minimizer,j+1)),rcSeqR=(rcb(seqR,k)),canonR=(min_k(seqR,rcSeqR));
 								//~ canonR=(min_k(seqR, rcSeqR));
 							}
 						}else{
-							seqR=update_kmer(j+k,minimizer,seq);
+							seqR=update_kmer(j+k,minimizer,seqR);
 							rcSeqR=(rcb(seqR,k));
 							canonR=(min_k(seqR, rcSeqR));
 						}
@@ -639,6 +662,7 @@ void kmer_Set_Light::multiple_query(const string& query_file){
 					if(not found){
 						#pragma omp atomic
 						FP++;
+						//~ cout<<2<<endl;
 					}
 				}
 			}
@@ -652,6 +676,7 @@ void kmer_Set_Light::multiple_query(const string& query_file){
 				if(hash<0){
 					#pragma omp atomic
 					FP++;
+					//~ cout<<3<<endl;
 					continue;
 				}
 				int n_bits_to_encode((ceil(log2(bucketSeq[minimizer].size()/2+1))-bit_saved_sub));
@@ -669,11 +694,10 @@ void kmer_Set_Light::multiple_query(const string& query_file){
 				uint j;
 				bool found(false);
 				for(j=(pos);j<pos+positions_to_check;++j){
-					if(not Valid_kmer.empty() and not Valid_kmer[minimizer][j+1]){
+					if(not light_mode and not Valid_kmer[minimizer][j+1]){
 						j+=k-1;
 						if(2*(j+k)<bucketSeq[minimizer].size()){
 							seqR=(seqR=(get_kmer(minimizer,j+1))),rcSeqR=(rcb(seqR,k)),canonR=(min_k(seqR,rcSeqR));
-							//~ canonR=(min_k(seqR, rcSeqR));
 						}
 					}else{
 						seqR=update_kmer(j+k,minimizer,seqR);
@@ -690,14 +714,14 @@ void kmer_Set_Light::multiple_query(const string& query_file){
 				if(not found){
 					#pragma omp atomic
 					FP++;
+					//~ cout<<4<<endl;
 				}
 			}
 		}
 	}
-
+	cout<<"-----------------------QUERY RECAP----------------------------"<<endl;
 	cout<<"Good kmer: "<<intToString(TP)<<endl;
 	cout<<"Erroneous kmers: "<<intToString(FP)<<endl;
-	cout<<"I am glad you are here with me. Here at the end of all things."<<endl;
 }
 
 
