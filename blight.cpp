@@ -36,16 +36,17 @@ using namespace chrono;
 
 int main(int argc, char ** argv){
 	if(argc<7){
-		cout<<"[graph file] [kmer size] [minimizer size] [number superbuckets] [number core] [query file] "<<endl;
+		cout<<"[graph file] [kmer size] [minimizer size] [minimizer mphf] [minimizer superbucket] [number core] [query file] "<<endl;
 		exit(0);
 	}
 	string input(argv[1]);
 	uint k(stoi(argv[2]));
-	uint m(stoi(argv[3]));
-	uint n(stoi(argv[4]));
-	uint c(stoi(argv[5]));
-	string query(argv[6]);
-	kmer_Set_Light ksl(k,m,n,c);
+	uint m1(stoi(argv[3]));
+	uint m2(stoi(argv[4]));
+	uint m3(stoi(argv[5]));
+	uint c(stoi(argv[6]));
+	string query(argv[7]);
+	kmer_Set_Light ksl(k,m1,m2,m3,c);
 
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
 

@@ -35,8 +35,7 @@ typedef boomphf::mphf<  kmer, hasher  > MPHF;
 class kmer_Set_Light{
 public:
 	uint k;
-	uint m;
-	uint n;
+	uint m1,m2,m3;
 	uint number_superbuckets;
 	uint minimizer_number;
 	uint bucket_per_superBuckets;
@@ -48,6 +47,8 @@ public:
 	uint64_t number_super_kmer;
 	uint64_t largest_MPHF;
 	uint64_t positions_total_size;
+	uint64_t largest_bucket_nuc_all;
+	uint number_bucket_per_mphf;
 	kmer offsetUpdateAnchor=1;
 	double bit_per_kmer;
 	bool light_mode;
@@ -57,34 +58,40 @@ public:
 	vector<vector<bool>> Valid_kmer;
 	vector<MPHF> kmer_MPHF;
 	vector<vector<bool>> positions;
-	vector<uint> buckets_size;
+	vector<uint> mphf_size;
+	vector<uint> bit_to_encode;
 	vector<uint> abundance_minimizer;
-	kmer_Set_Light(uint k_val,uint m_val, uint n_val,uint coreNumber_val){
+	kmer_Set_Light(uint k_val,uint m1_val, uint m2_val, uint m3_val, uint coreNumber_val){
 		k=k_val;
-		m=m_val;
-		n=n_val;
-		light_mode=true;
-		//~ light_mode=false;
+		m1=m1_val;
+		m2=m2_val;
+		m3=m3_val;
+		//~ light_mode=true;
+		light_mode=false;
 		bit_saved_sub=8;
 		number_kmer=0;
 		number_super_kmer=0;
+		largest_bucket_nuc_all=0;
 		positions_total_size=0;
 		largest_MPHF=0;
 		bit_per_kmer=0;
 		positions_to_check=1<<bit_saved_sub;
 		offsetUpdateAnchor<<=2*k;
-		number_superbuckets=1<<(2*n);
-		minimizer_number=1<<(2*m);
+		number_superbuckets=1<<(2*m3);
+		minimizer_number=1<<(2*m1);
+		number_bucket_per_mphf=1<<(2*(m1-m2));
 		bucket_per_superBuckets=minimizer_number/number_superbuckets;
 		coreNumber=coreNumber_val;
-		gammaFactor=5;
+		gammaFactor=2;
 		bucketSeq.resize(minimizer_number);
 		//~ buckets.resize(minimizer_number);
 		Valid_kmer.resize(minimizer_number);
-		buckets_size.resize(minimizer_number,0);
+		mphf_size.resize(minimizer_number/number_bucket_per_mphf,0);
 		abundance_minimizer.resize(minimizer_number);
-		kmer_MPHF.resize(minimizer_number);
-		positions.resize(minimizer_number);
+
+		kmer_MPHF.resize(minimizer_number/number_bucket_per_mphf);
+		positions.resize(minimizer_number/number_bucket_per_mphf);
+		bit_to_encode.resize(minimizer_number/number_bucket_per_mphf,1);
 	}
 
 	bool exists(const kmer& query);

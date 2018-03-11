@@ -1,5 +1,5 @@
 CC=g++
-CFLAGS=   -Ofast -std=c++11  -flto -pipe -funit-at-a-time  -Wfatal-errors -lz -fopenmp
+CFLAGS=   -O2 -std=c++11  -flto -pipe -funit-at-a-time  -Wfatal-errors -lz -fopenmp
 LDFLAGS=-flto -lpthread -lz -fopenmp
 
 
