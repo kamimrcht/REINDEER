@@ -366,13 +366,14 @@ void kmer_Set_Light::str2bool(const string& str,uint mini){
 
 void kmer_Set_Light::read_super_buckets(const string& input_file){
 	uint64_t total_size(0);
-	uint BC(0);
+
 	uint number_superbuckets_by_buckets(minimizer_number/number_superbuckets);
-	//~ #pragma omp parallel num_threads(1)
+	#pragma omp parallel num_threads(coreNumber)
 	{
 		string useless,line;
 		#pragma omp for
 		for(uint SBC=0;SBC<number_superbuckets;++SBC){
+			uint BC(SBC*bucket_per_superBuckets);
 			ifstream in(input_file+to_string(SBC));
 			while(not in.eof()){
 				getline(in,useless);
@@ -408,18 +409,18 @@ void kmer_Set_Light::read_super_buckets(const string& input_file){
 	cout<<"Largest MPHF: "<<intToString(largest_MPHF)<<endl;
 	cout<<"Largest Bucket: "<<intToString(largest_bucket_nuc_all)<<endl;
 
-	cout<<"Size of the partitionned graph in MB: "<<intToString(total_size/(4*1024*1024))<<endl;
-	cout<<"Total Positions size: (MBytes) "<<intToString(positions_total_size/(8*1024*1024))<<endl;
+	cout<<"Size of the partitionned graph (MBytes): "<<intToString(total_size/(4*1024*1024))<<endl;
+	cout<<"Total Positions size (MBytes): "<<intToString(positions_total_size/(8*1024*1024))<<endl;
 	if(not light_mode){
-		cout<<"Space used for separators in MB: "<<intToString(total_size/(8*1024*1024))<<endl;
+		cout<<"Space used for separators (MBytes): "<<intToString(total_size/(8*1024*1024))<<endl;
 	}
-	cout<<"Size of the partitionned graph in bit per kmer: "<<((double)(2*total_size)/(number_kmer))<<endl;
+	cout<<"Size of the partitionned graph (bit per kmer): "<<((double)(2*total_size)/(number_kmer))<<endl;
 	bit_per_kmer+=((double)(2*total_size)/(number_kmer));
 	if(not light_mode){
-		cout<<"Space used for separators in bit per kmer: "<<((double)total_size/(number_kmer))<<endl;
+		cout<<"Space used for separators (bit per kmer): "<<((double)total_size/(number_kmer))<<endl;
 		bit_per_kmer+=((double)total_size/(number_kmer));
 	}
-	cout<<"Total Positions size: bit per kmer "<<((double)positions_total_size/number_kmer)<<endl;
+	cout<<"Total Positions size (bit per kmer): "<<((double)positions_total_size/number_kmer)<<endl;
 	bit_per_kmer+=((double)positions_total_size/number_kmer);
 
 	cout<<"TOTAL Bits per kmer (without bbhash): "<<bit_per_kmer<<endl;
@@ -635,7 +636,7 @@ void kmer_Set_Light::multiple_query(const string& query_file){
 	}
 	ifstream in(query_file);
 	uint TP(0),FP(0);
-	#pragma omp parallel num_threads(1)
+	#pragma omp parallel num_threads(coreNumber)
 	while(not in.eof()){
 		string query,Q;
 		#pragma omp critical(dataupdate)
