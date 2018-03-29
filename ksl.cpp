@@ -349,26 +349,25 @@ void kmer_Set_Light::create_super_buckets(const string& input_file){
 
 void kmer_Set_Light::str2bool(const string& str,uint mini){
 	for(uint i(0);i<str.size();++i){
-		//~ if(not Valid_kmer.empty()){
-		all_buckets[mini]->valid_kmers.push_back(true);
-		//~ }
+		//~ all_buckets[mini]->valid_kmers.push_back(true);
+		Valid_kmer[mini/number_superbuckets].push_back(true);
 		switch (str[i]){
 			case 'A':
 				//~ all_buckets[mini]->bucketSeq
-				all_buckets[mini]->bucketSeq.push_back(false);
-				all_buckets[mini]->bucketSeq.push_back(false);
+				Valid_kmer[mini/number_superbuckets].push_back(false);
+				Valid_kmer[mini/number_superbuckets].push_back(false);
 				break;
 			case 'C':
-				all_buckets[mini]->bucketSeq.push_back(false);
-				all_buckets[mini]->bucketSeq.push_back(true);
+				Valid_kmer[mini/number_superbuckets].push_back(true)
+				Valid_kmer[mini/number_superbuckets].push_back(true);
 				break;
 			case 'G':
-				all_buckets[mini]->bucketSeq.push_back(true);
-				all_buckets[mini]->bucketSeq.push_back(false);
+				Valid_kmer[mini/number_superbuckets].push_back(true);
+				Valid_kmer[mini/number_superbuckets].push_back(true)
 				break;
 			case 'T':
-				all_buckets[mini]->bucketSeq.push_back(true);
-				all_buckets[mini]->bucketSeq.push_back(true);
+				Valid_kmer[mini/number_superbuckets].push_back(true);
+				Valid_kmer[mini/number_superbuckets].push_back(true);
 				break;
 			default:
 				cout<<"nope"<<endl;
