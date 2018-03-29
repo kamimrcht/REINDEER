@@ -30,6 +30,26 @@ typedef boomphf::SingleHashFunctor<kmer>  hasher;
 typedef boomphf::mphf<  kmer, hasher  > MPHF;
 
 
+struct Nadine_la_cuisine_francaise{
+	vector<bool> bucketSeq;
+	vector<bool> valid_kmers;
+	uint abundance_minimizer;
+};
+
+
+struct bucket_minimizer{
+	vector<bool> bucketSeq;
+	uint abundance_minimizer;
+};
+
+
+struct info_mphf{
+	uint mphf_size;
+	uint bit_to_encode;
+	vector<bool> positions;
+	MPHF kmer_MPHF;
+};
+
 
 
 class kmer_Set_Light{
@@ -53,22 +73,24 @@ public:
 	double bit_per_kmer;
 	bool light_mode;
 
-	//~ vector<string> 	buckets;
-	vector<vector<bool>> bucketSeq;
+	//~ vector<vector<bool>> bucketSeq;
 	vector<vector<bool>> Valid_kmer;
-	vector<MPHF> kmer_MPHF;
-	vector<vector<bool>> positions;
-	vector<uint> mphf_size;
-	vector<uint> bit_to_encode;
-	vector<uint> abundance_minimizer;
+	//~ vector<uint> abundance_minimizer;
+
+	//~ vector<MPHF> kmer_MPHF;
+	//~ vector<vector<bool>> positions;
+	//~ vector<uint> mphf_size;
+	//~ vector<uint> bit_to_encode;
+	vector<bucket_minimizer*> all_buckets;
+	vector<info_mphf*> all_mphf;
 	kmer_Set_Light(uint k_val,uint m1_val, uint m2_val, uint m3_val, uint coreNumber_val){
 		k=k_val;
 		m1=m1_val;
 		m2=m2_val;
 		m3=m3_val;
-		//~ light_mode=true;
-		light_mode=false;
-		bit_saved_sub=8;
+		light_mode=true;
+		//~ light_mode=false;
+		bit_saved_sub=6;
 		number_kmer=0;
 		number_super_kmer=0;
 		largest_bucket_nuc_all=0;
@@ -81,17 +103,18 @@ public:
 		minimizer_number=1<<(2*m1);
 		number_bucket_per_mphf=1<<(2*(m1-m2));
 		bucket_per_superBuckets=minimizer_number/number_superbuckets;
+		//~ cout<<minimizer_number<<endl;
 		coreNumber=coreNumber_val;
 		gammaFactor=2;
-		bucketSeq.resize(minimizer_number);
-		//~ buckets.resize(minimizer_number);
-		Valid_kmer.resize(minimizer_number);
-		mphf_size.resize(minimizer_number/number_bucket_per_mphf,0);
-		abundance_minimizer.resize(minimizer_number);
-
-		kmer_MPHF.resize(minimizer_number/number_bucket_per_mphf);
-		positions.resize(minimizer_number/number_bucket_per_mphf);
-		bit_to_encode.resize(minimizer_number/number_bucket_per_mphf,1);
+		//~ bucketSeq.resize(minimizer_number);
+		Valid_kmer.resize(bucket_per_superBuckets);
+		//~ abundance_minimizer.resize(minimizer_number);
+		all_buckets.resize(minimizer_number);
+		all_mphf.resize(minimizer_number/number_bucket_per_mphf);
+		//~ mphf_size.resize(minimizer_number/number_bucket_per_mphf,0);
+		//~ kmer_MPHF.resize(minimizer_number/number_bucket_per_mphf);
+		//~ positions.resize(minimizer_number/number_bucket_per_mphf);
+		//~ bit_to_encode.resize(minimizer_number/number_bucket_per_mphf,1);
 	}
 
 	bool exists(const kmer& query);
