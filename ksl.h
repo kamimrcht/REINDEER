@@ -38,8 +38,11 @@ struct Nadine_la_cuisine_francaise{
 
 
 struct bucket_minimizer{
-	vector<bool> bucketSeq;
 	uint abundance_minimizer;
+	uint nuc_minimizer;
+	uint current_pos;
+	vector<bool> bucketSeq;
+
 };
 
 
@@ -74,15 +77,15 @@ public:
 	bool light_mode;
 
 	//~ vector<vector<bool>> bucketSeq;
-	vector<vector<bool>> Valid_kmer;
+	vector<bool>* Valid_kmer;
 	//~ vector<uint> abundance_minimizer;
 
 	//~ vector<MPHF> kmer_MPHF;
 	//~ vector<vector<bool>> positions;
 	//~ vector<uint> mphf_size;
 	//~ vector<uint> bit_to_encode;
-	vector<bucket_minimizer*> all_buckets;
-	vector<info_mphf*> all_mphf;
+	bucket_minimizer** all_buckets;
+	info_mphf** all_mphf;
 	kmer_Set_Light(uint k_val,uint m1_val, uint m2_val, uint m3_val, uint coreNumber_val){
 		k=k_val;
 		m1=m1_val;
@@ -90,7 +93,7 @@ public:
 		m3=m3_val;
 		light_mode=true;
 		//~ light_mode=false;
-		bit_saved_sub=6;
+		bit_saved_sub=0;
 		number_kmer=0;
 		number_super_kmer=0;
 		largest_bucket_nuc_all=0;
@@ -107,10 +110,12 @@ public:
 		coreNumber=coreNumber_val;
 		gammaFactor=2;
 		//~ bucketSeq.resize(minimizer_number);
-		Valid_kmer.resize(bucket_per_superBuckets);
+		//~ Valid_kmer.resize(bucket_per_superBuckets);
+		Valid_kmer=new vector<bool>[bucket_per_superBuckets];
 		//~ abundance_minimizer.resize(minimizer_number);
-		all_buckets.resize(minimizer_number);
-		all_mphf.resize(minimizer_number/number_bucket_per_mphf);
+		all_buckets=new bucket_minimizer*[minimizer_number];
+		//~ all_mphf.resize(minimizer_number/number_bucket_per_mphf);
+		all_mphf=new info_mphf*[minimizer_number/number_bucket_per_mphf];
 		//~ mphf_size.resize(minimizer_number/number_bucket_per_mphf,0);
 		//~ kmer_MPHF.resize(minimizer_number/number_bucket_per_mphf);
 		//~ positions.resize(minimizer_number/number_bucket_per_mphf);
