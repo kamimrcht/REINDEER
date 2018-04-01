@@ -76,6 +76,7 @@ int main(int argc, char ** argv){
 	cout << "The whole indexing took me " << time_span.count() << " seconds."<< endl;
 	//~ cin.get();
 	ksl.multiple_query(query);
+	ksl.file_query(query);
 	high_resolution_clock::time_point t3 = high_resolution_clock::now();
 	duration<double> time_span2 = duration_cast<duration<double>>(t3 - t2);
 	cout << "The whole query took me " << time_span2.count() << " seconds."<<endl;

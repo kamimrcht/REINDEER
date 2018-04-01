@@ -93,7 +93,7 @@ public:
 		m3=m3_val;
 		light_mode=true;
 		//~ light_mode=false;
-		bit_saved_sub=0;
+		bit_saved_sub=5;
 		number_kmer=0;
 		number_super_kmer=0;
 		largest_bucket_nuc_all=0;
@@ -140,6 +140,14 @@ public:
 	kmer update_kmer(uint32_t pos,uint32_t mini,kmer input);
 	kmer get_kmer(uint32_t pos,uint32_t mini);
 	void print_kmer(kmer num);
+	int32_t query_get_pos_unitig(const kmer canon,uint minimizer);
+	void get_anchors(const string& query,vector<uint>& minimizerV, vector<kmer>& kmerV);
+	uint multiple_query_serial(const vector<uint>& minimizerV, const vector<kmer>& kmerV);
+	void file_query(const string& query_file);
+	uint32_t bool_to_int(uint n_bits_to_encode,uint pos,const vector<bool>& V);
+
+
+
 
 
 
