@@ -76,10 +76,14 @@ int main(int argc, char ** argv){
 	cout << "The whole indexing took me " << time_span.count() << " seconds."<< endl;
 	//~ cin.get();
 	ksl.multiple_query(query);
-	ksl.file_query(query);
 	high_resolution_clock::time_point t3 = high_resolution_clock::now();
 	duration<double> time_span2 = duration_cast<duration<double>>(t3 - t2);
-	cout << "The whole query took me " << time_span2.count() << " seconds."<<endl;
+	cout << "The serial query took me " << time_span2.count() << " seconds."<<endl;
+
+	ksl.file_query(query);
+	high_resolution_clock::time_point t4 = high_resolution_clock::now();
+	duration<double> time_span3 = duration_cast<duration<double>>(t4 - t3);
+	cout << "The optimized query took me " << time_span3.count() << " seconds."<<endl;
 	cout<<"I am glad you are here with me. Here at the end of all things."<<endl;
 
 	return 0;

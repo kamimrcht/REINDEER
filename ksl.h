@@ -93,7 +93,7 @@ public:
 		m3=m3_val;
 		light_mode=true;
 		//~ light_mode=false;
-		bit_saved_sub=5;
+		bit_saved_sub=7;
 		number_kmer=0;
 		number_super_kmer=0;
 		largest_bucket_nuc_all=0;
@@ -145,6 +145,8 @@ public:
 	uint multiple_query_serial(const vector<uint>& minimizerV, const vector<kmer>& kmerV);
 	void file_query(const string& query_file);
 	uint32_t bool_to_int(uint n_bits_to_encode,uint pos,const vector<bool>& V);
+	uint multiple_query_optimized(const vector<uint>& minimizerV, const vector<kmer>& kmerV);
+
 
 
 
