@@ -38,11 +38,10 @@ struct Nadine_la_cuisine_francaise{
 
 
 struct bucket_minimizer{
-	uint abundance_minimizer;
-	uint nuc_minimizer;
-	uint current_pos;
-	vector<bool> bucketSeq;
-
+	uint32_t abundance_minimizer;
+	uint32_t nuc_minimizer;
+	uint32_t current_pos;
+	uint64_t start;
 };
 
 
@@ -70,22 +69,22 @@ public:
 	uint64_t number_super_kmer;
 	uint64_t largest_MPHF;
 	uint64_t positions_total_size;
-	uint64_t largest_bucket_nuc_all;
+	uint largest_bucket_nuc_all;
 	uint64_t number_query;
 	uint number_bucket_per_mphf;
 	kmer offsetUpdateAnchor=1;
 	double bit_per_kmer;
 	bool light_mode;
 
-	//~ vector<vector<bool>> bucketSeq;
+	vector<bool> bucketSeq;
 	vector<bool>* Valid_kmer;
 	//~ vector<uint> abundance_minimizer;
 
 	//~ vector<MPHF> kmer_MPHF;
-	//~ vector<vector<bool>> positions;
+	//~ vector<bool> positions;
 	//~ vector<uint> mphf_size;
 	//~ vector<uint> bit_to_encode;
-	bucket_minimizer** all_buckets;
+	bucket_minimizer* all_buckets;
 	info_mphf** all_mphf;
 	kmer_Set_Light(uint k_val,uint m1_val, uint m2_val, uint m3_val, uint coreNumber_val, uint bit_to_save){
 		k=k_val;
@@ -115,7 +114,7 @@ public:
 		//~ Valid_kmer.resize(bucket_per_superBuckets);
 		Valid_kmer=new vector<bool>[bucket_per_superBuckets];
 		//~ abundance_minimizer.resize(minimizer_number);
-		all_buckets=new bucket_minimizer*[minimizer_number];
+		all_buckets=new bucket_minimizer[minimizer_number];
 		//~ all_mphf.resize(minimizer_number/number_bucket_per_mphf);
 		all_mphf=new info_mphf*[minimizer_number/number_bucket_per_mphf];
 		//~ mphf_size.resize(minimizer_number/number_bucket_per_mphf,0);

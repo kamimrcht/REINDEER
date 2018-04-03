@@ -83,8 +83,6 @@ int main(int argc, char ** argv){
 		<<"-s to use 4^s files (3). More reduce memory usage and use more files, must be <=n"<<endl
 		<<"-t core used (1)"<<endl
 		<<"-b bit saved to encode positions (6). Will reduce the memory usage of b bit per kmer but query have to check 2^b kmers"<<endl;
-
-
 		return 0;
 	}
 	kmer_Set_Light ksl(k,m1,m2,m3,c,bit);
