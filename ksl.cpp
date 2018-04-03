@@ -28,7 +28,7 @@ typedef boomphf::mphf<  kmer, hasher  > MPHF;
 
 
 
-uint64_t nuc2int(char c){
+kmer nuc2int(char c){
 	switch(c){
 		/*
 		case 'a': return 0;
@@ -47,8 +47,7 @@ uint64_t nuc2int(char c){
 }
 
 
-
-uint64_t nuc2intrc(char c){
+kmer nuc2intrc(char c){
 	switch(c){
 		/*
 		case 'a': return 0;
@@ -125,12 +124,12 @@ kmer str2num(const string& str){
 }
 
 
-//~ uint64_t xs(uint64_t y){
-	//~ y^=(y<<13); y^=(y>>17);y=(y^=(y<<15)); return y;
-//~ }
 uint64_t xs(uint64_t y){
-	return y;
+	y^=(y<<13); y^=(y>>17);y=(y^=(y<<15)); return y;
 }
+//~ uint64_t xs(uint64_t y){
+	//~ return y;
+//~ }
 
 
 string min_accordingtoXS(const string& seq1,const string& seq2){
@@ -313,8 +312,10 @@ void kmer_Set_Light::create_super_buckets(const string& input_file){
 				getline(inUnitigs,useless);
 				getline(inUnitigs,ref);
 			}
+			//~ cout<<"ref"<<ref<<endl;
 			//FOREACH UNITIG
 			if(not ref.empty() and not useless.empty()){
+				//~ cout<<ref<<endl;
 				super_minimizer=minimizer=minimizer_number;
 				uint last_position(0);
 				//FOREACH KMER
@@ -329,6 +330,7 @@ void kmer_Set_Light::create_super_buckets(const string& input_file){
 
 					//COMPUTE KMER MINIMIZER
 					minimizer=minimizer_according_xs(canon);
+					//~ cout<<minimizer<<endl;
 					if(super_minimizer!=minimizer){
 						omp_set_lock(&(lock[((super_minimizer))/bucket_per_superBuckets]));
 						*(out_files[((super_minimizer))/bucket_per_superBuckets])<<">"+to_string(super_minimizer)+"\n"<<ref.substr(last_position,i-last_position+k)<<"\n";
@@ -765,6 +767,8 @@ uint kmer_Set_Light::multiple_query_optimized(const vector<uint>& minimizerV, co
 
 
 int32_t kmer_Set_Light::query_get_pos_unitig(const kmer canon,uint minimizer){
+	#pragma omp atomic
+	number_query++;
 	int64_t hash(-1);
 	if(all_mphf[minimizer/number_bucket_per_mphf]==NULL){
 		return -1;
@@ -816,7 +820,7 @@ int32_t kmer_Set_Light::query_get_pos_unitig(const kmer canon,uint minimizer){
 
 
 
-void kmer_Set_Light::file_query(const string& query_file){
+void kmer_Set_Light::file_query(const string& query_file,bool optimized){
 	ifstream in(query_file);
 	uint TP(0),FP(0);
 	//~ cout<<"go"<<endl;
@@ -832,8 +836,12 @@ void kmer_Set_Light::file_query(const string& query_file){
 		}
 		if(query.size()>=k){
 			get_anchors(query,minimizerV,kmerV);
-			//~ uint32_t found=multiple_query_serial(minimizerV,kmerV);
-			uint32_t found=multiple_query_optimized(minimizerV,kmerV);
+			uint32_t  found(0);
+			if(optimized){
+				found=multiple_query_optimized(minimizerV,kmerV);
+			}else{
+				found=multiple_query_serial(minimizerV,kmerV);
+			}
 			#pragma omp critical(dataupdate)
 			{
 				//~ #pragma atomic
@@ -849,6 +857,8 @@ void kmer_Set_Light::file_query(const string& query_file){
 	cout<<"-----------------------QUERY RECAP 2----------------------------"<<endl;
 	cout<<"Good kmer: "<<intToString(TP)<<endl;
 	cout<<"Erroneous kmers: "<<intToString(FP)<<endl;
+	cout<<"Query performed: "<<intToString(number_query)<<endl;
+	number_query=0;
 }
 
 
@@ -888,7 +898,7 @@ void kmer_Set_Light::multiple_query(const string& query_file){
 			if(hash<0){
 				#pragma omp atomic
 				FP++;
-				//~ cout<<1<<endl;
+				cout<<1<<endl;
 				//~ cout<<"MEGA LOL"<<endl;
 				//~ print_kmer(canon);
 					//~ cin.get();
@@ -943,7 +953,7 @@ void kmer_Set_Light::multiple_query(const string& query_file){
 							FP++;
 							//~ print_kmer(canon);
 							//~ print_kmer(canonR);
-							//~ cout<<2<<endl;
+							cout<<2<<endl;
 							//~ cout<<pos<<endl;
 							//~ cin.get();
 							//~ print_kmer(seq);
@@ -954,7 +964,7 @@ void kmer_Set_Light::multiple_query(const string& query_file){
 					//~ cout<<"HERE"<<endl;
 					#pragma omp atomic
 					FP++;
-					//~ cout<<7<<endl;
+					cout<<7<<endl;
 					//~ cin.get();
 				}
 			}
@@ -977,7 +987,7 @@ void kmer_Set_Light::multiple_query(const string& query_file){
 				if(hash<0){
 					#pragma omp atomic
 					FP++;
-					//~ cout<<3<<endl;
+					cout<<3<<endl;
 					//~ cout<<"lol"<<endl;
 					//~ cin.get();
 					continue;
@@ -987,7 +997,7 @@ void kmer_Set_Light::multiple_query(const string& query_file){
 				if(2*(pos+k-1)>=all_buckets[minimizer]->bucketSeq.size()){
 					#pragma omp atomic
 					FP++;
-					//~ cout<<"4"<<endl;
+					cout<<"4"<<endl;
 					continue;
 				}
 				seqR=(get_kmer(minimizer,pos));
@@ -1021,7 +1031,7 @@ void kmer_Set_Light::multiple_query(const string& query_file){
 				if(not found){
 					#pragma omp atomic
 					FP++;
-					//~ cout<<"5"<<endl;
+					cout<<"5"<<endl;
 					//~ cin.get();
 				}
 			}
@@ -1032,6 +1042,8 @@ void kmer_Set_Light::multiple_query(const string& query_file){
 	cout<<"-----------------------QUERY RECAP----------------------------"<<endl;
 	cout<<"Good kmer: "<<intToString(TP)<<endl;
 	cout<<"Erroneous kmers: "<<intToString(FP)<<endl;
+	cout<<"Query performed: "<<intToString(number_query)<<endl;
+	number_query=0;
 }
 
 

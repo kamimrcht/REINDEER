@@ -20,8 +20,8 @@ using namespace std;
 
 
 
-#define kmer uint64_t
-//~ #define kmer __uint128_t
+//~ #define kmer uint64_t
+#define kmer __uint128_t
 #define minimizer_type uint32_t
 
 
@@ -71,6 +71,7 @@ public:
 	uint64_t largest_MPHF;
 	uint64_t positions_total_size;
 	uint64_t largest_bucket_nuc_all;
+	uint64_t number_query;
 	uint number_bucket_per_mphf;
 	kmer offsetUpdateAnchor=1;
 	double bit_per_kmer;
@@ -86,15 +87,16 @@ public:
 	//~ vector<uint> bit_to_encode;
 	bucket_minimizer** all_buckets;
 	info_mphf** all_mphf;
-	kmer_Set_Light(uint k_val,uint m1_val, uint m2_val, uint m3_val, uint coreNumber_val){
+	kmer_Set_Light(uint k_val,uint m1_val, uint m2_val, uint m3_val, uint coreNumber_val, uint bit_to_save){
 		k=k_val;
 		m1=m1_val;
 		m2=m2_val;
 		m3=m3_val;
 		light_mode=true;
 		//~ light_mode=false;
-		bit_saved_sub=7;
+		bit_saved_sub=bit_to_save;
 		number_kmer=0;
+		number_query=0;
 		number_super_kmer=0;
 		largest_bucket_nuc_all=0;
 		positions_total_size=0;
@@ -143,7 +145,7 @@ public:
 	int32_t query_get_pos_unitig(const kmer canon,uint minimizer);
 	void get_anchors(const string& query,vector<uint>& minimizerV, vector<kmer>& kmerV);
 	uint multiple_query_serial(const vector<uint>& minimizerV, const vector<kmer>& kmerV);
-	void file_query(const string& query_file);
+	void file_query(const string& query_file,bool bi);
 	uint32_t bool_to_int(uint n_bits_to_encode,uint pos,const vector<bool>& V);
 	uint multiple_query_optimized(const vector<uint>& minimizerV, const vector<kmer>& kmerV);
 
