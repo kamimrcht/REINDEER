@@ -350,8 +350,8 @@ namespace boomphf {
 #pragma mark hasher
 ////////////////////////////////////////////////////////////////
 
-	typedef std::array<uint64_t,10> hash_set_t;
-	typedef std::array<uint64_t,2> hash_pair_t;
+	typedef std::array<__uint128_t,10> hash_set_t;
+	typedef std::array<__uint128_t,2> hash_pair_t;
 
 
 
@@ -370,9 +370,9 @@ namespace boomphf {
 		}
 
 		//return one hash
-        uint64_t operator ()  (const Item& key, size_t idx)  const {  return hash64 (key, _seed_tab[idx]);  }
+        __uint128_t operator ()  (const Item& key, size_t idx)  const {  return hash64 (key, _seed_tab[idx]);  }
 
-        uint64_t hashWithSeed(const Item& key, uint64_t seed)  const {  return hash64 (key, seed);  }
+        __uint128_t hashWithSeed(const Item& key, __uint128_t seed)  const {  return hash64 (key, seed);  }
 
 		//this one returns all the 7 hashes
 		//maybe use xorshift instead, for faster hash compute
@@ -390,9 +390,9 @@ namespace boomphf {
 	private:
 
 
-		inline static uint64_t hash64 (Item key, uint64_t seed)
+		inline static __uint128_t hash64 (Item key, __uint128_t seed)
 		{
-			uint64_t hash = seed;
+			__uint128_t hash = seed;
 			hash ^= (hash <<  7) ^  key * (hash >> 3) ^ (~((hash << 11) + (key ^ (hash >> 5))));
 			hash = (~hash) + (hash << 21);
 			hash = hash ^ (hash >> 24);
@@ -408,7 +408,7 @@ namespace boomphf {
 		/* */
 		void generate_hash_seed ()
 		{
-			static const uint64_t rbase[MAXNBFUNC] =
+			static const __uint128_t rbase[MAXNBFUNC] =
 			{
 				0xAAAAAAAA55555555ULL,  0x33333333CCCCCCCCULL,  0x6666666699999999ULL,  0xB5B5B5B54B4B4B4BULL,
 				0xAA55AA5555335533ULL,  0x33CC33CCCC66CC66ULL,  0x6699669999B599B5ULL,  0xB54BB54B4BAA4BAAULL,
@@ -422,8 +422,8 @@ namespace boomphf {
 		size_t _nbFct;
 
 		static const size_t MAXNBFUNC = 10;
-		uint64_t _seed_tab[MAXNBFUNC];
-		uint64_t _user_seed;
+		__uint128_t _seed_tab[MAXNBFUNC];
+		__uint128_t _user_seed;
 	};
 
 /* alternative hash functor based on xorshift, taking a single hash functor as input.
@@ -435,7 +435,7 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
     template <typename Item> class SingleHashFunctor
 	{
 	public:
-		uint64_t operator ()  (const Item& key, uint64_t seed=0xAAAAAAAA55555555ULL) const  {  return hashFunctors.hashWithSeed(key, seed);  }
+		__uint128_t operator ()  (const Item& key, __uint128_t seed=0xAAAAAAAA55555555ULL) const  {  return hashFunctors.hashWithSeed(key, seed);  }
 
 	private:
 		HashFunctors<Item> hashFunctors;
@@ -462,11 +462,11 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
            a nonzero 64-bit seed, we suggest to pass it twice through
            MurmurHash3's avalanching function. */
 
-      //  uint64_t s[ 2 ];
+      //  __uint128_t s[ 2 ];
 
-        uint64_t next(uint64_t * s) {
-            uint64_t s1 = s[ 0 ];
-            const uint64_t s0 = s[ 1 ];
+        __uint128_t next(__uint128_t * s) {
+            __uint128_t s1 = s[ 0 ];
+            const __uint128_t s0 = s[ 1 ];
             s[ 0 ] = s0;
             s1 ^= s1 << 23; // a
             return ( s[ 1 ] = ( s1 ^ s0 ^ ( s1 >> 17 ) ^ ( s0 >> 26 ) ) ) + s0; // b, c
@@ -475,13 +475,13 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
         public:
 
 
-		uint64_t h0(hash_pair_t  & s, const Item& key )
+		__uint128_t h0(hash_pair_t  & s, const Item& key )
 		{
 			s[0] =  singleHasher (key, 0xAAAAAAAA55555555ULL);
 			return s[0];
 		}
 
-		uint64_t h1(hash_pair_t  & s, const Item& key )
+		__uint128_t h1(hash_pair_t  & s, const Item& key )
 		{
 			s[1] =  singleHasher (key, 0x33333333CCCCCCCCULL);
 			return s[1];
@@ -489,9 +489,9 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 
 
 		//return next hash an update state s
-		uint64_t next(hash_pair_t  & s ) {
-			uint64_t s1 = s[ 0 ];
-			const uint64_t s0 = s[ 1 ];
+		__uint128_t next(hash_pair_t  & s ) {
+			__uint128_t s1 = s[ 0 ];
+			const __uint128_t s0 = s[ 1 ];
 			s[ 0 ] = s0;
 			s1 ^= s1 << 23; // a
 			return ( s[ 1 ] = ( s1 ^ s0 ^ ( s1 >> 17 ) ^ ( s0 >> 26 ) ) ) + s0; // b, c
@@ -500,7 +500,7 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
         //this one returns all the  hashes
         hash_set_t operator ()  (const Item& key)
         {
-			uint64_t s[ 2 ];
+			__uint128_t s[ 2 ];
 
             hash_set_t   hset;
 
@@ -881,7 +881,6 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 
 		~mphf()
 		{
-
 		}
 
 

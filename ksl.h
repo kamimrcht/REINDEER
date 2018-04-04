@@ -46,9 +46,10 @@ struct bucket_minimizer{
 
 
 struct info_mphf{
-	uint mphf_size;
-	uint bit_to_encode;
-	vector<bool> positions;
+	uint32_t mphf_size;
+	uint8_t bit_to_encode;
+	//~ vector<bool> positions;
+	uint64_t start;
 	MPHF kmer_MPHF;
 };
 
@@ -81,11 +82,11 @@ public:
 	//~ vector<uint> abundance_minimizer;
 
 	//~ vector<MPHF> kmer_MPHF;
-	//~ vector<bool> positions;
+	vector<bool> positions;
 	//~ vector<uint> mphf_size;
 	//~ vector<uint> bit_to_encode;
 	bucket_minimizer* all_buckets;
-	info_mphf** all_mphf;
+	info_mphf* all_mphf;
 	kmer_Set_Light(uint k_val,uint m1_val, uint m2_val, uint m3_val, uint coreNumber_val, uint bit_to_save){
 		k=k_val;
 		m1=m1_val;
@@ -113,14 +114,31 @@ public:
 		//~ bucketSeq.resize(minimizer_number);
 		//~ Valid_kmer.resize(bucket_per_superBuckets);
 		Valid_kmer=new vector<bool>[bucket_per_superBuckets];
+		for(uint i(0);i<bucket_per_superBuckets;++i){
+			Valid_kmer[i]={};
+		}
 		//~ abundance_minimizer.resize(minimizer_number);
 		all_buckets=new bucket_minimizer[minimizer_number];
+		for(uint i(0);i<minimizer_number;++i){
+			all_buckets[i]={0,0,0,0};
+		}
 		//~ all_mphf.resize(minimizer_number/number_bucket_per_mphf);
-		all_mphf=new info_mphf*[minimizer_number/number_bucket_per_mphf];
+		all_mphf=new info_mphf[minimizer_number/number_bucket_per_mphf];
+		for(uint i(0);i<minimizer_number/number_bucket_per_mphf;++i){
+			all_mphf[i].mphf_size=0;
+			all_mphf[i].bit_to_encode=0;
+			all_mphf[i].start=0;
+		}
 		//~ mphf_size.resize(minimizer_number/number_bucket_per_mphf,0);
 		//~ kmer_MPHF.resize(minimizer_number/number_bucket_per_mphf);
 		//~ positions.resize(minimizer_number/number_bucket_per_mphf);
 		//~ bit_to_encode.resize(minimizer_number/number_bucket_per_mphf,1);
+	}
+
+	~kmer_Set_Light () {
+		delete[] all_buckets;
+		delete[] all_mphf;
+		delete[] Valid_kmer;
 	}
 
 	bool exists(const kmer& query);
@@ -145,8 +163,9 @@ public:
 	void get_anchors(const string& query,vector<uint>& minimizerV, vector<kmer>& kmerV);
 	uint multiple_query_serial(const vector<uint>& minimizerV, const vector<kmer>& kmerV);
 	void file_query(const string& query_file,bool bi);
-	uint32_t bool_to_int(uint n_bits_to_encode,uint pos,const vector<bool>& V);
+	uint32_t bool_to_int(uint n_bits_to_encode,uint pos,uint64_t start);
 	uint multiple_query_optimized(const vector<uint>& minimizerV, const vector<kmer>& kmerV);
+	void int_to_bool(uint n_bits_to_encode,uint32_t X, uint32_t pos,uint64_t start);
 
 
 
