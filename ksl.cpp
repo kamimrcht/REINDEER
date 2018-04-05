@@ -22,8 +22,6 @@ string SEQOFINTERESET("TCAGCGAGGACGGGTATCCGGTTTCCGTCTT");
 
 
 
-typedef boomphf::SingleHashFunctor<kmer>  hasher;
-typedef boomphf::mphf<  kmer, hasher  > MPHF;
 
 
 

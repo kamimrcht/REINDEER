@@ -104,7 +104,7 @@ int main(int argc, char ** argv){
 	high_resolution_clock::time_point t2 = high_resolution_clock::now();
 	duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
 	cout << "The whole indexing took me " << time_span.count() << " seconds."<< endl;
-	//~ cin.get();
+	cin.get();
 	ksl.file_query(query,false);
 	high_resolution_clock::time_point t3 = high_resolution_clock::now();
 	duration<double> time_span2 = duration_cast<duration<double>>(t3 - t2);

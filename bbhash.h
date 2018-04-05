@@ -350,8 +350,8 @@ namespace boomphf {
 #pragma mark hasher
 ////////////////////////////////////////////////////////////////
 
-	typedef std::array<__uint128_t,10> hash_set_t;
-	typedef std::array<__uint128_t,2> hash_pair_t;
+	typedef std::array<uint64_t,10> hash_set_t;
+	typedef std::array<uint64_t,2> hash_pair_t;
 
 
 
@@ -370,19 +370,19 @@ namespace boomphf {
 		}
 
 		//return one hash
-        __uint128_t operator ()  (const Item& key, size_t idx)  const {  return hash64 (key, _seed_tab[idx]);  }
+        uint64_t operator ()  (const Item& key, size_t idx)  const {  return hash64 ( (key/4294967295+key%4294967295), _seed_tab[idx]);  }
 
-        __uint128_t hashWithSeed(const Item& key, __uint128_t seed)  const {  return hash64 (key, seed);  }
+        uint64_t hashWithSeed(const Item& key, uint64_t seed)  const {  return hash64 ( (key/4294967295+key%4294967295), seed);  }
 
 		//this one returns all the 7 hashes
 		//maybe use xorshift instead, for faster hash compute
 		hash_set_t operator ()  (const Item& key)
 		{
-			hash_set_t	 hset;
+			hash_set_t hset;
 
 			for(size_t ii=0;ii<10; ii++)
 			{
-				hset[ii] =  hash64 (key, _seed_tab[ii]);
+				hset[ii] =  hash64 (key/4294967295+key%4294967295, _seed_tab[ii]);
 			}
 			return hset;
 		}
@@ -390,9 +390,9 @@ namespace boomphf {
 	private:
 
 
-		inline static __uint128_t hash64 (Item key, __uint128_t seed)
+		inline static uint64_t hash64 (uint64_t key, uint64_t seed)
 		{
-			__uint128_t hash = seed;
+			uint64_t hash = seed;
 			hash ^= (hash <<  7) ^  key * (hash >> 3) ^ (~((hash << 11) + (key ^ (hash >> 5))));
 			hash = (~hash) + (hash << 21);
 			hash = hash ^ (hash >> 24);
@@ -408,7 +408,7 @@ namespace boomphf {
 		/* */
 		void generate_hash_seed ()
 		{
-			static const __uint128_t rbase[MAXNBFUNC] =
+			static const uint64_t rbase[MAXNBFUNC] =
 			{
 				0xAAAAAAAA55555555ULL,  0x33333333CCCCCCCCULL,  0x6666666699999999ULL,  0xB5B5B5B54B4B4B4BULL,
 				0xAA55AA5555335533ULL,  0x33CC33CCCC66CC66ULL,  0x6699669999B599B5ULL,  0xB54BB54B4BAA4BAAULL,
@@ -422,8 +422,8 @@ namespace boomphf {
 		size_t _nbFct;
 
 		static const size_t MAXNBFUNC = 10;
-		__uint128_t _seed_tab[MAXNBFUNC];
-		__uint128_t _user_seed;
+		uint64_t _seed_tab[MAXNBFUNC];
+		uint64_t _user_seed;
 	};
 
 /* alternative hash functor based on xorshift, taking a single hash functor as input.
@@ -435,7 +435,7 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
     template <typename Item> class SingleHashFunctor
 	{
 	public:
-		__uint128_t operator ()  (const Item& key, __uint128_t seed=0xAAAAAAAA55555555ULL) const  {  return hashFunctors.hashWithSeed(key, seed);  }
+		uint64_t operator ()  (const Item& key, uint64_t seed=0xAAAAAAAA55555555ULL) const  {  return hashFunctors.hashWithSeed(key, seed);  }
 
 	private:
 		HashFunctors<Item> hashFunctors;
@@ -462,11 +462,11 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
            a nonzero 64-bit seed, we suggest to pass it twice through
            MurmurHash3's avalanching function. */
 
-      //  __uint128_t s[ 2 ];
+      //  uint64_t s[ 2 ];
 
-        __uint128_t next(__uint128_t * s) {
-            __uint128_t s1 = s[ 0 ];
-            const __uint128_t s0 = s[ 1 ];
+        uint64_t next(uint64_t * s) {
+            uint64_t s1 = s[ 0 ];
+            const uint64_t s0 = s[ 1 ];
             s[ 0 ] = s0;
             s1 ^= s1 << 23; // a
             return ( s[ 1 ] = ( s1 ^ s0 ^ ( s1 >> 17 ) ^ ( s0 >> 26 ) ) ) + s0; // b, c
@@ -475,13 +475,13 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
         public:
 
 
-		__uint128_t h0(hash_pair_t  & s, const Item& key )
+		uint64_t h0(hash_pair_t  & s, const Item& key )
 		{
 			s[0] =  singleHasher (key, 0xAAAAAAAA55555555ULL);
 			return s[0];
 		}
 
-		__uint128_t h1(hash_pair_t  & s, const Item& key )
+		uint64_t h1(hash_pair_t  & s, const Item& key )
 		{
 			s[1] =  singleHasher (key, 0x33333333CCCCCCCCULL);
 			return s[1];
@@ -489,9 +489,9 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 
 
 		//return next hash an update state s
-		__uint128_t next(hash_pair_t  & s ) {
-			__uint128_t s1 = s[ 0 ];
-			const __uint128_t s0 = s[ 1 ];
+		uint64_t next(hash_pair_t  & s ) {
+			uint64_t s1 = s[ 0 ];
+			const uint64_t s0 = s[ 1 ];
 			s[ 0 ] = s0;
 			s1 ^= s1 << 23; // a
 			return ( s[ 1 ] = ( s1 ^ s0 ^ ( s1 >> 17 ) ^ ( s0 >> 26 ) ) ) + s0; // b, c
@@ -500,7 +500,7 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
         //this one returns all the  hashes
         hash_set_t operator ()  (const Item& key)
         {
-			__uint128_t s[ 2 ];
+			uint64_t s[ 2 ];
 
             hash_set_t   hset;
 
@@ -881,6 +881,7 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 
 		~mphf()
 		{
+
 		}
 
 
@@ -923,7 +924,7 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 
 				double total_fastmode_ram =  (_fastModeLevel+1) +  ( pow(_proba_collision,_fastModeLevel)) * (_nb_levels-(_fastModeLevel+1))   ;
 
-				//~ printf("for info, total work write each  : %.3f    total work inram from level %i : %.3f  total work raw : %.3f \n",total_writeEach,_fastModeLevel,total_fastmode_ram,total_raw);
+				printf("for info, total work write each  : %.3f    total work inram from level %i : %.3f  total work raw : %.3f \n",total_writeEach,_fastModeLevel,total_fastmode_ram,total_raw);
 
 				if(writeEach)
 				{
@@ -949,8 +950,8 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 				delete _tempBitset;
 			}
 
-			//~ if(_withprogress)
-			//~ _progressBar.finish_threaded();
+			if(_withprogress)
+			_progressBar.finish_threaded();
 
 
 			_lastbitsetrank = offset ;
