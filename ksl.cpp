@@ -818,7 +818,7 @@ int32_t kmer_Set_Light::query_get_pos_unitig(const kmer canon,uint minimizer){
 		}
 	//~ }
 	if(hash<0){
-		cout<<"FAILHASH"<<endl;
+		//~ cout<<"FAILHASH"<<endl;
 		return -1;
 	}else{
 		int n_bits_to_encode(all_mphf[minimizer/number_bucket_per_mphf].bit_to_encode);
@@ -852,7 +852,7 @@ int32_t kmer_Set_Light::query_get_pos_unitig(const kmer canon,uint minimizer){
 			}
 		}
 	}
-	cout<<"FAILPOS"<<endl;
+	//~ cout<<"FAILPOS"<<endl;
 	return -1;
 }
 
