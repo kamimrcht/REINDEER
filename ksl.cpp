@@ -608,7 +608,7 @@ void kmer_Set_Light::create_mphf(uint begin_BC,uint end_BC){
 			anchors_number=anchors.size();
 			auto data_iterator3 = boomphf::range(static_cast<const kmer*>(&(anchors)[0]), static_cast<const kmer*>((&(anchors)[0])+anchors.size()));
 			//~ all_mphf[BC/number_bucket_per_mphf]=new info_mphf;
-			all_mphf[BC/number_bucket_per_mphf].kmer_MPHF= boomphf::mphf<hasher_t>(anchors.size(),data_iterator3,coreNumber,gammaFactor,false);
+			all_mphf[BC/number_bucket_per_mphf].kmer_MPHF= boomphf::mphf<kmer,hasher_t>(anchors.size(),data_iterator3,coreNumber,gammaFactor,false);
 			//~ all_mphf[BC/number_bucket_per_mphf].mphf_size=largest_bucket_anchor;
 			anchors.clear();
 			//~ vector<kmer>().swap(anchors);

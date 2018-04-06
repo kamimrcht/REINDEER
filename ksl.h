@@ -31,15 +31,7 @@ using namespace std;
 	typedef std::pair<uint64_t,uint64_t> hash_pair_t;
 
 public:
-	hash_pair_t operator ()  (const __uint128_t& key) const  {
-		hash_pair_t result;
-		result.first =  singleHasher ((uint64_t) (key >> 64), 0xAAAAAAAA55555555ULL)  ^  singleHasher ((uint64_t)key, 0xBBBBBBBB66666666ULL) ;
-		result.second =  singleHasher ((uint64_t) (key >> 64), 0x33333333CCCCCCCCULL)  ^  singleHasher ((uint64_t)key, 0x44444444DDDDDDDDULL) ;
-
-		return result;
-	}
-
-	uint64_t singleHasher(const uint64_t & key, uint64_t seed) const
+	uint64_t nadine_hash(const uint64_t & key, uint64_t seed) const
 	{
 
 		uint64_t hash = seed;
@@ -53,13 +45,25 @@ public:
 		hash = hash + (hash << 31);
 		return hash;
 	}
+
+	hash_pair_t operator ()  (const __uint128_t& key) const  {
+		hash_pair_t result;
+		result.first =  nadine_hash ((uint64_t) (key >> 64), 0xAAAAAAAA55555555ULL)  ^  nadine_hash ((uint64_t)key, 0xBBBBBBBB66666666ULL) ;
+		result.second =  nadine_hash ((uint64_t) (key >> 64), 0x33333333CCCCCCCCULL)  ^  nadine_hash ((uint64_t)key, 0x44444444DDDDDDDDULL) ;
+
+		return result;
+	}
+
+
 };
 
 
-typedef SingleHashFunctor128 hasher_t;
+//~ typedef SingleHashFunctor128 hasher_t;
+typedef boomphf::SingleHashFunctor<kmer>  hasher_t;
 
-typedef boomphf::mphf<  hasher_t  > MPHF;
-//~ typedef boomphf::mphf<  kmer, hasher  > MPHF;
+
+//~ typedef boomphf::mphf<  hasher_t,kmer  > MPHF;
+typedef boomphf::mphf<  kmer, hasher_t  > MPHF;
 
 
 
