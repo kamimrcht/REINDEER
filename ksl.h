@@ -33,8 +33,8 @@ using namespace std;
 public:
 	hash_pair_t operator ()  (const __uint128_t& key) const  {
 		hash_pair_t result;
-		result.first =  singleHasher ((uint64_t) (key >> 64), 0xAAAAAAAA55555555ULL)  ^  singleHasher ((uint64_t)key, 0xAAAAAAA555556565ULL) ;
-		result.second =  singleHasher ((uint64_t) (key >> 64), 0x33333333CCCCCCCCULL)  ^  singleHasher ((uint64_t)key, 0x33333333CCACACACULL) ;
+		result.first =  singleHasher ((uint64_t) (key >> 64), 0xAAAAAAAA55555555ULL)  ^  singleHasher ((uint64_t)key, 0xBBBBBBBB66666666ULL) ;
+		result.second =  singleHasher ((uint64_t) (key >> 64), 0x33333333CCCCCCCCULL)  ^  singleHasher ((uint64_t)key, 0x44444444DDDDDDDDULL) ;
 
 		return result;
 	}
