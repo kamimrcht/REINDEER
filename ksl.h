@@ -26,15 +26,42 @@ using namespace std;
 
 
 
-typedef boomphf::SingleHashFunctor<kmer>  hasher;
-typedef boomphf::mphf<  kmer, hasher  > MPHF;
+ class SingleHashFunctor128
+{
+	typedef std::pair<uint64_t,uint64_t> hash_pair_t;
 
+public:
+	hash_pair_t operator ()  (const __uint128_t& key) const  {
+		hash_pair_t result;
+		result.first =  singleHasher ((uint64_t) (key >> 64), 0xAAAAAAAA55555555ULL)  ^  singleHasher ((uint64_t)key, 0xAAAAAAA555556565ULL) ;
+		result.second =  singleHasher ((uint64_t) (key >> 64), 0x33333333CCCCCCCCULL)  ^  singleHasher ((uint64_t)key, 0x33333333CCACACACULL) ;
 
-struct Nadine_la_cuisine_francaise{
-	vector<bool> bucketSeq;
-	vector<bool> valid_kmers;
-	uint abundance_minimizer;
+		return result;
+	}
+
+	uint64_t singleHasher(const uint64_t & key, uint64_t seed) const
+	{
+
+		uint64_t hash = seed;
+		hash ^= (hash <<  7) ^  key * (hash >> 3) ^ (~((hash << 11) + (key ^ (hash >> 5))));
+		hash = (~hash) + (hash << 21);
+		hash = hash ^ (hash >> 24);
+		hash = (hash + (hash << 3)) + (hash << 8);
+		hash = hash ^ (hash >> 14);
+		hash = (hash + (hash << 2)) + (hash << 4);
+		hash = hash ^ (hash >> 28);
+		hash = hash + (hash << 31);
+		return hash;
+	}
 };
+
+
+typedef SingleHashFunctor128 hasher_t;
+
+typedef boomphf::mphf<  hasher_t  > MPHF;
+//~ typedef boomphf::mphf<  kmer, hasher  > MPHF;
+
+
 
 
 struct bucket_minimizer{

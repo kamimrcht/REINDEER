@@ -608,7 +608,7 @@ void kmer_Set_Light::create_mphf(uint begin_BC,uint end_BC){
 			anchors_number=anchors.size();
 			auto data_iterator3 = boomphf::range(static_cast<const kmer*>(&(anchors)[0]), static_cast<const kmer*>((&(anchors)[0])+anchors.size()));
 			//~ all_mphf[BC/number_bucket_per_mphf]=new info_mphf;
-			all_mphf[BC/number_bucket_per_mphf].kmer_MPHF= boomphf::mphf<kmer,hasher>(anchors.size(),data_iterator3,coreNumber,gammaFactor,false);
+			all_mphf[BC/number_bucket_per_mphf].kmer_MPHF= boomphf::mphf<hasher_t>(anchors.size(),data_iterator3,coreNumber,gammaFactor,false);
 			//~ all_mphf[BC/number_bucket_per_mphf].mphf_size=largest_bucket_anchor;
 			anchors.clear();
 			//~ vector<kmer>().swap(anchors);
@@ -806,15 +806,11 @@ int32_t kmer_Set_Light::query_get_pos_unitig(const kmer canon,uint minimizer){
 	#pragma omp atomic
 	number_query++;
 	int64_t hash(-1);
-	//~ if(all_mphf[minimizer/number_bucket_per_mphf]==NULL){
-		//~ return -1;
-	//~ }else{
 		if(all_mphf[minimizer/number_bucket_per_mphf].mphf_size==0){
 			return -1;
 		}else{
 			hash=(all_mphf[minimizer/number_bucket_per_mphf].kmer_MPHF.lookup(canon));
 		}
-	//~ }
 	if(hash<0){
 		//~ cout<<"FAILHASH"<<endl;
 		return -1;
@@ -831,17 +827,17 @@ int32_t kmer_Set_Light::query_get_pos_unitig(const kmer canon,uint minimizer){
 				uint j;
 				bool found(false);
 				for(j=(pos);j<pos+positions_to_check;++j){
-					if(not light_mode and not Valid_kmer[minimizer/number_superbuckets][j+1]){
-						j+=k-1;
-						if((j+k)<all_buckets[minimizer].nuc_minimizer){
-							seqR=(get_kmer(minimizer,j+1)),rcSeqR=(rcb(seqR,k)),canonR=(min_k(seqR,rcSeqR));
-							canonR=(min_k(seqR, rcSeqR));
-						}
-					}else{
+					//~ if(not light_mode and not Valid_kmer[minimizer/number_superbuckets][j+1]){
+						//~ j+=k-1;
+						//~ if((j+k)<all_buckets[minimizer].nuc_minimizer){
+							//~ seqR=(get_kmer(minimizer,j+1)),rcSeqR=(rcb(seqR,k)),canonR=(min_k(seqR,rcSeqR));
+							//~ canonR=(min_k(seqR, rcSeqR));
+						//~ }
+					//~ }else{
 						seqR=update_kmer(j+k,minimizer,seqR);
 						rcSeqR=(rcb(seqR,k));
 						canonR=(min_k(seqR, rcSeqR));
-					}
+					//~ }
 
 					if(canon==canonR){
 						return j+1;
