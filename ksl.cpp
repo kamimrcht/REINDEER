@@ -10,6 +10,7 @@
 #include <pthread.h>
 #include "bbhash.h"
 #include "ksl.h"
+#include "zstr.hpp"
 #include <omp.h>
 
 
@@ -240,16 +241,18 @@ uint32_t kmer_Set_Light::minimizer_according_xs(kmer seq){
 
 
 void kmer_Set_Light::abundance_minimizer_construct(const string& input_file){
-	ifstream inUnitigs(input_file);
-	if( not inUnitigs.good()){
+	//~ ifstream inUnitigs(input_file);
+	auto inUnitigs=new zstr::ifstream(input_file);
+
+	if( not inUnitigs->good()){
 		cout<<"Problem with files opening"<<endl;
 		exit(1);
 	}
 	string ref,useless;
 	kmer super_minimizer,minimizer;
-	while(not inUnitigs.eof()){
-		getline(inUnitigs,useless);
-		getline(inUnitigs,ref);
+	while(not inUnitigs->eof()){
+		getline(*inUnitigs,useless);
+		getline(*inUnitigs,ref);
 		//FOREACH UNITIG
 		if(not ref.empty() and not useless.empty()){
 			uint last_position(0);
@@ -286,14 +289,17 @@ void kmer_Set_Light::abundance_minimizer_construct(const string& input_file){
 
 void kmer_Set_Light::create_super_buckets(const string& input_file){
 	uint64_t total_nuc_number(0);
-	ifstream inUnitigs(input_file);
-	if( not inUnitigs.good()){
+	//~ ifstream inUnitigs(input_file);
+	auto inUnitigs=new zstr::ifstream(input_file);
+
+	if( not inUnitigs->good()){
 		cout<<"Problem with files opening"<<endl;
 		exit(1);
 	}
-	vector<ofstream*> out_files;
+	vector<zstr::ofstream*> out_files;
+	//~ pathCompressed= (new zstr::ofstream((paths+".gz").c_str()));
 	for(uint i(0);i<number_superbuckets;++i){
-		auto out =new ofstream("_out"+to_string(i));
+		auto out =new zstr::ofstream("_out"+to_string(i));
 		out_files.push_back(out);
 	}
 	omp_lock_t lock[number_superbuckets];
@@ -305,11 +311,11 @@ void kmer_Set_Light::create_super_buckets(const string& input_file){
 	{
 		string ref,useless;
 		minimizer_type super_minimizer,minimizer;
-		while(not inUnitigs.eof()){
+		while(not inUnitigs->eof()){
 			#pragma omp critical(dataupdate)
 			{
-				getline(inUnitigs,useless);
-				getline(inUnitigs,ref);
+				getline(*inUnitigs,useless);
+				getline(*inUnitigs,ref);
 			}
 			//~ cout<<"ref"<<ref<<endl;
 			//FOREACH UNITIG
@@ -361,7 +367,7 @@ void kmer_Set_Light::create_super_buckets(const string& input_file){
 		}
 	}
 	for(uint i(0);i<number_superbuckets;++i){
-		out_files[i]->close();
+		*out_files[i]<<flush;
 		delete(out_files[i]);
 	}
 	bucketSeq.resize(total_nuc_number*2);
@@ -436,11 +442,13 @@ void kmer_Set_Light::read_super_buckets(const string& input_file){
 					//~ total_size+=all_buckets[ii]->bucketSeq.capacity()/2;
 				//~ }
 			//~ }
-			ifstream in(input_file+to_string(SBC));
-			while(not in.eof()){
+			//~ ifstream in(input_file+to_string(SBC));
+			auto in=new zstr::ifstream(input_file+to_string(SBC));
+
+			while(not in->eof()){
 				useless="";
-				getline(in,useless);
-				getline(in,line);
+				getline(*in,useless);
+				getline(*in,line);
 				if(not useless.empty()){
 					useless=useless.substr(1);
 					uint minimizer(stoi(useless));
@@ -853,18 +861,19 @@ int32_t kmer_Set_Light::query_get_pos_unitig(const kmer canon,uint minimizer){
 
 
 void kmer_Set_Light::file_query(const string& query_file,bool optimized){
-	ifstream in(query_file);
-	uint TP(0),FP(0);
+	//~ ifstream in(query_file);
+	auto in=new zstr::ifstream(query_file);
+	uint64_t TP(0),FP(0);
 	//~ cout<<"go"<<endl;
 	#pragma omp parallel num_threads(coreNumber)
-	while(not in.eof()){
+	while(not in->eof()){
 		string query;
 		vector<kmer> kmerV;
 		vector<uint> minimizerV;
 		#pragma omp critical(dataupdate)
 		{
-			getline(in,query);
-			getline(in,query);
+			getline(*in,query);
+			getline(*in,query);
 		}
 		if(query.size()>=k){
 			get_anchors(query,minimizerV,kmerV);
