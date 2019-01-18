@@ -122,10 +122,10 @@ public:
 		}
 		//~ abundance_minimizer.resize(minimizer_number);
 		all_buckets=new bucket_minimizer[minimizer_number];
-		abundance_minimizer_temp=new uint32_t[minimizer_number];
-		abundance_minimizer=new uint8_t[minimizer_number];
-		memset(abundance_minimizer, 0, minimizer_number*sizeof(uint8_t));
-		memset(abundance_minimizer_temp, 0, minimizer_number*sizeof(uint32_t));
+		//~ abundance_minimizer_temp=new uint32_t[minimizer_number];
+		//~ abundance_minimizer=new uint8_t[minimizer_number];
+		//~ memset(abundance_minimizer, 0, minimizer_number*sizeof(uint8_t));
+		//~ memset(abundance_minimizer_temp, 0, minimizer_number*sizeof(uint32_t));
 		for(uint i(0);i<minimizer_number;++i){
 			all_buckets[i]={0,0,0};
 		}
@@ -144,9 +144,12 @@ public:
 
 	~kmer_Set_Light () {
 		delete[] all_buckets;
+		for(uint i(0);i<minimizer_number/number_bucket_per_mphf;++i){
+			delete all_mphf[i].kmer_MPHF;
+		}
 		delete[] all_mphf;
 		delete[] Valid_kmer;
-		delete[] abundance_minimizer;;
+		//~ delete[] abundance_minimizer;;
 	}
 
 	bool exists(const kmer& query);
@@ -176,14 +179,6 @@ public:
 	void int_to_bool(uint n_bits_to_encode,uint32_t X, uint32_t pos,uint64_t start);
 	kmer update_kmer_local(uint32_t pos,const vector<bool>& V,kmer input);
 	vector<bool> get_seq(uint32_t mini,uint32_t pos,uint32_t n);
-
-
-
-
-
-
-
-
 };
 
 

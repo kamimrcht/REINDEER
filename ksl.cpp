@@ -48,6 +48,7 @@ kmer nuc2int(char c){
 }
 
 
+
 kmer nuc2intrc(char c){
 	switch(c){
 		/*
@@ -65,6 +66,8 @@ kmer nuc2intrc(char c){
 	exit(0);
 	return 0;
 }
+
+
 
 string intToString(uint64_t n){
 	if(n<1000){
@@ -106,6 +109,7 @@ string revComp(const string& s){
 string getCanonical(const string& str){
 	return (min(str,revComp(str)));
 }
+
 
 
 kmer str2num(const string& str){
@@ -231,16 +235,16 @@ uint32_t kmer_Set_Light::minimizer_according_xs(kmer seq){
 		seq>>=2;
 		mmer=seq%minimizer_number;
 		mmer=min(mmer,(uint32_t)rcb(mmer,m1));
-		uint value_min(abundance_minimizer[mini]),value_mmer(abundance_minimizer[mini]);
+		//~ uint value_min(abundance_minimizer[mini]),value_mmer(abundance_minimizer[mini]);
 
-		if(value_min>value_mmer){
-			mini=mmer;
-		}else{
-			if(value_min==value_mmer){
-				mini=((xs(mini)<=xs(mmer))?mini:mmer);
-			}
-		}
-		//~ mini=((xs(mini)<=xs(mmer))?mini:mmer);
+		//~ if(value_min>value_mmer){
+			//~ mini=mmer;
+		//~ }else{
+			//~ if(value_min==value_mmer){
+				//~ mini=((xs(mini)<=xs(mmer))?mini:mmer);
+			//~ }
+		//~ }
+		mini=((xs(mini)<=xs(mmer))?mini:mmer);
 	}
 	return mini;
 }
@@ -313,9 +317,11 @@ void kmer_Set_Light::create_super_buckets(const string& input_file){
 		exit(1);
 	}
 
-	vector<ofstream*> out_files;
+	//~ vector<ofstream*> out_files;
+	vector<ostream*> out_files;
 	for(uint i(0);i<number_superbuckets;++i){
-		auto out =new ofstream("_out"+to_string(i));
+		//~ auto out =new ofstream("_out"+to_string(i));
+		auto out =new zstr::ofstream("_out"+to_string(i));
 		out_files.push_back(out);
 	}
 	//~ cout<<"file"<<endl;
@@ -385,6 +391,7 @@ void kmer_Set_Light::create_super_buckets(const string& input_file){
 			}
 		}
 	}
+	delete inUnitigs;
 	for(uint i(0);i<number_superbuckets;++i){
 		*out_files[i]<<flush;
 		delete(out_files[i]);
@@ -461,8 +468,9 @@ void kmer_Set_Light::read_super_buckets(const string& input_file){
 					//~ total_size+=all_buckets[ii]->bucketSeq.capacity()/2;
 				//~ }
 			//~ }
-			//~ ifstream in(input_file+to_string(SBC));
-			auto in=new ifstream(input_file+to_string(SBC));
+
+			//~ auto in=new ifstream(input_file+to_string(SBC));
+			auto in=new zstr::ifstream((input_file+to_string(SBC)));
 
 			while(not in->eof() and in-> good()){
 				useless="";
@@ -481,7 +489,7 @@ void kmer_Set_Light::read_super_buckets(const string& input_file){
 				}
 			}
 			delete in;
-			//~ remove((input_file+to_string(SBC)).c_str());
+			remove((input_file+to_string(SBC)).c_str());
 			create_mphf(BC,BC+bucket_per_superBuckets);
 			fill_positions(BC,BC+bucket_per_superBuckets);
 			BC+=bucket_per_superBuckets;
@@ -622,13 +630,13 @@ void kmer_Set_Light::print_kmer(kmer num){
 
 
 void kmer_Set_Light::create_mphf(uint begin_BC,uint end_BC){
-	#pragma omp parallel  num_threads(coreNumber)
+	//~ #pragma omp parallel  num_threads(coreNumber)
 	{
 	uint64_t anchors_number(0);
 	vector<kmer> anchors;
 	uint largest_bucket_anchor(0);
 	uint largest_bucket_nuc(0);
-	#pragma omp for schedule(dynamic, number_bucket_per_mphf)
+	//~ #pragma omp for schedule(dynamic, number_bucket_per_mphf)
 	for(uint BC=(begin_BC);BC<end_BC;++BC){
 		if(all_buckets[BC].nuc_minimizer!=0){
 			largest_bucket_nuc=max(largest_bucket_nuc,all_buckets[BC].nuc_minimizer);
@@ -762,20 +770,6 @@ int64_t kmer_Set_Light::correct_pos(uint32_t mini, uint64_t p){
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 uint32_t kmer_Set_Light::get_anchors(const string& query,uint& minimizer, vector<kmer>& kmerV,uint pos){
 	//~ #pragma omp atomic
 	//~ number_query++;
@@ -902,7 +896,7 @@ void kmer_Set_Light::file_query(const string& query_file,bool optimized){
 	auto in=new zstr::ifstream(query_file);
 	uint64_t TP(0),FP(0);
 	//~ cout<<"go"<<endl;
-	#pragma omp parallel num_threads(1)
+	#pragma omp parallel num_threads(coreNumber)
 	{
 		vector<kmer> kmerV;
 		uint32_t minimizer;
