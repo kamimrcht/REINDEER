@@ -11,10 +11,13 @@ EXEC=blight
 
 all: $(EXEC)
 
-blight: blight.o ksl.o
+blight: blight.o ksl.o mmh.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 blight.o: blight.cpp ksl.h
+	$(CC) -o $@ -c $< $(CFLAGS)
+
+mmh.o: MurmurHash3.cpp MurmurHash3.h
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 ksl.o: ksl.cpp

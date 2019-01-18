@@ -12,6 +12,8 @@
 #include "ksl.h"
 #include "zstr.hpp"
 #include <omp.h>
+#include "MurmurHash3.h"
+
 
 
 
@@ -123,9 +125,17 @@ kmer str2num(const string& str){
 }
 
 
+//~ uint64_t xs(uint64_t y){
+	//~ y^=(y<<13); y^=(y>>17);y=(y^=(y<<15)); return y;
+//~ }
 uint64_t xs(uint64_t y){
-	y^=(y<<13); y^=(y>>17);y=(y^=(y<<15)); return y;
+	uint64_t z(0);
+	MurmurHash3_x64_128 ( &y, 8, 17869, &z);
+	return z;
 }
+
+
+
 //~ uint64_t xs(uint64_t y){
 	//~ return y;
 //~ }
@@ -230,7 +240,7 @@ uint32_t kmer_Set_Light::minimizer_according_xs(kmer seq){
 				mini=((xs(mini)<=xs(mmer))?mini:mmer);
 			}
 		}
-		//~ mini=(((mini)<=(mmer))?mini:mmer);
+		//~ mini=((xs(mini)<=xs(mmer))?mini:mmer);
 	}
 	return mini;
 }
@@ -471,7 +481,7 @@ void kmer_Set_Light::read_super_buckets(const string& input_file){
 				}
 			}
 			delete in;
-			remove((input_file+to_string(SBC)).c_str());
+			//~ remove((input_file+to_string(SBC)).c_str());
 			create_mphf(BC,BC+bucket_per_superBuckets);
 			fill_positions(BC,BC+bucket_per_superBuckets);
 			BC+=bucket_per_superBuckets;
