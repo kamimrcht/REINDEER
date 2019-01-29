@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <pthread.h>
 #include <chrono>
+#include <tmmintrin.h>
 
 #include "bbhash.h"
 #include "blight.h"
@@ -168,19 +169,88 @@ uint64_t xs(uint32_t y){
 //~ }
 
 
+// It's quite complex to bitshift mmx register without an immediate (constant) count
+// See: https://stackoverflow.com/questions/34478328/the-best-way-to-shift-a-m128i
+inline __m128i mm_bitshift_left(__m128i x, unsigned count)
+{
+	__m128i carry = _mm_slli_si128(x, 8);
+	if (count >= 64) //TODO: bench: Might be faster to skip this fast-path branch
+		return _mm_slli_epi64(carry, count-64);  // the non-carry part is all zero, so return early
+	// else
+	carry = _mm_srli_epi64(carry, 64-count);
 
-kmer rcb(kmer min,uint n){
-	kmer res(0);
-	kmer offset(1);
-	offset<<=(2*n-2);
-	for(uint i(0); i<n;++i){
-		res+=(3-(min%4))*offset;
-		min>>=2;
-		offset>>=2;
+	x = _mm_slli_epi64(x, count);
+	return _mm_or_si128(x, carry);
+}
+
+inline __m128i mm_bitshift_right(__m128i x, unsigned count)
+{
+	__m128i carry = _mm_srli_si128(x, 8);
+	if (count >= 64)
+		return _mm_srli_epi64(carry, count-64);  // the non-carry part is all zero, so return early
+	// else
+	carry = _mm_slli_epi64(carry, 64-count);
+
+	x = _mm_srli_epi64(x, count);
+	return _mm_or_si128(x, carry);
+}
+
+
+inline __uint128_t rcb(const __uint128_t& in, uint n){
+	union kmer_u { __uint128_t k; __m128i m128i; uint64_t u64[2]; uint8_t u8[16];};
+	kmer_u res = { .k = in };
+	static_assert(sizeof(res) == sizeof(__uint128_t), "kmer sizeof mismatch");
+
+	// Complement
+	res.m128i = ~res.m128i;
+
+	// Swap byte order
+	kmer_u shuffidxs = { .u8 = {15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0} };
+	res.m128i = _mm_shuffle_epi8 (res.m128i, shuffidxs.m128i);
+
+	// Swap nuc order in bytes
+	const uint64_t c1 = 0x0f0f0f0f0f0f0f0f;
+	const uint64_t c2 = 0x3333333333333333;
+	for(uint64_t& x : res.u64) {
+		x = ((x & c1) << 4) | ((x & (c1 << 4)) >> 4); // swap 2-nuc order in bytes
+		x = ((x & c2) << 2) | ((x & (c2 << 2)) >> 2); // swap nuc order in 2-nuc
 	}
+
+	// Realign to the right
+	res.m128i = mm_bitshift_right(res.m128i, 128 - 2*n);
+	return res.k;
+}
+
+inline uint64_t rcb(uint64_t in, uint n) {
+	// Complement, swap byte order
+	uint64_t res = __builtin_bswap64(~in);
+	// Swap nuc order in bytes
+	const uint64_t c1 = 0x0f0f0f0f0f0f0f0f;
+	const uint64_t c2 = 0x3333333333333333;
+	res = ((res & c1) << 4) | ((res & (c1 << 4)) >> 4); // swap 2-nuc order in bytes
+	res = ((res & c2) << 2) | ((res & (c2 << 2)) >> 2); // swap nuc order in 2-nuc
+
+    // Realign to the right
+	res >>= 64 - 2*n;
+
 	return res;
 }
 
+inline uint32_t rcb(uint32_t in, uint n) {
+	// Complement, swap byte order
+	uint32_t res = __builtin_bswap32(~in);
+
+	// Swap nuc order in bytes
+	const uint32_t c1 = 0x0f0f0f0f;
+	const uint32_t c2 = 0x33333333;
+	res = ((res & c1) << 4) | ((res & (c1 << 4)) >> 4); // swap 2-nuc order in bytes
+	res = ((res & c2) << 2) | ((res & (c2 << 2)) >> 2); // swap nuc order in 2-nuc
+
+    // Realign to the right
+	res >>= 32 - 2*n;
+
+	return res;
+}
 
 
 void kmer_Set_Light::updateK(kmer& min, char nuc){
