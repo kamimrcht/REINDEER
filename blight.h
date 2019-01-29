@@ -154,7 +154,7 @@ public:
 			all_mphf[i].mphf_size=0;
 			all_mphf[i].bit_to_encode=0;
 			all_mphf[i].start=0;
-			all_mphf[i].empty=true;
+			all_mphf[i].empty=false;
 		}
 	}
 
