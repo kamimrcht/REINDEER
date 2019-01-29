@@ -230,9 +230,9 @@ uint32_t knuth_hash (uint32_t x){
 
 size_t hash2(int i1)
 {
-    size_t ret = i1;
-    ret *= 2654435761U;
-    return ret ^ 69;
+	size_t ret = i1;
+	ret *= 2654435761U;
+	return ret ^ 69;
 }
 
 
@@ -442,7 +442,7 @@ void kmer_Set_Light::create_super_buckets_extended(const string& input_file){
 	}
 	omp_lock_t lock[number_superbuckets];
 	for (int i=0; i<number_superbuckets; i++){
-        omp_init_lock(&(lock[i]));
+		omp_init_lock(&(lock[i]));
 	}
 	#pragma omp parallel num_threads(coreNumber)
 	{
@@ -597,7 +597,7 @@ void kmer_Set_Light::create_super_buckets_regular(const string& input_file){
 	}
 	omp_lock_t lock[number_superbuckets];
 	for (int i=0; i<number_superbuckets; i++){
-        omp_init_lock(&(lock[i]));
+		omp_init_lock(&(lock[i]));
 	}
 	#pragma omp parallel num_threads(coreNumber)
 	{
