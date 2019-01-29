@@ -136,6 +136,35 @@ kmer str2num(const string& str){
 }
 
 
+inline uint32_t revhash ( uint32_t x ) {
+	x = ( ( x >> 16 ) ^ x ) * 0x2c1b3c6d;
+	x = ( ( x >> 16 ) ^ x ) * 0x297a2d39;
+	x = ( ( x >> 16 ) ^ x );
+	return x;
+}
+
+inline uint32_t unrevhash ( uint32_t x ) {
+	x = ( ( x >> 16 ) ^ x ) * 0x0cf0b109; // PowerMod[0x297a2d39, -1, 2^32]
+	x = ( ( x >> 16 ) ^ x ) * 0x64ea2d65;
+	x = ( ( x >> 16 ) ^ x );
+	return x;
+}
+
+
+inline uint64_t revhash ( uint64_t x ) {
+	x = ( ( x >> 32 ) ^ x ) * 0xD6E8FEB86659FD93;
+	x = ( ( x >> 32 ) ^ x ) * 0xD6E8FEB86659FD93;
+	x = ( ( x >> 32 ) ^ x );
+	return x;
+}
+
+inline uint64_t unrevhash ( uint64_t x ) {
+	x = ( ( x >> 32 ) ^ x ) * 0xCFEE444D8B59A89B;
+	x = ( ( x >> 32 ) ^ x ) * 0xCFEE444D8B59A89B;
+	x = ( ( x >> 32 ) ^ x );
+	return x;
+}
+
 
 //~ uint64_t xs(uint64_t y){
 	//~ y^=(y<<13); y^=(y>>17);y=(y^=(y<<15)); return y;
@@ -143,11 +172,13 @@ kmer str2num(const string& str){
 //~ uint64_t xs(uint64_t y){
 	//~ return y;
 //~ }
-uint64_t xs(uint32_t y){
-	uint64_t z(0);
-	MurmurHash3_x86_32 ( &y, 4, 17869, &z);
-	return z;
-}
+// uint64_t xs(uint32_t y){
+// 	uint64_t z(0);
+// 	MurmurHash3_x86_32 ( &y, 4, 17869, &z);
+// 	return z;
+// }
+template<typename T>
+inline T xs(const T& x) { return revhash(x); }
 
 
 
