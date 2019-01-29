@@ -703,7 +703,7 @@ void kmer_Set_Light::create_super_buckets_regular(const string& input_file){
 	#pragma omp parallel num_threads(coreNumber)
 	{
 		string ref,useless;
-		minimizer_type old_minimizer,minimizer,precise_minimizer,old_precise_minimizer;
+		minimizer_type old_minimizer,minimizer; //,precise_minimizer,old_precise_minimizer;
 		while(not inUnitigs->eof()){
 			#pragma omp critical(dataupdate)
 			{
@@ -715,14 +715,14 @@ void kmer_Set_Light::create_super_buckets_regular(const string& input_file){
 				old_minimizer=minimizer=minimizer_number_graph.size();
 				uint last_position(0);
 				//FOREACH KMER
-				kmer seq(str2num(ref.substr(0,k))),rcSeq(rcb(seq,k)),canon(min_k(seq,rcSeq));
+				kmer seq(str2num(ref.substr(0,k))),rcSeq(rcb(seq,k)); //canon(min_k(seq,rcSeq));
 				minimizer=regular_minimizer(seq);
 				old_minimizer=minimizer;
 				uint i(0);
 				for(;i+k<ref.size();++i){
 					updateK(seq,ref[i+k]);
 					updateRCK(rcSeq,ref[i+k]);
-					canon=(min_k(seq, rcSeq));
+					//canon=(min_k(seq, rcSeq));
 					//COMPUTE KMER MINIMIZER
 					minimizer=regular_minimizer(seq);
 					if(old_minimizer!=minimizer){
@@ -733,7 +733,7 @@ void kmer_Set_Light::create_super_buckets_regular(const string& input_file){
 						all_buckets[old_minimizer].nuc_minimizer+=(i-last_position+k);
 						#pragma omp atomic
 						all_mphf[old_minimizer/number_bucket_per_mphf].mphf_size+=(i-last_position+k)-k+1;
-						all_mphf[old_precise_minimizer/number_bucket_per_mphf].empty=false;
+						//all_mphf[old_precise_minimizer/number_bucket_per_mphf].empty=false;
 						#pragma omp atomic
 						total_nuc_number+=(i-last_position+k);
 						last_position=i+1;
@@ -750,7 +750,7 @@ void kmer_Set_Light::create_super_buckets_regular(const string& input_file){
 					total_nuc_number+=(ref.substr(last_position)).size();
 					#pragma omp atomic
 					all_mphf[old_minimizer/number_bucket_per_mphf].mphf_size+=(ref.substr(last_position)).size()-k+1;
-					all_mphf[old_precise_minimizer/number_bucket_per_mphf].empty=false;
+					//all_mphf[old_precise_minimizer/number_bucket_per_mphf].empty=false;
 				}
 			}
 		}
@@ -1009,7 +1009,6 @@ string kmer_Set_Light::kmer2str(kmer num){
 void kmer_Set_Light::create_mphf(uint begin_BC,uint end_BC){
 	#pragma omp parallel  num_threads(coreNumber)
 		{
-		uint64_t anchors_number(0);
 		vector<kmer> anchors;
 		uint largest_bucket_anchor(0);
 		uint largest_bucket_nuc(0);
@@ -1042,7 +1041,6 @@ void kmer_Set_Light::create_mphf(uint begin_BC,uint end_BC){
 			}
 			if((BC+1)%number_bucket_per_mphf==0 and not anchors.empty()){
 				largest_MPHF=max(largest_MPHF,anchors.size());
-				anchors_number=anchors.size();
 				auto data_iterator3 = boomphf::range(static_cast<const kmer*>(&(anchors)[0]), static_cast<const kmer*>((&(anchors)[0])+anchors.size()));
 				all_mphf[BC/number_bucket_per_mphf].kmer_MPHF= new boomphf::mphf<kmer,hasher_t>(anchors.size(),data_iterator3,gammaFactor,false);
 				anchors.clear();
