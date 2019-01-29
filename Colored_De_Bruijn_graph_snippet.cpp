@@ -114,7 +114,7 @@ int main(int argc, char ** argv){
 		uint64_t color_number(file_names.size());
 
 		// I ALLOCATE THE COLOR VECTOR
-		vector<bool> color_me_amaze(ksl.number_kmer*color_number,false);
+		vector<bool> color_me_amaze((ksl.number_kmer)*color_number,false);
 		//NOT VERY SMART I KNOW...
 
 		// FOR EACH LINE OF EACH INDEXED FILE
@@ -124,15 +124,26 @@ int main(int argc, char ** argv){
 			vector<int64_t> kmer_ids;
 			while(not in.eof()){
 				getline(in,line);
+				if(line[0]!= 'A' and line[0]!= 'C' and line[0]!= 'G' and line[0]!= 'T' ){
+					continue;
+				}
+				//~ cout<<line<<endl;
 				// I GOT THE IDENTIFIER OF EACH KMER
 				kmer_ids=ksl.query_sequence_hash(line);
+				//~ cout<<"HASH"<<endl;
 				for(uint64_t i(0);i<kmer_ids.size();++i){
 					//I COLOR THEM
-					color_me_amaze[kmer_ids[i]*color_number+i_file]=true;
+					if(kmer_ids[i]>=0){
+						//~ cout<<kmer_ids[i]*color_number+i_file<<"\n"<<endl;
+						color_me_amaze[kmer_ids[i]*color_number+i_file]=true;
+						//~ cout<<color_me_amaze.size()<<"cgood"<<endl;;
+					}
 				}
 			}
 		}
 
+
+		cout<<"GO QUERY"<<endl;
 		ifstream query_file(query);
 
 		string line;
@@ -140,6 +151,9 @@ int main(int argc, char ** argv){
 		// FOR EACH LINE OF THE QUERY FILE
 		while(not query_file.eof()){
 			getline(query_file,line);
+			if(line[0]!= 'A' and line[0]!= 'C' and line[0]!= 'G' and line[0]!= 'T' ){
+				continue;
+			}
 			// I GOT THEIR INDICES
 			kmer_ids=ksl.query_sequence_hash(line);
 			for(uint64_t i(0);i<kmer_ids.size();++i){
