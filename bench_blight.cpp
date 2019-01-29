@@ -97,6 +97,7 @@ int main(int argc, char ** argv){
 		return 0;
 	}
 	{
+		cout<<"I use -g "+input+" -q "+query+" -k "+to_string(k)+" -m  "+to_string(m1)+" -n  "+to_string(m2)+" -s  "+to_string(m3)+" -t "+to_string(c)+" -b "+to_string(bit)<<endl;
 		kmer_Set_Light ksl(k,m1,m2,m3,c,bit,ex);
 		ksl.construct_index(input);
 

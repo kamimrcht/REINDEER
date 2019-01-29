@@ -527,7 +527,7 @@ void kmer_Set_Light::create_super_buckets_extended(const string& input_file){
 		max_bucket_mphf=max(all_buckets[BC].nuc_minimizer,max_bucket_mphf);
 		if((BC+1)%number_bucket_per_mphf==0){
 			int n_bits_to_encode((ceil(log2(max_bucket_mphf+1))-bit_saved_sub));
-			cout<<n_bits_to_encode<<" ";
+			//~ cout<<n_bits_to_encode<<" ";
 			if(n_bits_to_encode<1){n_bits_to_encode=1;}
 			all_mphf[BC/number_bucket_per_mphf].bit_to_encode=n_bits_to_encode;
 			all_mphf[BC/number_bucket_per_mphf].start=total_pos_size;
@@ -558,20 +558,23 @@ void kmer_Set_Light::construct_index(const string& input_file){
 	}
 
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
+
 	if(extension_minimizer==0){
 		create_super_buckets_regular(input_file);
 	}else{
 		create_super_buckets_extended(input_file);
 	}
+
 	high_resolution_clock::time_point t12 = high_resolution_clock::now();
 	duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
 	cout<<"Super bucket created: "<< time_span12.count() << " seconds."<<endl;
+
 	read_super_buckets("_out");
+
 	high_resolution_clock::time_point t13 = high_resolution_clock::now();
 	duration<double> time_span13 = duration_cast<duration<double>>(t13 - t12);
-	cout<<"Indexes created: "<< time_span12.count() << " seconds."<<endl;
-	high_resolution_clock::time_point t2 = high_resolution_clock::now();
-	duration<double> time_spant = duration_cast<duration<double>>(t2 - t1);
+	cout<<"Indexes created: "<< time_span13.count() << " seconds."<<endl;
+	duration<double> time_spant = duration_cast<duration<double>>(t13 - t1);
 	cout << "The whole indexing took me " << time_spant.count() << " seconds."<< endl;
 }
 
@@ -1105,6 +1108,7 @@ int64_t kmer_Set_Light::query_kmer_hash(kmer canon){
 			return query_get_hash(canon,minimizer);
 		}
 	}else{
+		//~ cout<<query_get_hash(canon,regular_minimizer(canon))<<endl;
 		return query_get_hash(canon,regular_minimizer(canon));
 	}
 }
@@ -1305,7 +1309,7 @@ int64_t kmer_Set_Light::query_get_hash(const kmer canon,uint minimizer){
 	#pragma omp atomic
 	number_query++;
 	int64_t hash(-1);
-	if(all_mphf[minimizer/number_bucket_per_mphf].empty==0){
+	if(all_mphf[minimizer/number_bucket_per_mphf].empty){
 		return -1;
 	}else{
 		hash=(all_mphf[minimizer/number_bucket_per_mphf].kmer_MPHF->lookup(canon));

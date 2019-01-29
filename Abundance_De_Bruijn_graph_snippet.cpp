@@ -23,7 +23,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
-
 #include "blight.h"
 
 
@@ -39,7 +38,7 @@ int main(int argc, char ** argv){
 	string input,query,fof;
 	uint k(0);
 	uint m1(9);
-	uint m2(8);
+	uint m2(9);
 	uint m3(3);
 	uint c(1);
 	uint bit(6);
@@ -89,7 +88,7 @@ int main(int argc, char ** argv){
 
 		<<"Performances arguments"<<endl
 		<<"-m minimizer size (9)"<<endl
-		<<"-n to create 4^n mphf (7). More mean slower construction but better index, must be <=m"<<endl
+		<<"-n to create 4^n mphf (9). More mean slower construction but better index, must be <=m"<<endl
 		<<"-s to use 4^s files (3). More reduce memory usage and use more files, must be <=n"<<endl
 		<<"-t core used (1)"<<endl
 		<<"-b bit saved to encode positions (6). Will reduce the memory usage of b bit per kmer but query have to check 2^b kmers"<<endl;
@@ -111,10 +110,9 @@ int main(int argc, char ** argv){
 				file_names.push_back(file_name);
 			}
 		}
-		uint64_t color_number(file_names.size());
 
 		// I ALLOCATE THE COLOR VECTOR
-		vector<bool> color_me_amaze(ksl.number_kmer*color_number,false);
+		vector<uint8_t> abundance(ksl.number_kmer,0);
 		//NOT VERY SMART I KNOW...
 
 		// FOR EACH LINE OF EACH INDEXED FILE
@@ -128,7 +126,7 @@ int main(int argc, char ** argv){
 				kmer_ids=ksl.query_sequence_hash(line);
 				for(uint64_t i(0);i<kmer_ids.size();++i){
 					//I COLOR THEM
-					color_me_amaze[kmer_ids[i]*color_number+i_file]=true;
+					abundance[kmer_ids[i]]++;
 				}
 			}
 		}
@@ -149,13 +147,7 @@ int main(int argc, char ** argv){
 					continue;
 				}
 				// I KNOW THE COLORS OF THIS KMER !... I'M BLUE DABEDI DABEDA...
-				cout<<"I HAVE BEEN SEEN IN THE FILE ";
-				for(uint64_t i_color(0);i_color<color_number;++i_color){
-					if(color_me_amaze[kmer_ids[i]*color_number+i_color]){
-						cout<<i_color<<" ";
-					}
-				}
-				cout<<"\n";
+				cout<<"I HAVE BEEN SEEN "<<(uint)abundance[kmer_ids[i]]<<" TIMES\n";
 			}
 		}
 	}
