@@ -518,7 +518,7 @@ void kmer_Set_Light::abundance_minimizer_construct(const string& input_file){
 			}
 		}
 	}
-	for(uint i(0);i<minimizer_number;++i){
+	for(uint i(0);i<minimizer_number.size();++i){
 		abundance_minimizer[i]=(uint8_t)(log2(abundance_minimizer_temp[i])*8);
 		//~ abundance_minimizer[i]=(abundance_minimizer_temp[i]);
 	}
@@ -536,13 +536,13 @@ void kmer_Set_Light::create_super_buckets_extended(const string& input_file){
 		exit(1);
 	}
 	vector<ostream*> out_files;
-	for(uint i(0);i<number_superbuckets;++i){
+	for(uint i(0);i<number_superbuckets.size();++i){
 		//~ auto out =new ofstream("_out"+to_string(i));
 		auto out =new zstr::ofstream("_out"+to_string(i));
 		out_files.push_back(out);
 	}
-	omp_lock_t lock[number_superbuckets];
-	for (int i=0; i<number_superbuckets; i++){
+	omp_lock_t lock[number_superbuckets.size()];
+	for (uint i=0; i<number_superbuckets.size(); i++){
 		omp_init_lock(&(lock[i]));
 	}
 	#pragma omp parallel num_threads(coreNumber)
@@ -557,7 +557,7 @@ void kmer_Set_Light::create_super_buckets_extended(const string& input_file){
 			}
 			//FOREACH UNITIG
 			if(not ref.empty() and not useless.empty()){
-				old_minimizer=minimizer=minimizer_number_graph;
+				old_minimizer=minimizer=minimizer_number_graph.size();
 				uint last_position(0);
 				//FOREACH KMER
 				kmer seq(str2num(ref.substr(0,k))),rcSeq(rcb(seq,k)),canon(min_k(seq,rcSeq));
@@ -615,7 +615,7 @@ void kmer_Set_Light::create_super_buckets_extended(const string& input_file){
 		}
 	}
 	delete inUnitigs;
-	for(uint i(0);i<number_superbuckets;++i){
+	for(uint i(0);i<number_superbuckets.size();++i){
 		*out_files[i]<<flush;
 		delete(out_files[i]);
 	}
@@ -623,7 +623,7 @@ void kmer_Set_Light::create_super_buckets_extended(const string& input_file){
 	bucketSeq.shrink_to_fit();
 	uint64_t i(0),total_pos_size(0);
 	uint max_bucket_mphf(0);
-	for(uint BC(0);BC<minimizer_number;++BC){
+	for(uint BC(0);BC<minimizer_number.size();++BC){
 		all_buckets[BC].start=i;
 		all_buckets[BC].current_pos=i;
 		i+=all_buckets[BC].nuc_minimizer;
@@ -691,13 +691,13 @@ void kmer_Set_Light::create_super_buckets_regular(const string& input_file){
 		exit(1);
 	}
 	vector<ostream*> out_files;
-	for(uint i(0);i<number_superbuckets;++i){
+	for(uint i(0);i<number_superbuckets.size();++i){
 		//~ auto out =new ofstream("_out"+to_string(i));
 		auto out =new zstr::ofstream("_out"+to_string(i));
 		out_files.push_back(out);
 	}
-	omp_lock_t lock[number_superbuckets];
-	for (int i=0; i<number_superbuckets; i++){
+	omp_lock_t lock[number_superbuckets.size()];
+	for (uint i=0; i<number_superbuckets.size(); i++){
 		omp_init_lock(&(lock[i]));
 	}
 	#pragma omp parallel num_threads(coreNumber)
@@ -712,7 +712,7 @@ void kmer_Set_Light::create_super_buckets_regular(const string& input_file){
 			}
 			//FOREACH UNITIG
 			if(not ref.empty() and not useless.empty()){
-				old_minimizer=minimizer=minimizer_number_graph;
+				old_minimizer=minimizer=minimizer_number_graph.size();
 				uint last_position(0);
 				//FOREACH KMER
 				kmer seq(str2num(ref.substr(0,k))),rcSeq(rcb(seq,k)),canon(min_k(seq,rcSeq));
@@ -756,7 +756,7 @@ void kmer_Set_Light::create_super_buckets_regular(const string& input_file){
 		}
 	}
 	delete inUnitigs;
-	for(uint i(0);i<number_superbuckets;++i){
+	for(uint i(0);i<number_superbuckets.size();++i){
 		*out_files[i]<<flush;
 		delete(out_files[i]);
 	}
@@ -764,7 +764,7 @@ void kmer_Set_Light::create_super_buckets_regular(const string& input_file){
 	bucketSeq.shrink_to_fit();
 	uint64_t i(0),total_pos_size(0);
 	uint max_bucket_mphf(0);
-	for(uint BC(0);BC<minimizer_number;++BC){
+	for(uint BC(0);BC<minimizer_number.size();++BC){
 		all_buckets[BC].start=i;
 		all_buckets[BC].current_pos=i;
 		i+=all_buckets[BC].nuc_minimizer;
@@ -819,14 +819,13 @@ void kmer_Set_Light::str2bool(const string& str,uint mini){
 void kmer_Set_Light::read_super_buckets(const string& input_file){
 	uint64_t total_size(0);
 	//~ cout<<"go"<<endl;
-	uint number_superbuckets_by_buckets(minimizer_number/number_superbuckets);
 	#pragma omp parallel num_threads(1)
 	{
 		string useless,line;
 		#pragma omp for
-		for(uint SBC=0;SBC<number_superbuckets;++SBC){
+		for(uint SBC=0;SBC<number_superbuckets.size();++SBC){
 			//~ cout<<"go"<<endl;
-			uint BC(SBC*bucket_per_superBuckets);
+			uint BC(SBC*bucket_per_superBuckets.size());
 			auto in=new zstr::ifstream((input_file+to_string(SBC)));
 			while(not in->eof() and in-> good()){
 				useless="";
@@ -845,11 +844,11 @@ void kmer_Set_Light::read_super_buckets(const string& input_file){
 			delete in;
 			remove((input_file+to_string(SBC)).c_str());
 			//~ cout<<"go1"<<endl;
-			create_mphf(BC,BC+bucket_per_superBuckets);
+			create_mphf(BC,BC+bucket_per_superBuckets.size());
 			//~ cout<<"go2"<<endl;
-			fill_positions(BC,BC+bucket_per_superBuckets);
+			fill_positions(BC,BC+bucket_per_superBuckets.size());
 			//~ cout<<"go3"<<endl;
-			BC+=bucket_per_superBuckets;
+			BC+=bucket_per_superBuckets.size();
 			cout<<"-"<<flush;
 		}
 	}
@@ -1076,7 +1075,7 @@ uint32_t kmer_Set_Light::bool_to_int(uint n_bits_to_encode,uint64_t pos,uint64_t
 		}
 		acc<<=1;
 	}
-	return res*positions_to_check;
+	return res*positions_to_check.size();
 }
 
 
@@ -1397,7 +1396,7 @@ int32_t kmer_Set_Light::query_get_pos_unitig(const kmer canon,uint minimizer){
 			}else{
 				uint64_t j;
 				bool found(false);
-				for(j=(pos);j<pos+positions_to_check;++j){
+				for(j=(pos);j<pos+positions_to_check.size();++j){
 					seqR=update_kmer(j+k,minimizer,seqR);//can be avoided
 					rcSeqR=(rcb(seqR,k));
 					canonR=(min_k(seqR, rcSeqR));
@@ -1447,7 +1446,7 @@ int64_t kmer_Set_Light::query_get_hash(const kmer canon,uint minimizer){
 				//~ cout<<8<<endl;
 				uint64_t j;
 				bool found(false);
-				for(j=(pos);j<pos+positions_to_check;++j){
+				for(j=(pos);j<pos+positions_to_check.size();++j){
 					seqR=update_kmer(j+k,minimizer,seqR);//can be avoided
 					rcSeqR=(rcb(seqR,k));
 					canonR=(min_k(seqR, rcSeqR));

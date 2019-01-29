@@ -65,79 +65,92 @@ struct extended_minimizer{
 	uint32_t extended_mini;
 };
 
+// Represents the cardinality of a pow2 sized set. Allows div/mod arithmetic operations on indexes.
+template<typename T>
+struct Pow2 {
+	Pow2(uint_fast8_t bits) : _bits(bits) {}
 
+	uint_fast8_t bits() const { return _bits; }
+	T size() const { return T(1) << _bits; }
+	explicit operator T() const { return size(); }
+	T max() const { return size() - T(1); }
+
+
+	friend T operator/(const T& x, const Pow2& y) { return x >> y._bits; }
+	friend T& operator/=(T& x, const Pow2& y) { return x >>= y._bits; }
+	friend T operator%(const T& x, const Pow2& y) { return x & y.max(); }
+	friend T& operator%=(T& x, const Pow2& y) { return x &= y.max(); }
+private:
+	uint_fast8_t _bits;
+};
 
 class kmer_Set_Light{
 public:
-	uint k;
-	uint m1,m2,m3,minimizer_size_graph;
-	uint number_superbuckets;
-	uint extension_minimizer;
-	uint minimizer_number;
-	uint minimizer_number_graph;
-	uint bucket_per_superBuckets;
-	uint coreNumber;
-	uint gammaFactor;
-	uint bit_saved_sub;
-	uint positions_to_check;
-	uint64_t number_kmer;
-	uint64_t number_super_kmer;
-	uint64_t largest_MPHF;
-	uint64_t positions_total_size;
-	uint largest_bucket_nuc_all;
-	uint64_t number_query;
-	uint number_bucket_per_mphf;
-	//~ uint hell_bucket;
-	kmer offsetUpdateAnchor=1;
-	kmer offsetUpdateMinimizer=1;
-	double bit_per_kmer;
-	bool light_mode;
+	const uint k, m1, m2, m3, extension_minimizer, minimizer_size_graph;
+	const uint coreNumber;
+	const uint bit_saved_sub;
+
+	const Pow2<kmer> offsetUpdateAnchor;
+	const Pow2<kmer> offsetUpdateMinimizer;
+	const Pow2<uint> mphf_number;
+	const Pow2<uint> number_superbuckets;
+	const Pow2<uint> minimizer_number;
+	const Pow2<uint> minimizer_number_graph;
+	const Pow2<uint> number_bucket_per_mphf;
+	const Pow2<uint> bucket_per_superBuckets;
+	const Pow2<uint> positions_to_check;
+
 	vector<bool> bucketSeq;
-	vector<bool>* Valid_kmer;
 	vector<bool> positions;
+	vector<bool>* Valid_kmer;
 	bucket_minimizer* all_buckets;
 	uint32_t* abundance_minimizer_temp;
 	uint8_t* abundance_minimizer;
 	info_mphf* all_mphf;
-	kmer_Set_Light(uint k_val,uint m1_val, uint m2_val, uint m3_val, uint coreNumber_val, uint bit_to_save,uint ex){
-		extension_minimizer=ex;
-		k=k_val;
-		m1=m1_val;
-		minimizer_size_graph=m1-2*extension_minimizer;
-		m2=m2_val;
-		if(m2==0){
-			m2=m1;
-		}
-		m3=m3_val;
-		light_mode=true;
-		bit_saved_sub=bit_to_save;
-		number_kmer=0;
-		number_query=0;
-		number_super_kmer=0;
-		largest_bucket_nuc_all=0;
-		positions_total_size=0;
-		largest_MPHF=0;
-		bit_per_kmer=0;
-		positions_to_check=1<<bit_saved_sub;
-		offsetUpdateAnchor<<=2*k;
-		offsetUpdateMinimizer<<=2*m1;
-		number_superbuckets=1<<(2*m3);
-		minimizer_number=1<<(2*m1);
-		minimizer_number_graph=1<<(2*(m1-2*extension_minimizer));
-		number_bucket_per_mphf=1<<(2*(m1-m2));
-		bucket_per_superBuckets=minimizer_number/number_superbuckets;
-		coreNumber=coreNumber_val;
-		gammaFactor=2;
-		Valid_kmer=new vector<bool>[bucket_per_superBuckets];
-		for(uint i(0);i<bucket_per_superBuckets;++i){
+
+	uint64_t number_kmer = 0;
+	uint64_t number_super_kmer = 0;
+	uint64_t largest_MPHF = 0;
+	uint64_t positions_total_size = 0;
+	uint64_t number_query=0;
+
+
+	//~ uint hell_bucket;
+	double bit_per_kmer = 0;
+	uint largest_bucket_nuc_all = 0;
+	const uint gammaFactor=2;
+	const bool light_mode=true;
+
+	kmer_Set_Light(uint k_val,uint m1_val, uint m2_val, uint m3_val, uint coreNumber_val, uint bit_to_save,uint ex)
+		: k(k_val)
+		, m1(m1_val)
+		, m2(m2_val ? m2_val : m1)
+		, m3(m3_val)
+		, extension_minimizer(ex)
+		, minimizer_size_graph(m1-2*extension_minimizer)
+		, coreNumber(coreNumber_val)
+		, bit_saved_sub(bit_to_save)
+
+		, offsetUpdateAnchor(2*k)
+		, offsetUpdateMinimizer(2*m1)
+		, mphf_number(2*m2)
+		, number_superbuckets(2*m3)
+		, minimizer_number(2*m1)
+		, minimizer_number_graph(2*minimizer_size_graph)
+		, number_bucket_per_mphf(2*(m1-m2))
+		, bucket_per_superBuckets(2*(m1-m3))
+		, positions_to_check(bit_saved_sub)
+	{
+		Valid_kmer=new vector<bool>[bucket_per_superBuckets.size()];
+		for(uint i(0);i<bucket_per_superBuckets.size();++i){
 			Valid_kmer[i]={};
 		}
-		all_buckets=new bucket_minimizer[minimizer_number];
-		for(uint i(0);i<minimizer_number;++i){
+		all_buckets=new bucket_minimizer[minimizer_number.size()];
+		for(uint i(0);i<minimizer_number.size();++i){
 			all_buckets[i]={0,0,0};
 		}
-		all_mphf=new info_mphf[minimizer_number/number_bucket_per_mphf];
-		for(uint i(0);i<minimizer_number/number_bucket_per_mphf;++i){
+		all_mphf=new info_mphf[mphf_number.size()];
+		for(uint i(0);i<mphf_number.size();++i){
 			all_mphf[i].mphf_size=0;
 			all_mphf[i].bit_to_encode=0;
 			all_mphf[i].start=0;
@@ -147,7 +160,7 @@ public:
 
 	~kmer_Set_Light () {
 		delete[] all_buckets;
-		for(uint i(0);i<minimizer_number/number_bucket_per_mphf;++i){
+		for(uint i(0);i<mphf_number.size();++i){
 			delete all_mphf[i].kmer_MPHF;
 		}
 		delete[] all_mphf;
