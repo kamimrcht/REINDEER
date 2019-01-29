@@ -1007,13 +1007,13 @@ string kmer_Set_Light::kmer2str(kmer num){
 
 
 void kmer_Set_Light::create_mphf(uint begin_BC,uint end_BC){
-	//~ #pragma omp parallel  num_threads(coreNumber)
+	#pragma omp parallel  num_threads(coreNumber)
 		{
 		uint64_t anchors_number(0);
 		vector<kmer> anchors;
 		uint largest_bucket_anchor(0);
 		uint largest_bucket_nuc(0);
-		//~ #pragma omp for schedule(dynamic, number_bucket_per_mphf)
+		#pragma omp for schedule(dynamic, number_bucket_per_mphf.size())
 		for(uint BC=(begin_BC);BC<end_BC;++BC){
 			if(all_buckets[BC].nuc_minimizer!=0){
 				largest_bucket_nuc=max(largest_bucket_nuc,all_buckets[BC].nuc_minimizer);
@@ -1044,7 +1044,7 @@ void kmer_Set_Light::create_mphf(uint begin_BC,uint end_BC){
 				largest_MPHF=max(largest_MPHF,anchors.size());
 				anchors_number=anchors.size();
 				auto data_iterator3 = boomphf::range(static_cast<const kmer*>(&(anchors)[0]), static_cast<const kmer*>((&(anchors)[0])+anchors.size()));
-				all_mphf[BC/number_bucket_per_mphf].kmer_MPHF= new boomphf::mphf<kmer,hasher_t>(anchors.size(),data_iterator3,coreNumber,gammaFactor,false);
+				all_mphf[BC/number_bucket_per_mphf].kmer_MPHF= new boomphf::mphf<kmer,hasher_t>(anchors.size(),data_iterator3,gammaFactor,false);
 				anchors.clear();
 				largest_bucket_anchor=0;
 				largest_bucket_nuc=(0);

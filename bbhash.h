@@ -192,163 +192,6 @@ namespace boomphf {
 		return (popcount_32(low) + popcount_32(high));
 	}
 
-
-	///// progress bar
-	class Progress
-	{
-	public:
-		int timer_mode;
-		struct timeval timestamp;
-		double heure_debut, heure_actuelle ;
-		std::string   message;
-
-		uint64_t done;
-		uint64_t todo;
-		int subdiv ; // progress printed every 1/subdiv of total to do
-		double partial;
-		int _nthreads;
-		std::vector<double > partial_threaded;
-		std::vector<uint64_t > done_threaded;
-
-		double steps ; //steps = todo/subidv
-
-		void init(uint64_t ntasks, const char * msg,int nthreads =1)
-		{
-			_nthreads = nthreads;
-			message = std::string(msg);
-			gettimeofday(&timestamp, NULL);
-			heure_debut = timestamp.tv_sec +(timestamp.tv_usec/1000000.0);
-
-			//fprintf(stderr,"| %-*s |\n",98,msg);
-
-			todo= ntasks;
-			done = 0;
-			partial =0;
-
-			partial_threaded.resize(_nthreads);
-			done_threaded.resize(_nthreads);
-
-			for (int ii=0; ii<_nthreads;ii++) partial_threaded[ii]=0;
-			for (int ii=0; ii<_nthreads;ii++) done_threaded[ii]=0;
-			subdiv= 1000;
-			steps = (double)todo / (double)subdiv;
-
-			if(!timer_mode)
-			{
-				 fprintf(stderr,"[");fflush(stderr);
-			}
-		}
-
-		void finish()
-		{
-			set(todo);
-			 if(timer_mode)
-			 	fprintf(stderr,"\n");
-			 else
-			 	fprintf(stderr,"]\n");
-
-			fflush(stderr);
-			todo= 0;
-			done = 0;
-			partial =0;
-
-		}
-		void finish_threaded()// called by only one of the threads
-		{
-			done = 0;
-			double rem = 0;
-			for (int ii=0; ii<_nthreads;ii++) done += (done_threaded[ii] );
-			for (int ii=0; ii<_nthreads;ii++) partial += (partial_threaded[ii] );
-
-			finish();
-
-		}
-		void inc(uint64_t ntasks_done)
-		{
-			done += ntasks_done;
-			partial += ntasks_done;
-
-
-			while(partial >= steps)
-			{
-				if(timer_mode)
-				{
-					gettimeofday(&timestamp, NULL);
-					heure_actuelle = timestamp.tv_sec +(timestamp.tv_usec/1000000.0);
-					double elapsed = heure_actuelle - heure_debut;
-					double speed = done / elapsed;
-					double rem = (todo-done) / speed;
-					if(done>todo) rem=0;
-					int min_e  = (int)(elapsed / 60) ;
-					elapsed -= min_e*60;
-					int min_r  = (int)(rem / 60) ;
-					rem -= min_r*60;
-
-				 fprintf(stderr,"%c[%s]  %-5.3g%%   elapsed: %3i min %-2.0f sec   remaining: %3i min %-2.0f sec",13,
-				 		message.c_str(),
-				 		100*(double)done/todo,
-				 		min_e,elapsed,min_r,rem);
-
-				}
-				else
-				{
-					 fprintf(stderr,"-");fflush(stderr);
-				}
-				partial -= steps;
-			}
-
-
-		}
-
-		void inc(uint64_t ntasks_done, int tid) //threads collaborate to this same progress bar
-		{
-			partial_threaded[tid] += ntasks_done;
-			done_threaded[tid] += ntasks_done;
-			while(partial_threaded[tid] >= steps)
-			{
-				if(timer_mode)
-				{
-					struct timeval timet;
-					double now;
-					gettimeofday(&timet, NULL);
-					now = timet.tv_sec +(timet.tv_usec/1000000.0);
-					uint64_t total_done  = 0;
-					for (int ii=0; ii<_nthreads;ii++) total_done += (done_threaded[ii] );
-					double elapsed = now - heure_debut;
-					double speed = total_done / elapsed;
-					double rem = (todo-total_done) / speed;
-					if(total_done > todo) rem =0;
-					int min_e  =  (int)(elapsed / 60) ;
-					elapsed -= min_e*60;
-					int min_r  =  (int)(rem / 60) ;
-					rem -= min_r*60;
-
-					 fprintf(stderr,"%c[%s]  %-5.3g%%   elapsed: %3i min %-2.0f sec   remaining: %3i min %-2.0f sec",13,
-					 		message.c_str(),
-					 		100*(double)total_done/todo,
-					 		min_e,elapsed,min_r,rem);
-				}
-				else
-				{
-					 fprintf(stderr,"-");fflush(stderr);
-				}
-				partial_threaded[tid] -= steps;
-
-			}
-
-		}
-
-		void set(uint64_t ntasks_done)
-		{
-			if(ntasks_done > done)
-				inc(ntasks_done-done);
-		}
-		Progress () :     timer_mode(0) {}
-		//include timer, to print ETA ?
-	};
-
-
-
 ////////////////////////////////////////////////////////////////
 #pragma mark -
 #pragma mark hasher
@@ -709,14 +552,14 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 
 		}
 
-		//atomically   return old val and set to 1
-		uint64_t atomic_test_and_set(uint64_t pos)
+		//return old val and set to 1
+		uint64_t test_and_set(uint64_t pos)
 		{
-			uint64_t oldval = 	__sync_fetch_and_or (_bitArray + (pos >> 6), (uint64_t) (1ULL << (pos & 63)) );
-
+			uint64_t& val = _bitArray[pos >> 6];
+			uint64_t oldval = val;
+			val = oldval | uint64_t(1) << (pos & 63);
 			return  ( oldval >> (pos & 63 ) ) & 1;
 		}
-
 
 		uint64_t get(uint64_t pos) const
 		{
@@ -732,15 +575,13 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 		void set(uint64_t pos)
 		{
 			assert(pos<_size);
-			//_bitArray [pos >> 6] |=   (1ULL << (pos & 63) ) ;
-			__sync_fetch_and_or (_bitArray + (pos >> 6ULL), (1ULL << (pos & 63)) );
+			_bitArray [pos >> 6] |= (uint64_t(1) << (pos & 63) ) ;
 		}
 
 		//set bit pos to 0
 		void reset(uint64_t pos)
 		{
-			//_bitArray [pos >> 6] &=   ~(1ULL << (pos & 63) ) ;
-			__sync_fetch_and_and (_bitArray + (pos >> 6ULL), ~(1ULL << (pos & 63) ));
+			_bitArray [pos >> 6] &= ~(uint64_t(1) << (pos & 63) ) ;
 		}
 
 		//return value of  last rank
@@ -895,18 +736,15 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 
 		// allow perc_elem_loaded  elements to be loaded in ram for faster construction (default 3%), set to 0 to desactivate
 		template <typename Range>
-		mphf( size_t n, Range const& input_range,int num_thread = 1,  double gamma = 2.0 , bool writeEach = true, bool progress =true, float perc_elem_loaded = 0.99) :
-		_gamma(gamma), _hash_domain(size_t(ceil(double(n) * gamma))), _nelem(n), _num_thread(num_thread), _percent_elem_loaded_for_fastMode (perc_elem_loaded), _withprogress(false)
+		mphf( size_t n, Range const& input_range, double gamma = 2.0 , bool writeEach = true, float perc_elem_loaded = 0.99) :
+		_gamma(gamma), _hash_domain(size_t(ceil(double(n) * gamma))), _nelem(n), _percent_elem_loaded_for_fastMode (perc_elem_loaded)
 		{
 			if(n ==0) return;
 
 			_fastmode = false;
 
-
-
 			if(_percent_elem_loaded_for_fastMode > 0.0 )
 				_fastmode =true;
-
 
 			if(writeEach)
 			{
@@ -919,30 +757,6 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 			}
 
 			setup();
-
-			if(_withprogress)
-			{
-				_progressBar.timer_mode=1;
-
-
-				double total_raw = _nb_levels;
-
-				double sum_geom_read =  ( 1.0 / (1.0 - _proba_collision));
-				double total_writeEach = sum_geom_read + 1.0;
-
-				double total_fastmode_ram =  (_fastModeLevel+1) +  ( pow(_proba_collision,_fastModeLevel)) * (_nb_levels-(_fastModeLevel+1))   ;
-
-				printf("for info, total work write each  : %.3f    total work inram from level %i : %.3f  total work raw : %.3f \n",total_writeEach,_fastModeLevel,total_fastmode_ram,total_raw);
-
-				if(writeEach)
-				{
-					_progressBar.init(_nelem * total_writeEach,"Building BooPHF",num_thread);
-				}
-				else if(_fastmode)
-					_progressBar.init( _nelem * total_fastmode_ram    ,"Building BooPHF",num_thread);
-				else
-					_progressBar.init( _nelem * _nb_levels ,"Building BooPHF",num_thread);
-			}
 
 			uint64_t offset = 0;
 			for(int ii = 0; ii< _nb_levels; ii++)
@@ -958,18 +772,11 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 				delete _tempBitset;
 			}
 
-			if(_withprogress)
-			_progressBar.finish_threaded();
-
-
 			_lastbitsetrank = offset ;
 
 			//printf("used temp ram for construction : %lli MB \n",setLevelFastmode.capacity()* sizeof(elem_t) /1024ULL/1024ULL);
 
 			std::vector<elem_t>().swap(setLevelFastmode);   // clear setLevelFastmode reallocating
-
-
-			pthread_mutex_destroy(&_mutex);
 
 			_built = true;
 		}
@@ -1039,137 +846,86 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 			return totalsize;
 		}
 
-		template <typename Iterator>  //typename Range,
-        void pthread_processLevel( std::vector<elem_t>  & buffer , std::shared_ptr<Iterator> shared_it, std::shared_ptr<Iterator> until_p, int i)
+		template <typename Range>  //typename Range,
+        void pthread_processLevel(const Range& range, int i)
 		{
 			uint64_t nb_done =0;
-			int tid =  __sync_fetch_and_add (&_nb_living, 1);
-			auto until = *until_p;
-			uint64_t inbuff =0;
-
 			uint64_t writebuff =0;
-			std::vector< elem_t > & myWriteBuff = bufferperThread[tid];
+			std::vector< elem_t > myWriteBuff = {};
+			myWriteBuff.resize(NBBUFF);
 
 
-			for (bool isRunning=true;  isRunning ; )
+			for(const elem_t& val: range)
 			{
+				//printf("processing %llu  level %i\n",val, i);
 
-				//safely copy n items into buffer
-				pthread_mutex_lock(&_mutex);
-                for(; inbuff<NBBUFF && (*shared_it)!=until;  ++(*shared_it))
+				//auto hashes = _hasher(val);
+				hash_pair_t bbhash;  int level;
+				uint64_t level_hash;
+				if(_writeEachLevel)
+					getLevel(bbhash,val,&level, i,i-1);
+				else
+					getLevel(bbhash,val,&level, i);
+
+
+				if(level == i) //insert into lvl i
 				{
-                    buffer[inbuff]= *(*shared_it); inbuff++;
-				}
-				if((*shared_it)==until) isRunning =false;
-				pthread_mutex_unlock(&_mutex);
-
-
-				//do work on the n elems of the buffer
-			//	printf("filling input  buff \n");
-
-                for(uint64_t ii=0; ii<inbuff ; ii++)
-				{
-					elem_t val = buffer[ii];
-					//printf("processing %llu  level %i\n",val, i);
-
-					//auto hashes = _hasher(val);
-					hash_pair_t bbhash;  int level;
-					uint64_t level_hash;
-					if(_writeEachLevel)
-						getLevel(bbhash,val,&level, i,i-1);
-					else
-						getLevel(bbhash,val,&level, i);
-
-
-					//uint64_t level_hash = getLevel(bbhash,val,&level, i);
-
-					//__sync_fetch_and_add(& _cptTotalProcessed,1);
-
-					if(level == i) //insert into lvl i
+					if(_fastmode && i == _fastModeLevel)
 					{
 
-						//	__sync_fetch_and_add(& _cptLevel,1);
-
-
-
-
-						if(_fastmode && i == _fastModeLevel)
-						{
-
-							uint64_t idxl2 = __sync_fetch_and_add(& _idxLevelsetLevelFastmode,1);
-							//si depasse taille attendue pour setLevelFastmode, fall back sur slow mode mais devrait pas arriver si hash ok et proba avec nous
-							if(idxl2>= setLevelFastmode.size())
-								_fastmode = false;
-							else
-								setLevelFastmode[idxl2] = val; // create set for fast mode
-						}
-
-						//insert to level i+1 : either next level of the cascade or final hash if last level reached
-						if(i == _nb_levels-1) //stop cascade here, insert into exact hash
-						{
-
-							uint64_t hashidx =  __sync_fetch_and_add (& _hashidx, 1);
-
-							pthread_mutex_lock(&_mutex); //see later if possible to avoid this, mais pas bcp item vont la
-							// calc rank de fin  precedent level qq part, puis init hashidx avec ce rank, direct minimal, pas besoin inser ds bitset et rank
-							_final_hash[val] = hashidx;
-							pthread_mutex_unlock(&_mutex);
-						}
+						uint64_t idxl2 = _idxLevelsetLevelFastmode++;
+						//si depasse taille attendue pour setLevelFastmode, fall back sur slow mode mais devrait pas arriver si hash ok et proba avec nous
+						if(idxl2>= setLevelFastmode.size())
+							_fastmode = false;
 						else
-						{
-
-							//ils ont reach ce level
-							//insert elem into curr level on disk --> sera utilise au level+1 , (mais encore besoin filtre)
-
-							if(_writeEachLevel && i > 0 && i < _nb_levels -1)
-							{
-								if(writebuff>=NBBUFF)
-								{
-									//flush buffer
-									flockfile(_currlevelFile);
-									fwrite(myWriteBuff.data(),sizeof(elem_t),writebuff,_currlevelFile);
-									funlockfile(_currlevelFile);
-									writebuff = 0;
-
-								}
-
-									myWriteBuff[writebuff++] = val;
-
-							}
-
-
-
-
-
-
-							//computes next hash
-
-							if ( level == 0)
-								level_hash = _hasher.h0(bbhash,val);
-							else if ( level == 1)
-								level_hash = _hasher.h1(bbhash,val);
-							else
-							{
-								level_hash = _hasher.next(bbhash);
-							}
-							insertIntoLevel(level_hash,i); //should be safe
-						}
+							setLevelFastmode[idxl2] = val; // create set for fast mode
 					}
 
-					nb_done++;
-					if((nb_done&1023) ==0  && _withprogress) {_progressBar.inc(nb_done,tid);nb_done=0; }
+					//insert to level i+1 : either next level of the cascade or final hash if last level reached
+					if(i == _nb_levels-1) //stop cascade here, insert into exact hash
+					{
+						// calc rank de fin  precedent level qq part, puis init hashidx avec ce rank, direct minimal, pas besoin inser ds bitset et rank
+						_final_hash[val] = _hashidx++;
+					}
+					else
+					{
+						//ils ont reach ce level
+						//insert elem into curr level on disk --> sera utilise au level+1 , (mais encore besoin filtre)
 
+						if(_writeEachLevel && i > 0 && i < _nb_levels -1)
+						{
+							if(writebuff>=NBBUFF)
+							{
+								fwrite(myWriteBuff.data(),sizeof(elem_t),writebuff,_currlevelFile);
+								writebuff = 0;
+							}
+
+								myWriteBuff[writebuff++] = val;
+
+						}
+
+						//computes next hash
+
+						if ( level == 0)
+							level_hash = _hasher.h0(bbhash,val);
+						else if ( level == 1)
+							level_hash = _hasher.h1(bbhash,val);
+						else
+						{
+							level_hash = _hasher.next(bbhash);
+						}
+						insertIntoLevel(level_hash,i); //should be safe
+					}
 				}
 
-				inbuff = 0;
+				nb_done++;
 			}
+
 
 			if(_writeEachLevel && writebuff>0)
 			{
 				//flush buffer
-				flockfile(_currlevelFile);
 				fwrite(myWriteBuff.data(),sizeof(elem_t),writebuff,_currlevelFile);
-				funlockfile(_currlevelFile);
 				writebuff = 0;
 			}
 
@@ -1261,28 +1017,11 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 
 		void setup()
 		{
-			pthread_mutex_init(&_mutex, NULL);
-
-			_pid = getpid() + printPt(pthread_self()) ;// + pthread_self();
-			//printf("pt self %llu  pid %i \n",printPt(pthread_self()),_pid);
-
-			_cptTotalProcessed=0;
-
-
 			if(_fastmode)
 			{
 				setLevelFastmode.resize(_percent_elem_loaded_for_fastMode * (double)_nelem );
 			}
 
-
-			bufferperThread.resize(_num_thread);
-			if(_writeEachLevel)
-			{
-				for(int ii=0; ii<_num_thread; ii++)
-				{
-					bufferperThread[ii].resize(NBBUFF);
-				}
-			}
 
 			_proba_collision = 1.0 -  pow(((_gamma*(double)_nelem -1 ) / (_gamma*(double)_nelem)),_nelem-1);
 
@@ -1364,9 +1103,9 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 		//	uint64_t hashl =  level_hash % _levels[i].hash_domain;
 			uint64_t hashl = fastrange64( level_hash,_levels[i].hash_domain);
 
-			if( _levels[i].bitset.atomic_test_and_set(hashl) )
+			if( _levels[i].bitset.test_and_set(hashl) )
 			{
-				_tempBitset->atomic_test_and_set(hashl);
+				_tempBitset->test_and_set(hashl);
 			}
 
 		}
@@ -1405,86 +1144,32 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 				}
 			}
 
-
-			_cptLevel = 0;
 			_hashidx = 0;
 			_idxLevelsetLevelFastmode =0;
-			_nb_living =0;
-			//create  threads
-			pthread_t *tab_threads= new pthread_t [_num_thread];
-			typedef decltype(input_range.begin()) it_type;
-			thread_args<Range, it_type> t_arg; // meme arg pour tous
-			t_arg.boophf = this;
-			t_arg.range = &input_range;
-			t_arg.it_p =  std::static_pointer_cast<void>(std::make_shared<it_type>(input_range.begin()));
-			t_arg.until_p =  std::static_pointer_cast<void>(std::make_shared<it_type>(input_range.end()));
-
-
-			t_arg.level = i;
-
 
 			if(_writeEachLevel && (i > 1))
 			{
-
-				auto data_iterator_level = file_binary<elem_t>(fname_prev);
-
-				typedef decltype(data_iterator_level.begin()) disklevel_it_type;
-
-				//data_iterator_level.begin();
-				t_arg.it_p = std::static_pointer_cast<void>(std::make_shared<disklevel_it_type>(data_iterator_level.begin()));
-				t_arg.until_p = std::static_pointer_cast<void>(std::make_shared<disklevel_it_type>(data_iterator_level.end()));
-
-				for(int ii=0;ii<_num_thread;ii++)
-					pthread_create (&tab_threads[ii], NULL,  thread_processLevel<elem_t, Hasher_t, Range, disklevel_it_type>, &t_arg); //&t_arg[ii]
-
-
-				//must join here before the block is closed and file_binary is destroyed (and closes the file)
-				for(int ii=0;ii<_num_thread;ii++)
-				{
-					pthread_join(tab_threads[ii], NULL);
-				}
-
+				pthread_processLevel(file_binary<elem_t>(fname_prev), i);
 			}
 
 			else
 			{
 				if(_fastmode && i >= (_fastModeLevel+1))
 				{
-
-					/* we'd like to do t_arg.it = data_iterator.begin() but types are different;
-					 so, casting to (void*) because of that; and we remember the type in the template */
-					typedef decltype(setLevelFastmode.begin()) fastmode_it_type;
-					t_arg.it_p =  std::static_pointer_cast<void>(std::make_shared<fastmode_it_type>(setLevelFastmode.begin()));
-					t_arg.until_p =  std::static_pointer_cast<void>(std::make_shared<fastmode_it_type>(setLevelFastmode.end()));
-
-					/* we'd like to do t_arg.it = data_iterator.begin() but types are different;
-					 so, casting to (void*) because of that; and we remember the type in the template */
-
-					for(int ii=0;ii<_num_thread;ii++)
-						pthread_create (&tab_threads[ii], NULL,  thread_processLevel<elem_t, Hasher_t, Range, fastmode_it_type>, &t_arg); //&t_arg[ii]
-
-
+					pthread_processLevel(setLevelFastmode, i);
 				}
 				else
 				{
-					for(int ii=0;ii<_num_thread;ii++)
-						pthread_create (&tab_threads[ii], NULL,  thread_processLevel<elem_t, Hasher_t, Range, decltype(input_range.begin())>, &t_arg); //&t_arg[ii]
-				}
-				//joining
-				for(int ii=0;ii<_num_thread;ii++)
-				{
-					pthread_join(tab_threads[ii], NULL);
+					pthread_processLevel(input_range,i);
 				}
 			}
 			//printf("\ngoing to level %i  : %llu elems  %.2f %%  expected : %.2f %% \n",i,_cptLevel,100.0* _cptLevel/(float)_nelem,100.0* pow(_proba_collision,i) );
 
-			//printf("\ncpt total processed %llu \n",_cptTotalProcessed);
 			if(_fastmode && i == _fastModeLevel) //shrink to actual number of elements in set
 			{
 				//printf("\nresize setLevelFastmode to %lli \n",_idxLevelsetLevelFastmode);
 				setLevelFastmode.resize(_idxLevelsetLevelFastmode);
 			}
-			delete [] tab_threads;
 
 			if(_writeEachLevel)
 			{
@@ -1513,15 +1198,10 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 		uint64_t _hash_domain;
 		uint64_t _nelem;
         std::unordered_map<elem_t,uint64_t,Hasher_t> _final_hash;
-		Progress _progressBar;
-		int _nb_living;
-		int _num_thread;
 		uint64_t _hashidx;
 		double _proba_collision;
 		uint64_t _lastbitsetrank;
 		uint64_t _idxLevelsetLevelFastmode;
-		uint64_t _cptLevel;
-		uint64_t _cptTotalProcessed;
 
 		// fast build mode , requires  that _percent_elem_loaded_for_fastMode %   elems are loaded in ram
 		float _percent_elem_loaded_for_fastMode ;
@@ -1529,16 +1209,11 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 		std::vector< elem_t > setLevelFastmode;
 	//	std::vector< elem_t > setLevelFastmode_next; // todo shrinker le set e nram a chaque niveau  ?
 
-		std::vector< std::vector< elem_t > > bufferperThread;
-
 		int _fastModeLevel;
-		bool _withprogress;
 		bool _built;
 		bool _writeEachLevel;
 		FILE * _currlevelFile;
 		int _pid;
-	public:
-		pthread_mutex_t _mutex;
 	};
 
 ////////////////////////////////////////////////////////////////
@@ -1559,12 +1234,8 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 		std::vector<elem_t> buffer;
 		buffer.resize(NBBUFF);
 
-		pthread_mutex_t * mutex =  & obw->_mutex;
-
-		pthread_mutex_lock(mutex); // from comment above: "//get starting iterator for this thread, must be protected (must not be currently used by other thread to copy elems in buff)"
         std::shared_ptr<it_type> startit = std::static_pointer_cast<it_type>(targ->it_p);
         std::shared_ptr<it_type> until_p = std::static_pointer_cast<it_type>(targ->until_p);
-		pthread_mutex_unlock(mutex);
 
 		obw->pthread_processLevel(buffer, startit, until_p, level);
 
