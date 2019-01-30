@@ -23,6 +23,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <omp.h>
+
 
 #include "blight.h"
 
@@ -35,6 +37,8 @@ using namespace chrono;
 
 
 int main(int argc, char ** argv){
+	omp_set_nested(1);
+
 	char ch;
 	string input,query,fof;
 	uint k(0);
@@ -118,44 +122,86 @@ int main(int argc, char ** argv){
 		//NOT VERY SMART I KNOW...
 
 		// FOR EACH LINE OF EACH INDEXED FILE
-		for(uint i_file(0);i_file<file_names.size();++i_file){
+		uint i_file;
+		#pragma omp parallel for num_threads(file_names.size())
+		for(i_file=0;i_file<file_names.size();++i_file){
 			ifstream in(file_names[i_file]);
-			string line;
-			vector<int64_t> kmer_ids;
-			while(not in.eof()){
-				getline(in,line);
-				// I GOT THE IDENTIFIER OF EACH KMER
-				kmer_ids=ksl.query_sequence_hash(line);
-				for(uint64_t i(0);i<kmer_ids.size();++i){
-					//I COLOR THEM
-					color_me_amaze[kmer_ids[i]*color_number+i_file]=true;
+			#pragma omp parallel num_threads(10)
+			{
+				vector<string> lines;
+				string line;
+				vector<int64_t> kmer_ids;
+				while(not in.eof()){
+					#pragma omp critical(i_file)
+					{
+						for(uint i(0);i<100;++i){
+							getline(in,line);
+							lines.push_back(line);
+						}
+					}
+					for(uint i(0);i<100;++i){
+						line=lines[i];
+						if(line[0]=='A' or line[0]=='C' or line[0]=='G' or line[0]=='T'){
+							// I GOT THE IDENTIFIER OF EACH KMER
+							kmer_ids=ksl.query_sequence_hash(line);
+							for(uint64_t i(0);i<kmer_ids.size();++i){
+								//I COLOR THEM
+								if(kmer_ids[i]>=0){
+									#pragma omp critical(color)
+									{
+										color_me_amaze[kmer_ids[i]*color_number+i_file]=true;
+									}
+								}
+							}
+						}
+					}
 				}
 			}
 		}
 
 		ifstream query_file(query);
-
-		string line;
-		vector<int64_t> kmer_ids;
-		// FOR EACH LINE OF THE QUERY FILE
-		while(not query_file.eof()){
-			getline(query_file,line);
-			// I GOT THEIR INDICES
-			kmer_ids=ksl.query_sequence_hash(line);
-			for(uint64_t i(0);i<kmer_ids.size();++i){
-				// KMERS WITH NEGATIVE INDICE ARE ALIEN/STRANGER/COLORBLIND KMERS
-				if(kmer_ids[i]<0){
-					cout<<"I WAS NOT INDEXED\n";
-					continue;
-				}
-				// I KNOW THE COLORS OF THIS KMER !... I'M BLUE DABEDI DABEDA...
-				cout<<"I HAVE BEEN SEEN IN THE FILE ";
-				for(uint64_t i_color(0);i_color<color_number;++i_color){
-					if(color_me_amaze[kmer_ids[i]*color_number+i_color]){
-						cout<<i_color<<" ";
+		//~ #pragma omp parallel ordered
+		{
+			string qline;
+			vector<string> lines;
+			//~ vector<int64_t> kmer_ids;
+			// FOR EACH LINE OF THE QUERY FILE
+			while(not query_file.eof()){
+				//~ #pragma omp critical(i_file)
+				{
+					for(uint i(0);i<1000;++i){
+						getline(query_file,qline);
+						if(qline.empty()){break;}
+						lines.push_back(qline);
 					}
 				}
-				cout<<"\n";
+				uint i;
+				#pragma omp for ordered
+				for(i=(0);i<lines.size();++i){
+					string toWrite;
+					string line=lines[i];
+					if(line[0]=='A' or line[0]=='C' or line[0]=='G' or line[0]=='T'){
+						// I GOT THEIR INDICES
+						vector<int64_t> kmer_ids=ksl.query_sequence_hash(line);
+						for(uint64_t i(0);i<kmer_ids.size();++i){
+							// KMERS WITH NEGATIVE INDICE ARE ALIEN/STRANGER/COLORBLIND KMERS
+							if(kmer_ids[i]>=0){
+
+							// I KNOW THE COLORS OF THIS KMER !... I'M BLUE DABEDI DABEDA...
+							//~ cout<<"I HAVE BEEN SEEN IN THE FILE ";
+								for(uint64_t i_color(0);i_color<color_number;++i_color){
+									if(color_me_amaze[kmer_ids[i]*color_number+i_color]){
+										//~ cout<<i_color<<" ";
+										toWrite+=to_string(i_color)+"	";
+									}
+								}
+							}
+							toWrite+="\n";
+						}
+					}
+					#pragma omp ordered
+					cout<<toWrite;
+				}
 			}
 		}
 	}
