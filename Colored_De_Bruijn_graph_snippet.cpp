@@ -159,6 +159,7 @@ int main(int argc, char ** argv){
 							}
 						}
 					}
+					lines={};
 				}
 			}
 		}
@@ -212,6 +213,7 @@ int main(int argc, char ** argv){
 					#pragma omp ordered
 					out<<toWrite;
 				}
+				lines={};
 			}
 		}
 
