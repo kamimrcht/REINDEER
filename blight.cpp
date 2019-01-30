@@ -815,10 +815,10 @@ void kmer_Set_Light::str2bool(const string& str,uint mini){
 void kmer_Set_Light::read_super_buckets(const string& input_file){
 	uint64_t total_size(0);
 	//~ cout<<"go"<<endl;
-	#pragma omp parallel num_threads(1)
+	//#pragma omp parallel num_threads(1)
 	{
 		string useless,line;
-		#pragma omp for
+		//#pragma omp for
 		for(uint SBC=0;SBC<number_superbuckets.size();++SBC){
 			//~ cout<<"go"<<endl;
 			uint BC(SBC*bucket_per_superBuckets.size());
@@ -831,9 +831,9 @@ void kmer_Set_Light::read_super_buckets(const string& input_file){
 					useless=useless.substr(1);
 					uint minimizer(stoi(useless));
 					str2bool(line,minimizer);
-					#pragma omp atomic
+					//#pragma omp atomic
 					number_kmer+=line.size()-k+1;
-					#pragma omp atomic
+					//#pragma omp atomic
 					number_super_kmer++;
 				}
 			}
@@ -1089,7 +1089,7 @@ void kmer_Set_Light::fill_positions(uint begin_BC,uint end_BC){
 						if((j+k)<all_buckets[BC].nuc_minimizer){
 							seq=(get_kmer(BC,j+1)),rcSeq=(rcb(seq,k)),canon=(min_k(seq,rcSeq));
 							//~ cout<<"go6"<<endl;
-							#pragma omp critical(dataupdate)
+							//#pragma omp critical(dataupdate)
 							{
 								int_to_bool(n_bits_to_encode,(j+1)/positions_to_check,all_mphf[BC/number_bucket_per_mphf].kmer_MPHF->lookup(canon),all_mphf[BC/number_bucket_per_mphf].start);
 							}
@@ -1103,7 +1103,7 @@ void kmer_Set_Light::fill_positions(uint begin_BC,uint end_BC){
 						//~ cout<<"7.2"<<endl;
 						//~ cout<<BC<<endl;
 						//~ cout<<all_mphf.size()<<endl;
-						#pragma omp critical(dataupdate)
+						//#pragma omp critical(dataupdate)
 						{
 							int_to_bool(n_bits_to_encode,(j+1)/positions_to_check,all_mphf[BC/number_bucket_per_mphf].kmer_MPHF->lookup(canon),all_mphf[BC/number_bucket_per_mphf].start);
 						}
