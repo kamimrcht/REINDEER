@@ -105,6 +105,10 @@ int main(int argc, char ** argv){
 		// IF YOU DONT KNOW WHAT TO DO THIS SHOULD WORKS GOOD -> kmer_Set_Light ksl(KMERSIZE,9,9,3,CORE_NUMBER,6,0);
 		ksl.construct_index(input);
 
+
+		high_resolution_clock::time_point t1 = high_resolution_clock::now();
+
+
 		// I PARSE THE FILE OF FILE
 		ifstream fofin(fof);
 		vector <string> file_names;
@@ -159,6 +163,12 @@ int main(int argc, char ** argv){
 			}
 		}
 
+		high_resolution_clock::time_point t12 = high_resolution_clock::now();
+		duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
+		cout<<"Coloration done: "<< time_span12.count() << " seconds."<<endl;
+
+		ofstream out("outcolor");
+
 		ifstream query_file(query);
 		//~ #pragma omp parallel ordered
 		{
@@ -200,10 +210,14 @@ int main(int argc, char ** argv){
 						}
 					}
 					#pragma omp ordered
-					cout<<toWrite;
+					out<<toWrite;
 				}
 			}
 		}
+
+		high_resolution_clock::time_point t13 = high_resolution_clock::now();
+		duration<double> time_span13 = duration_cast<duration<double>>(t13 - t12);
+		cout<<"Query done: "<< time_span13.count() << " seconds."<<endl;
 	}
 	return 0;
 }
