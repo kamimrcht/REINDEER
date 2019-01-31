@@ -101,7 +101,7 @@ int main(int argc, char ** argv){
 		kmer_Set_Light ksl(k,m1,m2,m3,c,bit,ex);
 		ksl.construct_index(input);
 
-		ksl.file_query(query,false);
+		ksl.file_query(query);
 
 		//~ ksl.file_query(query,true);
 		//~ high_resolution_clock::time_point t4 = high_resolution_clock::now();
