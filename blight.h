@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include <unordered_map>
 #include <pthread.h>
+#include "common.h"
 #include "bbhash.h"
 
 
@@ -38,20 +39,20 @@ typedef boomphf::mphf<  kmer, hasher_t  > MPHF;
 
 
 struct bucket_minimizer{
-	//~ uint32_t abundance_minimizer;
-	uint32_t nuc_minimizer;
 	uint64_t current_pos;
 	uint64_t start;
+	//~ uint32_t abundance_minimizer;
+	uint32_t nuc_minimizer;
 };
 
 
 
 struct info_mphf{
-	bool empty;
 	uint64_t mphf_size;
 	uint64_t start;
-	uint8_t bit_to_encode;
 	MPHF* kmer_MPHF;
+	uint8_t bit_to_encode;
+	bool empty;
 };
 
 
@@ -68,7 +69,9 @@ struct extended_minimizer{
 // Represents the cardinality of a pow2 sized set. Allows div/mod arithmetic operations on indexes.
 template<typename T>
 struct Pow2 {
-	Pow2(uint_fast8_t bits) : _bits(bits) {}
+	Pow2(uint_fast8_t bits) : _bits(bits) {
+		assume(bits <= CHAR_BIT*sizeof(T), "Pow2(%u > %u)", unsigned(bits), unsigned(CHAR_BIT*sizeof(T)));
+	}
 
 	uint_fast8_t bits() const { return _bits; }
 	T size() const { return T(1) << _bits; }
@@ -189,7 +192,7 @@ public:
 	int32_t query_get_pos_unitig(const kmer canon,uint minimizer);
 	uint32_t get_anchors(const string& query,uint& minimizer, vector<kmer>& kmerV,uint pos);
 	uint multiple_query_serial(const uint minimizerV, const vector<kmer>& kmerV);
-	void file_query(const string& query_file,bool bi);
+	void file_query(const string& query_file);
 	uint32_t bool_to_int(uint n_bits_to_encode,uint64_t pos,uint64_t start);
 	uint multiple_query_optimized(uint minimizerV, const vector<kmer>& kmerV);
 	void int_to_bool(uint n_bits_to_encode,uint64_t X, uint64_t pos,uint64_t start);
