@@ -222,7 +222,7 @@ private:
     static const std::size_t default_buff_size = (std::size_t)1 << 20;
 }; // class istreambuf
 
-class ostreambuf
+class ostreambuf final
     : public std::streambuf
 {
 public:
@@ -318,7 +318,7 @@ private:
     static const std::size_t default_buff_size = (std::size_t)1 << 20;
 }; // class ostreambuf
 
-class istream
+class istream final
     : public std::istream
 {
 public:
@@ -383,7 +383,7 @@ public:
     {
         exceptions(std::ios_base::badbit);
     }
-    virtual ~ifstream()
+    virtual ~ifstream() final
     {
         if (rdbuf()) delete rdbuf();
     }
