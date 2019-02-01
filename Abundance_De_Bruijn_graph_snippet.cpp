@@ -122,11 +122,16 @@ int main(int argc, char ** argv){
 			vector<int64_t> kmer_ids;
 			while(not in.eof()){
 				getline(in,line);
-				// I GOT THE IDENTIFIER OF EACH KMER
-				kmer_ids=ksl.query_sequence_hash(line);
-				for(uint64_t i(0);i<kmer_ids.size();++i){
-					//I COLOR THEM
-					abundance[kmer_ids[i]]++;
+				if(line[0]=='A' or line[0]=='C' or line[0]=='G' or line[0]=='T'){
+					// I GOT THE IDENTIFIER OF EACH KMER
+					kmer_ids=ksl.query_sequence_hash(line);
+					for(uint64_t i(0);i<kmer_ids.size();++i){
+						//I COLOR THEM
+						if(kmer_ids[i]<0){
+							continue;
+						}
+						abundance[kmer_ids[i]]++;
+					}
 				}
 			}
 		}
@@ -134,20 +139,27 @@ int main(int argc, char ** argv){
 		ifstream query_file(query);
 
 		string line;
+		uint64_t weight;
+
 		vector<int64_t> kmer_ids;
 		// FOR EACH LINE OF THE QUERY FILE
 		while(not query_file.eof()){
 			getline(query_file,line);
-			// I GOT THEIR INDICES
-			kmer_ids=ksl.query_sequence_hash(line);
-			for(uint64_t i(0);i<kmer_ids.size();++i){
-				// KMERS WITH NEGATIVE INDICE ARE ALIEN/STRANGER/COLORBLIND KMERS
-				if(kmer_ids[i]<0){
-					cout<<"I WAS NOT INDEXED\n";
-					continue;
+			if(line[0]=='A' or line[0]=='C' or line[0]=='G' or line[0]=='T'){
+				// I GOT THEIR INDICES
+				kmer_ids=ksl.query_sequence_hash(line);
+				weight=0;
+				for(uint64_t i(0);i<kmer_ids.size();++i){
+					// KMERS WITH NEGATIVE INDICE ARE ALIEN/STRANGER/COLORBLIND KMERS
+					if(kmer_ids[i]<0){
+						//~ cout<<"I WAS NOT INDEXED\n";
+						continue;
+					}
+					// I KNOW THE COLORS OF THIS KMER !... I'M BLUE DABEDI DABEDA...
+					//~ cout<<"I HAVE BEEN SEEN "<<(uint)abundance[kmer_ids[i]]<<" TIMES\n";
+					weight+=abundance[kmer_ids[i]];
 				}
-				// I KNOW THE COLORS OF THIS KMER !... I'M BLUE DABEDI DABEDA...
-				cout<<"I HAVE BEEN SEEN "<<(uint)abundance[kmer_ids[i]]<<" TIMES\n";
+				cout<<weight<<"\n";
 			}
 		}
 	}
