@@ -118,7 +118,7 @@ public:
 	//~ uint hell_bucket;
 	double bit_per_kmer = 0;
 	uint largest_bucket_nuc_all = 0;
-	const uint gammaFactor=3;
+	const uint gammaFactor=2;
 	const bool light_mode=true;
 
 	kmer_Set_Light(uint k_val,uint m1_val, uint m2_val, uint m3_val, uint coreNumber_val, uint bit_to_save,uint ex)

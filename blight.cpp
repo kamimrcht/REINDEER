@@ -36,6 +36,7 @@ kmer nuc2int(char c){
 		case 'C': return 1;
 		case 'G': return 2;
 		case 'T': return 3;
+		case 'N': return 0;
 	}
 	cout<<"bug"<<c<<"!"<<endl;
 	exit(0);
@@ -56,6 +57,7 @@ kmer nuc2intrc(char c){
 		case 'C': return 2;
 		case 'G': return 1;
 		case 'T': return 0;
+		case 'N': return 0;
 	}
 	cout<<"bug"<<c<<"!"<<endl;
 	exit(0);
@@ -128,6 +130,7 @@ kmer str2num(const string& str){
 			case 'C':res+=1;break;
 			case 'G':res+=2;break;
 			case 'T':res+=3;break;
+			case 'N':res+=0;break;
 			default:cout<<"bug"<<"!"<<endl;
 	exit(0);
 		}
