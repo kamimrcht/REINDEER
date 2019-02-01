@@ -19,23 +19,6 @@
 
 namespace boomphf {
 
-
-	inline u_int64_t printPt( pthread_t pt) {
-	  unsigned char *ptc = (unsigned char*)(void*)(&pt);
-		u_int64_t res =0;
-	  for (size_t i=0; i<sizeof(pt); i++) {
-		  res+= (unsigned)(ptc[i]);
-	  }
-		return res;
-	}
-
-
-////////////////////////////////////////////////////////////////
-#pragma mark -
-#pragma mark utils
-////////////////////////////////////////////////////////////////
-
-
 	// iterator from disk file of u_int64_t with buffered read,   todo template
 	template <typename basetype>
 	class bfile_iterator : public std::iterator<std::forward_iterator_tag, basetype>{
@@ -155,7 +138,7 @@ namespace boomphf {
 
 		bfile_iterator<type_elem> end() const {return bfile_iterator<type_elem>(); }
 
-		size_t        size () const  {  return 0;  }//todo ?
+		size_t		size () const  {  return 0;  }//todo ?
 
 	private:
 		FILE * _is;
@@ -166,7 +149,6 @@ namespace boomphf {
 #pragma mark hasher
 ////////////////////////////////////////////////////////////////
 
-	typedef std::array<uint64_t,10> hash_set_t;
 	typedef std::array<uint64_t,2> hash_pair_t;
 
 /* alternative hash functor based on xorshift, taking a single hash functor as input.
@@ -174,8 +156,8 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 (rayan)
 */
 
-    // wrapper around HashFunctors to return only one value instead of 7
-    template <typename Item> class SingleHashFunctor
+	// wrapper around HashFunctors to return only one value instead of 7
+	template <typename Item> class SingleHashFunctor
 	{
 	public:
 		uint64_t operator ()  (const Item& key, uint64_t seed=0xAAAAAAAA55555555ULL) const  {  return hash64(key, seed);  }
@@ -208,36 +190,36 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 
 
 
-    template <typename Item, class SingleHasher_t> class XorshiftHashFunctors
-    {
-        /*  Xorshift128*
-            Written in 2014 by Sebastiano Vigna (vigna@acm.org)
+	template <typename Item, class SingleHasher_t> class XorshiftHashFunctors
+	{
+		/*  Xorshift128*
+			Written in 2014 by Sebastiano Vigna (vigna@acm.org)
 
-            To the extent possible under law, the author has dedicated all copyright
-            and related and neighboring rights to this software to the public domain
-            worldwide. This software is distributed without any warranty.
+			To the extent possible under law, the author has dedicated all copyright
+			and related and neighboring rights to this software to the public domain
+			worldwide. This software is distributed without any warranty.
 
-            See <http://creativecommons.org/publicdomain/zero/1.0/>. */
-        /* This is the fastest generator passing BigCrush without
-           systematic failures, but due to the relatively short period it is
-           acceptable only for applications with a mild amount of parallelism;
-           otherwise, use a xorshift1024* generator.
+			See <http://creativecommons.org/publicdomain/zero/1.0/>. */
+		/* This is the fastest generator passing BigCrush without
+		   systematic failures, but due to the relatively short period it is
+		   acceptable only for applications with a mild amount of parallelism;
+		   otherwise, use a xorshift1024* generator.
 
-           The state must be seeded so that it is not everywhere zero. If you have
-           a nonzero 64-bit seed, we suggest to pass it twice through
-           MurmurHash3's avalanching function. */
+		   The state must be seeded so that it is not everywhere zero. If you have
+		   a nonzero 64-bit seed, we suggest to pass it twice through
+		   MurmurHash3's avalanching function. */
 
-      //  uint64_t s[ 2 ];
+	  //  uint64_t s[ 2 ];
 
-        uint64_t next(uint64_t * s) {
-            uint64_t s1 = s[ 0 ];
-            const uint64_t s0 = s[ 1 ];
-            s[ 0 ] = s0;
-            s1 ^= s1 << 23; // a
-            return ( s[ 1 ] = ( s1 ^ s0 ^ ( s1 >> 17 ) ^ ( s0 >> 26 ) ) ) + s0; // b, c
-        }
+		uint64_t next(uint64_t * s) {
+			uint64_t s1 = s[ 0 ];
+			const uint64_t s0 = s[ 1 ];
+			s[ 0 ] = s0;
+			s1 ^= s1 << 23; // a
+			return ( s[ 1 ] = ( s1 ^ s0 ^ ( s1 >> 17 ) ^ ( s0 >> 26 ) ) ) + s0; // b, c
+		}
 
-        public:
+		public:
 
 
 		uint64_t h0(hash_pair_t  & s, const Item& key )
@@ -254,7 +236,7 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 
 
 		//return next hash an update state s
-		uint64_t next(hash_pair_t  & s ) {
+		uint64_t next(hash_pair_t & s ) {
 			uint64_t s1 = s[ 0 ];
 			const uint64_t s0 = s[ 1 ];
 			s[ 0 ] = s0;
@@ -262,35 +244,21 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 			return ( s[ 1 ] = ( s1 ^ s0 ^ ( s1 >> 17 ) ^ ( s0 >> 26 ) ) ) + s0; // b, c
 		}
 
-        //this one returns all the  hashes
-        hash_set_t operator ()  (const Item& key)
-        {
-			uint64_t s[ 2 ];
+		uint64_t hot_fun iter(const Item& key, hash_pair_t& s, size_t i) {
+			uint64_t h;
+			if(i == 0)
+				h = h0(s, key);
+			else if(i == 1)
+				h = h1(s, key);
+			else
+				h = next(s);
+			return h;
+		}
 
-            hash_set_t   hset;
+	private:
+		SingleHasher_t singleHasher;
+	};
 
-            hset[0] =  singleHasher (key, 0xAAAAAAAA55555555ULL);
-            hset[1] =  singleHasher (key, 0x33333333CCCCCCCCULL);
-
-            s[0] = hset[0];
-            s[1] = hset[1];
-
-            for(size_t ii=2;ii< 10 /* it's much better have a constant here, for inlining; this loop is super performance critical*/; ii++)
-            {
-                hset[ii] = next(s);
-            }
-
-            return hset;
-        }
-    private:
-        SingleHasher_t singleHasher;
-    };
-
-
-////////////////////////////////////////////////////////////////
-#pragma mark -
-#pragma mark iterators
-////////////////////////////////////////////////////////////////
 
 	template <typename Iterator>
 	struct iter_range
@@ -315,10 +283,6 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 		return iter_range<Iterator>(begin, end);
 	}
 
-////////////////////////////////////////////////////////////////
-#pragma mark -
-#pragma mark BitVector
-////////////////////////////////////////////////////////////////
 
 	class bitVector {
 
@@ -329,9 +293,10 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 			_bitArray = nullptr;
 		}
 
-		bitVector(uint64_t n) : _nwords(n >> 6)
+		bitVector(uint64_t n)
 		{
 			n = (n + 63) / 64;
+			_nwords = n;
 			_bitArray =  (uint64_t *) calloc (_nwords,sizeof(uint64_t));
 		}
 
@@ -390,8 +355,11 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 
 		void resize(uint64_t newsize)
 		{
-			_nwords  = (newsize + 63) / 64;
-			_bitArray = (uint64_t *) realloc(_bitArray,_nwords*sizeof(uint64_t));
+			uint64_t new_nwords  = (newsize + 63) / 64;
+			if(new_nwords > _nwords) {
+				_bitArray = (uint64_t *) realloc(_bitArray,_nwords*sizeof(uint64_t));
+			}
+			_nwords = new_nwords;
 		}
 
 		size_t size() const
@@ -497,12 +465,15 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 
 		//return value of  last rank
 		// add offset to  all ranks  computed
-		uint64_t build_ranks(uint64_t offset =0)
+		uint64_t build_ranks(uint64_t upto, uint64_t offset =0)
 		{
-			_ranks.reserve(2+ size()/_nb_bits_per_rank_sample);
+			assume(upto <= size(), "build_ranks: upto=%llu > size()=%llu", upto, size());
+			const uint64_t max_idx = (upto + 63)/64;
+			assume(max_idx <= _nwords, "build_ranks: max_idx=%llu > _nwords=%llu", max_idx, _nwords);
+			_ranks.reserve(2+ upto/_nb_bits_per_rank_sample);
 
 			uint64_t curent_rank = offset;
-			for (size_t ii = 0; ii < _nwords; ii++) {
+			for (size_t ii = 0; ii < max_idx; ii++) {
 				if (((ii*64)  % _nb_bits_per_rank_sample) == 0) {
 					_ranks.push_back(curent_rank);
 				}
@@ -562,18 +533,26 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 		std::vector<uint64_t> _ranks;
 	};
 
-////////////////////////////////////////////////////////////////
-#pragma mark -
-#pragma mark level
-////////////////////////////////////////////////////////////////
 
 
 
-	class level{
-	public:
-		level(){ }
+	/* Hasher_t returns a single hash when operator()(elem_t key) is called.
+	   if used with XorshiftHashFunctors, it must have the following operator: operator()(elem_t key, uint64_t seed) */
+	template <typename elem_t, typename Hasher_t, unsigned _nb_levels=16>
+	class mphf {
+		/* this mechanisms gets P hashes out of Hasher_t */
+		typedef XorshiftHashFunctors<elem_t,Hasher_t> MultiHasher_t ;
 
-		~level() {
+		struct buildState {
+			bitVector accommodated;
+			bitVector collisions_map;
+		};
+
+
+	struct levelIndexer {
+		levelIndexer(){ }
+
+		~levelIndexer() {
 		}
 
 		static uint64_t fastrange64(uint64_t word, uint64_t p) {
@@ -591,163 +570,196 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 			return hash2levelidx(hash_raw) + idx_begin;
 		}
 
+		uint64_t endidx() const {
+			return idx_begin + hash_domain;
+		}
+
 		uint64_t idx_begin;
 		uint64_t hash_domain;
 	};
-
-
-////////////////////////////////////////////////////////////////
-#pragma mark -
-#pragma mark mphf
-////////////////////////////////////////////////////////////////
-
-
-    /* Hasher_t returns a single hash when operator()(elem_t key) is called.
-       if used with XorshiftHashFunctors, it must have the following operator: operator()(elem_t key, uint64_t seed) */
-    template <typename elem_t, typename Hasher_t, unsigned _nb_levels=16>
-	class mphf {
-
-        /* this mechanisms gets P hashes out of Hasher_t */
-        typedef XorshiftHashFunctors<elem_t,Hasher_t> MultiHasher_t ;
-       // typedef HashFunctors<elem_t> MultiHasher_t; // original code (but only works for int64 keys)  (seems to be as fast as the current xorshift)
-		//typedef IndepHashFunctors<elem_t,Hasher_t> MultiHasher_t; //faster than xorshift
-
-
-		struct buildState {
-			std::vector< elem_t > setLevelFastmode;
-			bitVector collisions_map;
-			unsigned fastModeLevel;
-			bool fast_mode;
-		};
 
 	public:
 		mphf()
 		{}
 
-
-		~mphf()
-		{
-
-		}
-
-
-		// allow perc_elem_loaded  elements to be loaded in ram for faster construction (default 3%), set to 0 to desactivate
 		template <typename Range>
-		mphf( size_t n, Range const& input_range, double gamma = 2.0, float perc_elem_loaded = 0.99) :
+		mphf( size_t n, Range const& input_range, double gamma = 2.0) :
 		_gamma(gamma), _nelem(n)
 		{
-			if(n ==0) return;
+			if(n == 0) return;
 
-			buildState state = setup(perc_elem_loaded);
+			bitset = bitVector(configureLevels());
 
-			for(unsigned ii = 0; ii< _nb_levels; ii++)
-			{
-				processLevel(input_range,ii, state);
+			buildState state = {
+				.accommodated = bitVector(_nelem),
+				.collisions_map = bitVector(_levels[0].hash_domain),
+			};
 
-				bitset.clearCollisions(_levels[ii].idx_begin , _levels[ii].hash_domain , state.collisions_map);
-				state.collisions_map.clear();
+			unsigned level = 0;
+			for(; ; level++) {
+				if(level < _nb_levels) {
+					if(processLevel(input_range, level, state)) {
+						continue; // Some keys collided, needs another level
+					} else {
+						break;
+					}
+				} else {
+					processFallbackLevel(input_range, state);
+					level = _nb_levels - 1;
+					break;
+				}
 			}
-
-			_lastbitsetrank = bitset.build_ranks(0) ;
-
-			//printf("used temp ram for construction : %lli MB \n",setLevelFastmode.capacity()* sizeof(elem_t) /1024ULL/1024ULL);
+			_lastbitsetrank = bitset.build_ranks(_levels[level].endidx());
 		}
 
-
-		uint64_t lookup(elem_t elem)
+		uint64_t lookup(elem_t elem) const
 		{
-
-
 			hash_pair_t bbhash;  unsigned level;
-			uint64_t level_hash = getLevel(bbhash,elem,&level);
+			uint64_t bit_idx = getLevel(elem, level, bbhash);
 
-			if( level == (_nb_levels-1))
-			{
-				auto in_final_map  = _final_hash.find (elem);
-				if ( in_final_map == _final_hash.end() )
+			if(level < _nb_levels) {
+				return bitset.rank(bit_idx);
+			} else {
+				auto in_final_map = _final_hash.find(elem);
+				if (in_final_map != _final_hash.end())
 				{
-					//elem was not in orignal set of keys
-					return ULLONG_MAX; //  means elem not in set
-				}
-				else
-				{
-					uint64_t minimal_hp = in_final_map->second + _lastbitsetrank;
-					//printf("lookup %llu  level %i   --> %llu \n",elem,level,minimal_hp);
-
-					return minimal_hp;
+					return in_final_map->second + _lastbitsetrank;
+				} else {
+					// elem was not in orignal set of keys
+					assert(false, "not in final map");
+					return ULLONG_MAX; // means elem not in set
 				}
 			}
-
-			return bitset.rank(_levels[level].hash2idx(level_hash));
+			return bitset.rank(bit_idx);
 		}
 
 		uint64_t nbKeys() const
 		{
-            return _nelem;
-        }
+			return _nelem;
+		}
 
-		uint64_t totalBitSize()
+		uint64_t totalBitSize() const
 		{
 			// unordered map takes approx 42B per elem [personal test] (42B with uint64_t key, would be larger for other type of elem)
 			return bitset.bitSize() + CHAR_BIT * (_final_hash.size()*42 + sizeof(mphf));
 		}
 
-		template <typename Range>  //typename Range,
-        inline void inner_processLevel(const Range& range, unsigned i, buildState& state)
-		{
-			uint64_t hashidx = 0;
-			uint64_t idxLevelsetLevelFastmode = 0;
+	private:
 
-			for(const elem_t& val: range)
+		//Configure the levels and return the total size of the bitVector
+		uint64_t configureLevels() {
+			double proba_collision = 1.0 -  pow(((_gamma*(double)_nelem -1 ) / (_gamma*(double)_nelem)),_nelem-1);
+
+			//double sum_geom =_gamma * ( 1.0 +  proba_collision / (1.0 - proba_collision));
+			//printf("proba collision %f  sum_geom  %f   \n",proba_collision,sum_geom);
+
+			uint64_t previous_idx =0;
+			size_t hash_domain = (size_t)  (ceil(double(_nelem) * _gamma)) ;
+			for(unsigned ii=0; ii<_nb_levels; ii++)
 			{
-				hash_pair_t bbhash;  unsigned level;
-				uint64_t level_hash;
-				getLevel(bbhash,val,&level, i);
 
-				if(level == i) //insert into lvl i
-				{
-					if(state.fast_mode && i == state.fastModeLevel)
-					{
+				_levels[ii].idx_begin = previous_idx;
 
-						uint64_t idxl2 = idxLevelsetLevelFastmode++;
-						//si depasse taille attendue pour setLevelFastmode, fall back sur slow mode mais devrait pas arriver si hash ok et proba avec nous
-						if(idxl2>= state.setLevelFastmode.size()) {
-							state.fast_mode = false;
-						} else {
-							state.setLevelFastmode[idxl2] = val; // create set for fast mode
-						}
-					}
+				// round size to nearest superior multiple of 64, makes it easier to clear a level
+				_levels[ii].hash_domain =  (( (uint64_t) (hash_domain * pow(proba_collision,ii)) + 63) / 64 ) * 64;
+				if(_levels[ii].hash_domain == 0 ) _levels[ii].hash_domain  = 64 ;
+				previous_idx += _levels[ii].hash_domain;
 
-					//insert to level i+1 : either next level of the cascade or final hash if last level reached
-					if(i == _nb_levels-1) //stop cascade here, insert into exact hash
-					{
-						// calc rank de fin  precedent level qq part, puis init hashidx avec ce rank, direct minimal, pas besoin inser ds bitset et rank
-						_final_hash[val] = hashidx++;
-					}
-					else
-					{
+// 				printf("build level %i bit array : start %12llu, size %12llu  ",ii,_levels[ii].idx_begin,_levels[ii].hash_domain );
+// 				printf(" expected elems : %.2f %% total \n",100.0*pow(proba_collision,ii));
+			}
 
-						if ( level == 0)
-							level_hash = get_hasher().h0(bbhash,val);
-						else if ( level == 1)
-							level_hash = get_hasher().h1(bbhash,val);
-						else
+			return previous_idx;
+		}
+
+		//compute level and returns bit vector position in the last level reached
+		uint64_t hot_fun getLevel(elem_t val, unsigned& level, hash_pair_t& bbhash, unsigned maxlevel = _nb_levels) const
+		{
+			uint64_t bit_idx = ULLONG_MAX;
+			assume(maxlevel <= _nb_levels, "getLevel: maxlevel=%u > _nb_levels=%u", maxlevel, _nb_levels);
+			for (level = 0; level < maxlevel ; level++ )
+			{
+				bit_idx = _levels[level].hash2idx(get_hasher().iter(val, bbhash, level));
+				if(bitset.get(bit_idx))
+					break;
+				else
+					continue;
+			}
+			return bit_idx;
+		}
+
+		template <typename Range>
+		bool flatten_fun processLevel(const Range& range, unsigned level, buildState& state) {
+			switch(level) {
+				case 0: return processLevel_(range, 0, state);
+				case 1: return processLevel_(range, 1, state);
+				default: return processLevel_(range, level, state);
+			}
+		}
+
+		template <typename Range>
+		bool processLevel_(const Range& range, unsigned level, buildState& state)
+		{
+			const levelIndexer& level_indexer = _levels[level];
+			if(level > 0)
+				state.collisions_map.clear(0, level_indexer.hash_domain);
+
+			bool did_collide = false;
+			size_t key_idx = 0;
+			for(auto it = std::begin(range) ; it != std::end(range) ; it++, key_idx++) {
+				// After level 2 we can skip keys that were found at stable positions in level 1
+				if(level >= 2 && state.accommodated.get(key_idx)) {
+					// This branch is not useless, it allows to inform the branch predictor
+					continue;
+				} else {
+					const elem_t& val = *it;
+					hash_pair_t bbhash; unsigned found_level;
+					getLevel(val, found_level, bbhash, level);
+					if(found_level < level) {
+						// Mark the key as accommodated in previous level, avoid rehasing it afterwards
+						state.accommodated.set(key_idx);
+					} else {
+						// Not found in previous levels => insert into this one
+						uint64_t level_hash = get_hasher().iter(val, bbhash, level);
+
+						// Put the key in the bit vector, checking for collisions
+						if(bitset.test_and_set(level_indexer.hash2idx(level_hash)))
 						{
-							level_hash = get_hasher().next(bbhash);
+							state.collisions_map.test_and_set(level_indexer.hash2levelidx(level_hash));
+							did_collide = true;
 						}
-						insertIntoLevel(level_hash, i, state.collisions_map); //should be safe
 					}
 				}
 			}
 
-			if(state.fast_mode && i == state.fastModeLevel) //shrink to actual number of elements in set
-			{
-				//printf("\nresize setLevelFastmode to %lli \n",_idxLevelsetLevelFastmode);
-				state.setLevelFastmode.resize(idxLevelsetLevelFastmode);
+			if(did_collide)
+				bitset.clearCollisions(level_indexer.idx_begin, level_indexer.hash_domain , state.collisions_map);
+
+			return did_collide;
+		}
+
+		template <typename Range>
+		inline void processFallbackLevel(const Range& range, buildState& state)
+		{
+			uint64_t hashidx = 0;
+			size_t key_idx = 0;
+			for(auto it = std::begin(range) ; it != std::end(range) ; it++, key_idx++) {
+				if(state.accommodated.get(key_idx)) {
+					// This branch is not useless, it allows to inform the branch predictor
+					continue;
+				} else {
+					const elem_t& val = *it;
+					hash_pair_t bbhash;  unsigned found_level;
+					getLevel(val, found_level, bbhash);
+					if(found_level >= _nb_levels) // Not in any level
+					{
+						_final_hash[val] = hashidx++;
+					}
+				}
 			}
 		}
 
-
+	public:
 		void save(std::ostream& os) const
 		{
 			os.write(reinterpret_cast<char const*>(&_gamma), sizeof(_gamma));
@@ -779,7 +791,6 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 			configureLevels();
 
 			//restore final hash
-
 			_final_hash.clear();
 			size_t final_hash_size ;
 
@@ -797,122 +808,8 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 			}
 		}
 
-
-		private :
-		// Collision probability for the first level
-		double probaCollision() {
-			return 1.0 -  pow(((_gamma*(double)_nelem -1 ) / (_gamma*(double)_nelem)),_nelem-1);
-		}
-
-		//Configure the levels and return the total size of the bitVector
-		uint64_t configureLevels() {
-			double proba_collision = probaCollision();
-
-			//double sum_geom =_gamma * ( 1.0 +  proba_collision / (1.0 - proba_collision));
-			//printf("proba collision %f  sum_geom  %f   \n",proba_collision,sum_geom);
-
-			//build levels
-			uint64_t previous_idx =0;
-			size_t hash_domain = (size_t)  (ceil(double(_nelem) * _gamma)) ;
-			for(unsigned ii=0; ii<_nb_levels; ii++)
-			{
-
-				_levels[ii].idx_begin = previous_idx;
-
-				// round size to nearest superior multiple of 64, makes it easier to clear a level
-				_levels[ii].hash_domain =  (( (uint64_t) (hash_domain * pow(proba_collision,ii)) + 63) / 64 ) * 64;
-				if(_levels[ii].hash_domain == 0 ) _levels[ii].hash_domain  = 64 ;
-				previous_idx += _levels[ii].hash_domain;
-
-// 				printf("build level %i bit array : start %12llu, size %12llu  ",ii,_levels[ii].idx_begin,_levels[ii].hash_domain );
-// 				printf(" expected elems : %.2f %% total \n",100.0*pow(proba_collision,ii));
-
-			}
-
-			return previous_idx;
-		}
-
-		buildState setup(float percent_elem_loaded_for_fastMode)
-		{
-			bitset = bitVector(configureLevels());
-			double proba_collision = probaCollision();
-			unsigned fastModeLevel = 0;
-			for(; fastModeLevel<_nb_levels ; fastModeLevel++)
-			{
-				 if((float)pow(proba_collision,fastModeLevel) < percent_elem_loaded_for_fastMode)
-				 {
-				 	break;
-				 }
-			}
-
-			return buildState {
-				.setLevelFastmode = std::vector<elem_t>(size_t(percent_elem_loaded_for_fastMode * (float)_nelem), elem_t{}),
-				.collisions_map = { _levels[0].hash_domain },
-				.fastModeLevel = fastModeLevel,
-				.fast_mode = true
-			};
-		}
-
-
-		//compute level and returns hash of last level reached
-		uint64_t getLevel(hash_pair_t & bbhash, elem_t val,unsigned * res_level, unsigned maxlevel = 100, unsigned minlevel =0)
-		//uint64_t getLevel(hash_pair_t & bbhash, elem_t val,int * res_level, int maxlevel = 100, int minlevel =0)
-		{
-			unsigned level = 0;
-			uint64_t hash_raw=0;
-
-			for (unsigned ii = 0; ii<(_nb_levels-1) &&  ii < maxlevel ; ii++ )
-			{
-
-				//calc le hash suivant
-				 if ( ii == 0)
-					hash_raw = get_hasher().h0(bbhash,val);
-				else if ( ii == 1)
-					hash_raw = get_hasher().h1(bbhash,val);
-				else
-				{
-					hash_raw = get_hasher().next(bbhash);
-				}
-
-				if( ii >= minlevel && bitset.get(_levels[ii].hash2idx(hash_raw)) )
-				{
-					break;
-				}
-
-				level++;
-			}
-
-			*res_level = level;
-			return hash_raw;
-		}
-
-
-		//insert into bitarray
-		void insertIntoLevel(uint64_t level_hash, unsigned i, bitVector& collisions_map)
-		{
-			if(bitset.test_and_set(_levels[i].hash2idx(level_hash)))
-			{
-				collisions_map.test_and_set(_levels[i].hash2levelidx(level_hash));
-			}
-		}
-
-
-		//loop to insert into level i
-		template <typename Range>
-		void processLevel(Range const& input_range, unsigned i, buildState& state)
-		{
-			if(state.fast_mode && i >= (state.fastModeLevel+1))
-			{
-				inner_processLevel(state.setLevelFastmode, i, state);
-			}
-			else
-			{
-				inner_processLevel(input_range, i, state);
-			}
-		}
-
 	private:
-		level _levels[_nb_levels];
+		levelIndexer _levels[_nb_levels];
 		std::unordered_map<elem_t,uint64_t,Hasher_t> _final_hash;
 		bitVector bitset;
 
@@ -920,7 +817,6 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 		uint64_t _nelem;
 		uint64_t _lastbitsetrank;
 
-		MultiHasher_t get_hasher() { return {}; }
+		MultiHasher_t get_hasher() const { return {}; }
 	};
 }
-
