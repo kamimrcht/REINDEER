@@ -228,6 +228,7 @@ public:
 	int64_t query_get_hash(const kmer canon,uint32_t minimizer);
 	vector<int64_t> query_sequence_hash(const string& query);
 	void construct_index(const string& input_file);
+	void report_memusage(boomphf::memreport_t& report, const std::string& prefix="blight", bool add_struct=true);
 };
 
 

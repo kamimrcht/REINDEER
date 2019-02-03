@@ -891,7 +891,11 @@ void kmer_Set_Light::read_super_buckets(const string& input_file){
 	cout<<"TOTAL Bits per kmer (without bbhash): "<<bit_per_kmer<<endl;
 	cout<<"TOTAL Bits per kmer (with bbhash): "<<bit_per_kmer+4<<endl;
 	cout<<"TOTAL Size estimated (MBytes): "<<(bit_per_kmer+4)*number_kmer/(8*1024*1024)<<endl;
-	}
+
+	boomphf::memreport_t report;
+	report_memusage(report);
+	boomphf::print_memreport(report);
+}
 
 
 
@@ -1058,8 +1062,7 @@ void kmer_Set_Light::create_mphf(uint begin_BC,uint end_BC){
 			}
 			if((BC+1)%number_bucket_per_mphf==0 and not anchors.empty()){
 				largest_MPHF=max(largest_MPHF,anchors.size());
-				auto data_iterator3 = boomphf::range(static_cast<const kmer*>(&(anchors)[0]), static_cast<const kmer*>((&(anchors)[0])+anchors.size()));
-				all_mphf[BC/number_bucket_per_mphf].kmer_MPHF= new boomphf::mphf<kmer,hasher_t>(anchors.size(),data_iterator3,gammaFactor);
+				all_mphf[BC/number_bucket_per_mphf].kmer_MPHF= new boomphf::mphf<kmer,hasher_t>(anchors.size(),anchors,gammaFactor);
 				anchors.clear();
 				largest_bucket_anchor=0;
 				largest_bucket_nuc=(0);
@@ -1489,7 +1492,20 @@ void kmer_Set_Light::file_query(const string& query_file){
 
 
 
+void kmer_Set_Light::report_memusage(boomphf::memreport_t& report, const std::string& prefix, bool add_struct) {
+	if(add_struct)
+		report[prefix+"::sizeof(struct)"] += sizeof(kmer_Set_Light);
+	report[prefix+"::Valid_kmer"] += Valid_kmer->size() / CHAR_BIT;
+	report[prefix+"::positions"] += positions.size() / CHAR_BIT;
+	report[prefix+"::bucketSeq"] += bucketSeq.size() / CHAR_BIT;
 
+	report[prefix+"::sizeof(bucket_minimizer)*minimizer_number"] += sizeof(bucket_minimizer) * minimizer_number;
+	report[prefix+"::sizeof(info_mphf)*mphf_number"] += sizeof(info_mphf) * mphf_number;
+	for(uint i(0);i<mphf_number;++i){
+		if(all_mphf[i].kmer_MPHF)
+			all_mphf[i].kmer_MPHF->report_memusage(report, prefix+"::kmer_MPHF");
+	}
+}
 
 
 

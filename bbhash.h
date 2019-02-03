@@ -9,9 +9,12 @@
 #include <iostream>
 #include <math.h>
 
+#include <memory>
+#include <algorithm>
 #include <array>
 #include <unordered_map>
 #include <vector>
+#include <string>
 #include "common.h"
 #include <sys/time.h>
 #include <string.h>
@@ -144,10 +147,6 @@ namespace boomphf {
 		FILE * _is;
 	};
 
-////////////////////////////////////////////////////////////////
-#pragma mark -
-#pragma mark hasher
-////////////////////////////////////////////////////////////////
 
 	typedef std::array<uint64_t,2> hash_pair_t;
 
@@ -155,8 +154,6 @@ namespace boomphf {
 we need this 2-functors scheme because HashFunctors won't work with unordered_map.
 (rayan)
 */
-
-	// wrapper around HashFunctors to return only one value instead of 7
 	template <typename Item> class SingleHashFunctor
 	{
 	public:
@@ -189,7 +186,6 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 	};
 
 
-
 	template <typename Item, class SingleHasher_t> class XorshiftHashFunctors
 	{
 		/*  Xorshift128*
@@ -208,8 +204,6 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 		   The state must be seeded so that it is not everywhere zero. If you have
 		   a nonzero 64-bit seed, we suggest to pass it twice through
 		   MurmurHash3's avalanching function. */
-
-	  //  uint64_t s[ 2 ];
 
 		uint64_t next(uint64_t * s) {
 			uint64_t s1 = s[ 0 ];
@@ -260,29 +254,32 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 	};
 
 
-	template <typename Iterator>
-	struct iter_range
-	{
-		iter_range(Iterator b, Iterator e)
-		: m_begin(b)
-		, m_end(e)
-		{}
+	using memreport_t = std::unordered_map<std::string, size_t>;
+	inline void print_memreport(const memreport_t& report) {
+		using pair_t = std::pair<std::string, size_t>;
+		std::vector<pair_t> vec(report.begin(), report.end());
+		std::sort(vec.begin(), vec.end());
+		size_t max_l = 0;
+		for(const pair_t& p : report) max_l = std::max(max_l, p.first.length());
+		std::cout << "--------------------------------------------------------------------------------\nMemory usage:\n";
+		uint64_t total = 0;
+		for(const pair_t& p : vec) {
+			total += p.second;
+			float size = p.second;
+			unsigned unit = 0;
+			for(; size > 1024 ; unit++, size /= 1024);
 
-		Iterator begin() const
-		{ return m_begin; }
+			std::cout << p.first;
+			for(size_t i=0 ; i < 1 + max_l - p.first.size() ; i++)
+				std::cout << " ";
+			std::cout << " : " << size<< "BKMGT"[unit] << std::endl;
+		}
 
-		Iterator end() const
-		{ return m_end; }
-
-		Iterator m_begin, m_end;
-	};
-
-	template <typename Iterator>
-	iter_range<Iterator> range(Iterator begin, Iterator end)
-	{
-		return iter_range<Iterator>(begin, end);
+		float size = total;
+		unsigned unit = 0;
+		for(; size > 1024 ; unit++, size /= 1024);
+		std::cout << "Total : " << size<< "BKMGT"[unit] << std::endl;
 	}
-
 
 	class bitVector {
 
@@ -367,7 +364,12 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 			return _nwords * sizeof(uint64_t) * CHAR_BIT;
 		}
 
-		uint64_t bitSize() const {return (_nwords*64ULL + _ranks.capacity()*64ULL );}
+		void report_memusage(memreport_t& report, const std::string& prefix="bitVector", bool add_struct=true) const {
+			if(add_struct)
+				report[prefix+"::sizeof(struct)"] += sizeof(bitVector);
+			report[prefix+"::array"] += sizeof(uint64_t) * _nwords;
+			report[prefix+"::ranks"] += sizeof(uint64_t) * _nranks;
+		}
 
 		//clear whole array
 		void clear()
@@ -524,7 +526,6 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 			is.read(reinterpret_cast<char*>(_ranks.data()), (std::streamsize)(sizeof(_ranks[0]) * _ranks.size()));
 		}
 
-
 	protected:
 		uint64_t*  _bitArray;
 		uint64_t _nwords;
@@ -604,13 +605,12 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 		}
 
 		uint64_t nbKeys() const { return _nelem; }
-		uint64_t bitvectorBitSize() const { return bitset.bitSize(); }
-		uint64_t hashmapBitSize() const {
-			return CHAR_BIT * (24*_final_hash.size() + 8*_final_hash.bucket_count());
-		}
-		uint64_t totalBitSize() const
-		{
-			return bitvectorBitSize() + hashmapBitSize() + CHAR_BIT * sizeof(mphf);
+
+		void report_memusage(memreport_t& report, const std::string& prefix="mphf", bool add_struct=true) const {
+			if(add_struct)
+				report[prefix+"::sizeof(struct)"] += sizeof(mphf);
+			report[prefix+"::fallback_map"] += 24*_final_hash.size() + 8*_final_hash.bucket_count();
+			bitset.report_memusage(report, prefix+"::bitvector", false);
 		}
 
 	private:
