@@ -285,32 +285,22 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 
 	public:
 
-		bitVector() : _nwords(0)
+		bitVector() : _nwords(0), _nranks(0)
 		{
-			_bitArray = nullptr;
 		}
 
 		bitVector(uint64_t n)
 		{
 			n = (n + 63) / 64;
 			_nwords = n;
-			_bitArray =  (uint64_t *) calloc (_nwords,sizeof(uint64_t));
+			_bitArray = std::unique_ptr<uint64_t[]>(new uint64_t[_nwords]());
 		}
 
-		~bitVector()
+		//copy constructor
+		bitVector(bitVector const &r)
 		{
-			if(_bitArray != nullptr)
-				free(_bitArray);
+		 *this = r;
 		}
-
-		 //copy constructor
-		 bitVector(bitVector const &r)
-		 {
-			 _nwords = r._nwords;
-			 _ranks = r._ranks;
-			 _bitArray = (uint64_t *) calloc (_nwords,sizeof(uint64_t));
-			 memcpy(_bitArray, r._bitArray, _nwords*sizeof(uint64_t) );
-		 }
 
 		// Copy assignment operator
 		bitVector &operator=(bitVector const &r)
@@ -318,11 +308,12 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 			if (&r != this)
 			{
 				_nwords = r._nwords;
-				_ranks = r._ranks;
-				if(_bitArray != nullptr)
-					free(_bitArray);
-				_bitArray = (uint64_t *) calloc (_nwords,sizeof(uint64_t));
-				memcpy(_bitArray, r._bitArray, _nwords*sizeof(uint64_t) );
+				_bitArray = std::unique_ptr<uint64_t[]>(new uint64_t[_nwords]);
+				memcpy(_bitArray.get(), r._bitArray.get(), _nwords*sizeof(uint64_t) );
+
+				_nranks = r._nranks;
+				_ranks = std::unique_ptr<uint64_t[]>(new uint64_t[_nranks]);
+				memcpy(_ranks.get(), r._ranks.get(), _nranks*sizeof(uint64_t) );
 			}
 			return *this;
 		}
@@ -333,12 +324,10 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 			//printf("bitVector move assignment \n");
 			if (&r != this)
 			{
-				if(_bitArray != nullptr)
-					free(_bitArray);
-
-				_nwords = std::move (r._nwords);
-				_ranks = std::move (r._ranks);
-				_bitArray = r._bitArray;
+				_nwords = r._nwords;
+				_nranks = r._nranks;
+				_ranks = std::move(r._ranks);
+				_bitArray = std::move(r._bitArray);
 				r._bitArray = nullptr;
 			}
 			return *this;
@@ -347,16 +336,6 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 		bitVector(bitVector &&r) : _bitArray ( nullptr)
 		{
 			*this = std::move(r);
-		}
-
-
-		void resize(uint64_t newsize)
-		{
-			uint64_t new_nwords  = (newsize + 63) / 64;
-			if(new_nwords > _nwords) {
-				_bitArray = (uint64_t *) realloc(_bitArray,_nwords*sizeof(uint64_t));
-			}
-			_nwords = new_nwords;
 		}
 
 		size_t size() const
@@ -374,7 +353,7 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 		//clear whole array
 		void clear()
 		{
-			memset(_bitArray,0,_nwords*sizeof(uint64_t));
+			memset(_bitArray.get(),0,_nwords*sizeof(uint64_t));
 		}
 
 		//clear collisions in interval, only works with start and size multiple of 64
@@ -390,14 +369,15 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 			}
 		}
 
-
 		//clear interval, only works with start and size multiple of 64
 		void clear(uint64_t start, size_t size)
 		{
 			assume( (start & 63) ==0, "start must be a multiple of 64");
 			assume( (size & 63) ==0, "size must be a multiple of 64");
-			memset(_bitArray + (start/64ULL),0,(size/64ULL)*sizeof(uint64_t));
+			memset(&_bitArray[start/64ULL],0,(size/64ULL)*sizeof(uint64_t));
 		}
+
+		void clear(uint64_t start=0) { clear(start, _nwords); }
 
 #ifndef NDEBUG
 		//for debug purposes
@@ -413,8 +393,8 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 			}
 			printf("\n");
 
-			printf("rank array : size %lu \n",_ranks.size());
-			for (uint64_t ii = 0; ii< _ranks.size(); ii++)
+			printf("rank array : size %lu \n",_nranks);
+			for (uint64_t ii = 0; ii< _nranks; ii++)
 			{
 				printf("%llu :  %lli,  ",ii,_ranks[ii]);
 			}
@@ -425,11 +405,8 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 		//return value at pos
 		uint64_t operator[](uint64_t pos) const
 		{
-			//unsigned char * _bitArray8 = (unsigned char *) _bitArray;
-			//return (_bitArray8[pos >> 3ULL] >> (pos & 7 ) ) & 1;
 			assume(pos < size(), "pos=%llu > size()=%llu", pos,  size());
 			return (_bitArray[pos >> 6ULL] >> (pos & 63 ) ) & 1;
-
 		}
 
 		//return old val and set to 1
@@ -457,14 +434,14 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 		void set(uint64_t pos)
 		{
 			assume(pos < size(), "pos=%llu > size()=%llu", pos,  size());
-			_bitArray [pos >> 6] |= (uint64_t(1) << (pos & 63) ) ;
+			_bitArray [pos >> 6] |= uint64_t(1) << (pos & 63) ;
 		}
 
 		//set bit pos to 0
 		void reset(uint64_t pos)
 		{
 			assume(pos < size(), "pos=%llu > size()=%llu", pos,  size());
-			_bitArray [pos >> 6] &= ~(uint64_t(1) << (pos & 63) ) ;
+			_bitArray [pos >> 6] &= ~(uint64_t(1) << (pos & 63)) ;
 		}
 
 		//return value of  last rank
@@ -474,14 +451,16 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 			assume(upto <= size(), "build_ranks: upto=%llu > size()=%llu", upto, size());
 			const uint64_t max_idx = (upto + 63)/64;
 			assume(max_idx <= _nwords, "build_ranks: max_idx=%llu > _nwords=%llu", max_idx, _nwords);
-			_ranks.reserve(2+ upto/_nb_bits_per_rank_sample);
+			_nranks = (max_idx + (_words_per_rankingblock-1))/_words_per_rankingblock;
+			_ranks = std::unique_ptr<uint64_t[]>(new uint64_t[_nranks]());
 
 			uint64_t curent_rank = offset;
-			for (size_t ii = 0; ii < max_idx; ii++) {
-				if (((ii*64)  % _nb_bits_per_rank_sample) == 0) {
-					_ranks.push_back(curent_rank);
+			for (size_t ii = 0, ridx = 0; ii < max_idx; ii++) {
+				if (ii % _words_per_rankingblock == 0) {
+					_ranks[ridx++] = curent_rank;
 				}
 				curent_rank += __builtin_popcountll(_bitArray[ii]);
+				assert(ridx <=  _nranks, "%llu > %llu", ridx, _nranks);
 			}
 
 			return curent_rank;
@@ -492,48 +471,43 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 			assume(pos < size(), "pos=%llu > size()=%llu", pos,  size());
 			uint64_t word_idx = pos / 64ULL;
 			uint64_t word_offset = pos % 64;
-			uint64_t block = pos / _nb_bits_per_rank_sample;
+			uint64_t block = word_idx / _words_per_rankingblock;
 			uint64_t r = _ranks[block];
-			for (uint64_t w = block * _nb_bits_per_rank_sample / 64; w < word_idx; ++w) {
+			for (uint64_t w = block * _words_per_rankingblock; w < word_idx; ++w) {
 				r += __builtin_popcountll( _bitArray[w] );
 			}
 			uint64_t mask = (uint64_t(1) << word_offset ) - 1;
 			r += __builtin_popcountll( _bitArray[word_idx] & mask);
-
 			return r;
 		}
-
-
 
 		void save(std::ostream& os) const
 		{
 			os.write(reinterpret_cast<char const*>(&_nwords), sizeof(_nwords));
-			os.write(reinterpret_cast<char const*>(_bitArray), (std::streamsize)(sizeof(uint64_t) * _nwords));
-			size_t sizer = _ranks.size();
-			os.write(reinterpret_cast<char const*>(&sizer),  sizeof(size_t));
-			os.write(reinterpret_cast<char const*>(_ranks.data()), (std::streamsize)(sizeof(_ranks[0]) * _ranks.size()));
+			os.write(reinterpret_cast<char const*>(_bitArray.get()), (std::streamsize)(sizeof(uint64_t) * _nwords));
+			os.write(reinterpret_cast<char const*>(&_nranks),  sizeof(size_t));
+			os.write(reinterpret_cast<char const*>(_ranks.get()), (std::streamsize)(sizeof(_ranks[0]) * _nranks));
 		}
 
 		void load(std::istream& is)
 		{
 			is.read(reinterpret_cast<char*>(&_nwords), sizeof(_nwords));
-			this->resize(_nwords << 6);
-			is.read(reinterpret_cast<char *>(_bitArray), (std::streamsize)(sizeof(uint64_t) * _nwords));
+			_bitArray = std::unique_ptr<uint64_t[]>(new uint64_t[_nwords]);
+			is.read(reinterpret_cast<char *>(_bitArray.get()), (std::streamsize)(sizeof(uint64_t) * _nwords));
 
-			size_t sizer;
-			is.read(reinterpret_cast<char *>(&sizer),  sizeof(size_t));
-			_ranks.resize(sizer);
-			is.read(reinterpret_cast<char*>(_ranks.data()), (std::streamsize)(sizeof(_ranks[0]) * _ranks.size()));
+			is.read(reinterpret_cast<char *>(&_nranks),  sizeof(size_t));
+			_ranks = std::unique_ptr<uint64_t[]>(new uint64_t[_nranks]);
+			is.read(reinterpret_cast<char*>(_ranks.get()), (std::streamsize)(sizeof(_ranks[0]) * _nranks));
 		}
 
 	protected:
-		uint64_t*  _bitArray;
+		std::unique_ptr<uint64_t[]>  _bitArray;
 		uint64_t _nwords;
 
-		 // epsilon =  64 / _nb_bits_per_rank_sample   bits
-		// additional size for rank is epsilon * size()
-		static const uint64_t _nb_bits_per_rank_sample = 512; //512 seems ok
-		std::vector<uint64_t> _ranks;
+		static const uint64_t _words_per_rankingblock = 16; // Have to popcount at most two cache lines
+		//FIXME: ...if 8 words boundaries are aligned on cache lines, can we do something about that ?
+		std::unique_ptr<uint64_t[]> _ranks;
+		uint64_t _nranks;
 	};
 
 
