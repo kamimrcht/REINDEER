@@ -203,7 +203,6 @@ public:
 	uint32_t minimizer_graph(kmer seq);
 	uint32_t minimizer_extended(kmer seq);
 	pair<uint32_t,uint32_t> minimizer_and_more(kmer seq, uint& prefix_fragile, uint& suffix_fragile);
-	kmer get_int_in_kmer(kmer seq,uint64_t pos,uint number_nuc);
 	bool single_query(const uint minimizer, kmer kastor);
 	bool multiple_minimizer_query_bool(const uint minimizer,  kmer kastor,uint prefix_length,uint suffix_length);
 	int64_t multiple_minimizer_query_hash(const uint minimizer,  kmer kastor,uint prefix_length,uint suffix_length);
