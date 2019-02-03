@@ -840,17 +840,18 @@ void kmer_Set_Light::read_super_buckets(const string& input_file){
 	uint64_t total_size(0);
 	//~ cout<<"go"<<endl;
 	//#pragma omp parallel num_threads(1)
+	Valid_kmer=new vector<bool>[bucket_per_superBuckets.value()]();
 	{
 		string useless,line;
 		//#pragma omp for
 		for(uint SBC=0;SBC<number_superbuckets.value();++SBC){
 			//~ cout<<"go"<<endl;
 			uint BC(SBC*bucket_per_superBuckets);
-			auto in=new zstr::ifstream((input_file+to_string(SBC)));
-			while(not in->eof() and in-> good()){
+			zstr::ifstream in((input_file+to_string(SBC)));
+			while(not in.eof() and in.good()){
 				useless="";
-				getline(*in,useless);
-				getline(*in,line);
+				getline(in,useless);
+				getline(in,line);
 				if(not useless.empty()){
 					useless=useless.substr(1);
 					uint minimizer(stoi(useless));
@@ -861,7 +862,6 @@ void kmer_Set_Light::read_super_buckets(const string& input_file){
 					number_super_kmer++;
 				}
 			}
-			delete in;
 			remove((input_file+to_string(SBC)).c_str());
 			//~ cout<<"go1"<<endl;
 			create_mphf(BC,BC+bucket_per_superBuckets);
@@ -872,6 +872,7 @@ void kmer_Set_Light::read_super_buckets(const string& input_file){
 			cout<<"-"<<flush;
 		}
 	}
+	delete[] Valid_kmer;
 	cout<<endl;
 	cout<<"----------------------INDEX RECAP----------------------------"<<endl;
 	cout<<"Kmer in graph: "<<intToString(number_kmer)<<endl;
@@ -1496,7 +1497,6 @@ void kmer_Set_Light::file_query(const string& query_file){
 void kmer_Set_Light::report_memusage(boomphf::memreport_t& report, const std::string& prefix, bool add_struct) {
 	if(add_struct)
 		report[prefix+"::sizeof(struct)"] += sizeof(kmer_Set_Light);
-	report[prefix+"::Valid_kmer"] += Valid_kmer->size() / CHAR_BIT;
 	report[prefix+"::positions"] += positions.size() / CHAR_BIT;
 	report[prefix+"::bucketSeq"] += bucketSeq.size() / CHAR_BIT;
 
@@ -1506,6 +1506,10 @@ void kmer_Set_Light::report_memusage(boomphf::memreport_t& report, const std::st
 		if(all_mphf[i].kmer_MPHF)
 			all_mphf[i].kmer_MPHF->report_memusage(report, prefix+"::kmer_MPHF");
 	}
+
+//	for(unsigned i=0; i < bucket_per_superBuckets ; i++)
+//		report[prefix+"::Valid_kmer::array"] += Valid_kmer[i].size() / CHAR_BIT;
+//	report[prefix+"::Valid_kmer::sizeof(vector)"] += sizeof(Valid_kmer[0]) * bucket_per_superBuckets;
 }
 
 
