@@ -70,19 +70,29 @@ struct extended_minimizer{
 template<typename T>
 struct Pow2 {
 	Pow2(uint_fast8_t bits) : _bits(bits) {
-		assume(bits <= CHAR_BIT*sizeof(T), "Pow2(%u > %u)", unsigned(bits), unsigned(CHAR_BIT*sizeof(T)));
+		assume(bits < CHAR_BIT*sizeof(T), "Pow2(%u > %u)", unsigned(bits), unsigned(CHAR_BIT*sizeof(T)));
 	}
 
 	uint_fast8_t bits() const { return _bits; }
-	T size() const { return T(1) << _bits; }
-	explicit operator T() const { return size(); }
-	T max() const { return size() - T(1); }
+	T value() const { return T(1) << _bits; }
+	explicit operator T() const { return value(); }
+	T max() const { return value() - T(1); }
 
 
+	friend T operator*(const T& x, const Pow2& y) { return x << y._bits; }
+	friend T& operator*=(T& x, const Pow2& y) { return x <<= y._bits; }
 	friend T operator/(const T& x, const Pow2& y) { return x >> y._bits; }
 	friend T& operator/=(T& x, const Pow2& y) { return x >>= y._bits; }
 	friend T operator%(const T& x, const Pow2& y) { return x & y.max(); }
 	friend T& operator%=(T& x, const Pow2& y) { return x &= y.max(); }
+	Pow2& operator>>=(uint_fast8_t d) { _bits -= d; return *this; }
+	Pow2& operator<<=(uint_fast8_t d) { _bits += d; return *this; }
+	friend bool operator<(const T& x, const Pow2& y) { return x < y.value(); }
+	friend bool operator<=(const T& x, const Pow2& y) { return x < y.value(); }
+	friend T operator+(const T& x, const Pow2& y) { return x + y.value(); }
+	friend T& operator+=(T& x, const Pow2& y) { return x += y.value(); }
+	friend T operator-(const T& x, const Pow2& y) { return x - y.value(); }
+	friend T& operator-=(T& x, const Pow2& y) { return x -= y.value(); }
 private:
 	uint_fast8_t _bits;
 };
@@ -144,16 +154,16 @@ public:
 		, bucket_per_superBuckets(2*(m1-m3))
 		, positions_to_check(bit_saved_sub)
 	{
-		Valid_kmer=new vector<bool>[bucket_per_superBuckets.size()];
-		for(uint i(0);i<bucket_per_superBuckets.size();++i){
+		Valid_kmer=new vector<bool>[bucket_per_superBuckets.value()];
+		for(uint i(0);i<bucket_per_superBuckets;++i){
 			Valid_kmer[i]={};
 		}
-		all_buckets=new bucket_minimizer[minimizer_number.size()];
-		for(uint i(0);i<minimizer_number.size();++i){
+		all_buckets=new bucket_minimizer[minimizer_number.value()];
+		for(uint i(0);i<minimizer_number;++i){
 			all_buckets[i]={0,0,0};
 		}
-		all_mphf=new info_mphf[mphf_number.size()];
-		for(uint i(0);i<mphf_number.size();++i){
+		all_mphf=new info_mphf[mphf_number.value()];
+		for(uint i(0);i<mphf_number;++i){
 			all_mphf[i].mphf_size=0;
 			all_mphf[i].bit_to_encode=0;
 			all_mphf[i].start=0;
@@ -163,7 +173,7 @@ public:
 
 	~kmer_Set_Light () {
 		delete[] all_buckets;
-		for(uint i(0);i<mphf_number.size();++i){
+		for(uint i(0);i<mphf_number;++i){
 			delete all_mphf[i].kmer_MPHF;
 		}
 		delete[] all_mphf;
