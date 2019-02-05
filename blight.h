@@ -154,14 +154,7 @@ public:
 		, bucket_per_superBuckets(2*(m1-m3))
 		, positions_to_check(bit_saved_sub)
 	{
-		Valid_kmer=new vector<bool>[bucket_per_superBuckets.value()];
-		for(uint i(0);i<bucket_per_superBuckets;++i){
-			Valid_kmer[i]={};
-		}
-		all_buckets=new bucket_minimizer[minimizer_number.value()];
-		for(uint i(0);i<minimizer_number;++i){
-			all_buckets[i]={0,0,0};
-		}
+		all_buckets=new bucket_minimizer[minimizer_number.value()]();
 		all_mphf=new info_mphf[mphf_number.value()];
 		for(uint i(0);i<mphf_number;++i){
 			all_mphf[i].mphf_size=0;
@@ -177,7 +170,6 @@ public:
 			delete all_mphf[i].kmer_MPHF;
 		}
 		delete[] all_mphf;
-		delete[] Valid_kmer;
 		//~ delete[] abundance_minimizer;;
 	}
 
@@ -211,7 +203,6 @@ public:
 	uint32_t minimizer_graph(kmer seq);
 	uint32_t minimizer_extended(kmer seq);
 	pair<uint32_t,uint32_t> minimizer_and_more(kmer seq, uint& prefix_fragile, uint& suffix_fragile);
-	kmer get_int_in_kmer(kmer seq,uint64_t pos,uint number_nuc);
 	bool single_query(const uint minimizer, kmer kastor);
 	bool multiple_minimizer_query_bool(const uint minimizer,  kmer kastor,uint prefix_length,uint suffix_length);
 	int64_t multiple_minimizer_query_hash(const uint minimizer,  kmer kastor,uint prefix_length,uint suffix_length);

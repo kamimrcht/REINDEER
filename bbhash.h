@@ -321,15 +321,13 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 		// Move assignment operator
 		bitVector &operator=(bitVector &&r)
 		{
-			//printf("bitVector move assignment \n");
-			if (&r != this)
-			{
-				_nwords = r._nwords;
-				_nranks = r._nranks;
-				_ranks = std::move(r._ranks);
-				_bitArray = std::move(r._bitArray);
-				r._bitArray = nullptr;
-			}
+			_nwords = r._nwords;
+			_nranks = r._nranks;
+			_ranks = std::move(r._ranks);
+			_bitArray = std::move(r._bitArray);
+			r._bitArray = nullptr;
+			r._nwords = 0;
+			r._nranks = 0;
 			return *this;
 		}
 		// Move constructor
