@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <omp.h>
 #include "blight.h"
 
 
@@ -32,8 +33,9 @@ using namespace chrono;
 
 
 
-
 int main(int argc, char ** argv){
+	omp_set_nested(1);
+
 	char ch;
 	string input,query,fof;
 	uint k(0);
@@ -88,7 +90,7 @@ int main(int argc, char ** argv){
 
 		<<"Performances arguments"<<endl
 		<<"-m minimizer size (9)"<<endl
-		<<"-n to create 4^n mphf (9). More mean slower construction but better index, must be <=m"<<endl
+		<<"-n to create 4^n mphf (7). More mean slower construction but better index, must be <=m"<<endl
 		<<"-s to use 4^s files (3). More reduce memory usage and use more files, must be <=n"<<endl
 		<<"-t core used (1)"<<endl
 		<<"-b bit saved to encode positions (6). Will reduce the memory usage of b bit per kmer but query have to check 2^b kmers"<<endl;
@@ -100,6 +102,10 @@ int main(int argc, char ** argv){
 		// IF YOU DONT KNOW WHAT TO DO THIS SHOULD WORKS GOOD -> kmer_Set_Light ksl(KMERSIZE,9,9,3,CORE_NUMBER,6,0);
 		ksl.construct_index(input);
 
+
+		high_resolution_clock::time_point t1 = high_resolution_clock::now();
+
+
 		// I PARSE THE FILE OF FILE
 		ifstream fofin(fof);
 		vector <string> file_names;
@@ -110,58 +116,99 @@ int main(int argc, char ** argv){
 				file_names.push_back(file_name);
 			}
 		}
+		uint64_t color_number(file_names.size());
 
-		// I ALLOCATE THE COLOR VECTOR
+		// I ALLOCATE THE ABUNDANCE VECTOR
 		vector<uint8_t> abundance(ksl.number_kmer,0);
-		//NOT VERY SMART I KNOW...
 
 		// FOR EACH LINE OF EACH INDEXED FILE
-		for(uint i_file(0);i_file<file_names.size();++i_file){
+		uint i_file;
+		#pragma omp parallel for num_threads(file_names.size())
+		for(i_file=0;i_file<file_names.size();++i_file){
 			ifstream in(file_names[i_file]);
-			string line;
-			vector<int64_t> kmer_ids;
-			while(not in.eof()){
-				getline(in,line);
-				if(line[0]=='A' or line[0]=='C' or line[0]=='G' or line[0]=='T'){
-					// I GOT THE IDENTIFIER OF EACH KMER
-					kmer_ids=ksl.query_sequence_hash(line);
-					for(uint64_t i(0);i<kmer_ids.size();++i){
-						//I COLOR THEM
-						if(kmer_ids[i]<0){
-							continue;
+			#pragma omp parallel num_threads(10)
+			{
+				vector<string> lines;
+				string line;
+				vector<int64_t> kmer_ids;
+				while(not in.eof()){
+					#pragma omp critical(i_file)
+					{
+						for(uint i(0);i<100;++i){
+							getline(in,line);
+							lines.push_back(line);
 						}
-						abundance[kmer_ids[i]]++;
 					}
+					for(uint i(0);i<100;++i){
+						line=lines[i];
+						if(line[0]=='A' or line[0]=='C' or line[0]=='G' or line[0]=='T'){
+							// I GOT THE IDENTIFIER OF EACH KMER
+							kmer_ids=ksl.query_sequence_hash(line);
+							for(uint64_t i(0);i<kmer_ids.size();++i){
+								//I INCREMENT  THEIR ABUNDANCE
+								if(kmer_ids[i]>=0){
+									#pragma omp critical(color)
+									{
+										abundance[kmer_ids[i]]++;
+									}
+								}
+							}
+						}
+					}
+					lines={};
 				}
 			}
 		}
+
+		high_resolution_clock::time_point t12 = high_resolution_clock::now();
+		duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
+		cout<<"Abundancy computed: "<< time_span12.count() << " seconds."<<endl;
+
+		ofstream out("outabundance");
 
 		ifstream query_file(query);
-
-		string line;
-		uint64_t weight;
-
-		vector<int64_t> kmer_ids;
-		// FOR EACH LINE OF THE QUERY FILE
-		while(not query_file.eof()){
-			getline(query_file,line);
-			if(line[0]=='A' or line[0]=='C' or line[0]=='G' or line[0]=='T'){
-				// I GOT THEIR INDICES
-				kmer_ids=ksl.query_sequence_hash(line);
-				weight=0;
-				for(uint64_t i(0);i<kmer_ids.size();++i){
-					// KMERS WITH NEGATIVE INDICE ARE ALIEN/STRANGER/COLORBLIND KMERS
-					if(kmer_ids[i]<0){
-						//~ cout<<"I WAS NOT INDEXED\n";
-						continue;
+		#pragma omp parallel
+		{
+			string qline;
+			vector<string> lines;
+			//~ vector<int64_t> kmer_ids;
+			// FOR EACH LINE OF THE QUERY FILE
+			while(not query_file.eof()){
+				#pragma omp critical(i_file)
+				{
+					for(uint i(0);i<1000;++i){
+						getline(query_file,qline);
+						if(qline.empty()){break;}
+						lines.push_back(qline);
 					}
-					// I KNOW THE COLORS OF THIS KMER !... I'M BLUE DABEDI DABEDA...
-					//~ cout<<"I HAVE BEEN SEEN "<<(uint)abundance[kmer_ids[i]]<<" TIMES\n";
-					weight+=abundance[kmer_ids[i]];
 				}
-				cout<<weight<<"\n";
+				uint i;
+				#pragma omp for ordered
+				for(i=(0);i<lines.size();++i){
+					string toWrite;
+					string line=lines[i];
+					if(line[0]=='A' or line[0]=='C' or line[0]=='G' or line[0]=='T'){
+						// I GOT THEIR INDICES
+						vector<int64_t> kmer_ids=ksl.query_sequence_hash(line);
+						for(uint64_t i(0);i<kmer_ids.size();++i){
+							// KMERS WITH NEGATIVE INDICE ARE ALIEN/STRANGER/COLORBLIND KMERS
+							if(kmer_ids[i]>=0){
+							// I KNOW THE ABUNDANCY OF THIS KMER !
+								toWrite+=to_string(abundance[kmer_ids[i]])+"	";
+							}
+							toWrite+="\n";
+						}
+					}
+					#pragma omp ordered
+					out<<toWrite;
+				}
+				lines={};
 			}
 		}
+
+		high_resolution_clock::time_point t13 = high_resolution_clock::now();
+		duration<double> time_span13 = duration_cast<duration<double>>(t13 - t12);
+		cout<<"Query done: "<< time_span13.count() << " seconds."<<endl;
 	}
 	return 0;
 }

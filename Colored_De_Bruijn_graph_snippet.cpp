@@ -24,8 +24,6 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <omp.h>
-
-
 #include "blight.h"
 
 
@@ -43,7 +41,7 @@ int main(int argc, char ** argv){
 	string input,query,fof;
 	uint k(0);
 	uint m1(9);
-	uint m2(8);
+	uint m2(9);
 	uint m3(3);
 	uint c(1);
 	uint bit(6);
@@ -171,14 +169,14 @@ int main(int argc, char ** argv){
 		ofstream out("outcolor");
 
 		ifstream query_file(query);
-		//~ #pragma omp parallel ordered
+		#pragma omp parallel
 		{
 			string qline;
 			vector<string> lines;
 			//~ vector<int64_t> kmer_ids;
 			// FOR EACH LINE OF THE QUERY FILE
 			while(not query_file.eof()){
-				//~ #pragma omp critical(i_file)
+				#pragma omp critical(i_file)
 				{
 					for(uint i(0);i<1000;++i){
 						getline(query_file,qline);
