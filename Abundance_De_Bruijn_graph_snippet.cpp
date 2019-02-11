@@ -39,8 +39,8 @@ int main(int argc, char ** argv){
 	char ch;
 	string input,query,fof;
 	uint k(0);
-	uint m1(9);
-	uint m2(9);
+	uint m1(10);
+	uint m2(10);
 	uint m3(3);
 	uint c(1);
 	uint bit(6);
@@ -99,7 +99,7 @@ int main(int argc, char ** argv){
 	{
 		// I BUILD THE INDEX
 		kmer_Set_Light ksl(k,m1,m2,m3,c,bit,ex);
-		// IF YOU DONT KNOW WHAT TO DO THIS SHOULD WORKS GOOD -> kmer_Set_Light ksl(KMERSIZE,9,9,3,CORE_NUMBER,6,0);
+		// IF YOU DONT KNOW WHAT TO DO THIS SHOULD WORKS GOOD -> kmer_Set_Light ksl(KMERSIZE,10,10,3,CORE_NUMBER,6,0);
 		ksl.construct_index(input);
 
 
@@ -171,7 +171,6 @@ int main(int argc, char ** argv){
 		{
 			string qline;
 			vector<string> lines;
-			//~ vector<int64_t> kmer_ids;
 			// FOR EACH LINE OF THE QUERY FILE
 			while(not query_file.eof()){
 				#pragma omp critical(i_file)

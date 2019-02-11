@@ -40,8 +40,8 @@ int main(int argc, char ** argv){
 	char ch;
 	string input,query,fof;
 	uint k(0);
-	uint m1(9);
-	uint m2(9);
+	uint m1(10);
+	uint m2(10);
 	uint m3(3);
 	uint c(1);
 	uint bit(6);
@@ -100,12 +100,11 @@ int main(int argc, char ** argv){
 	{
 		// I BUILD THE INDEX
 		kmer_Set_Light ksl(k,m1,m2,m3,c,bit,ex);
-		// IF YOU DONT KNOW WHAT TO DO THIS SHOULD WORKS GOOD -> kmer_Set_Light ksl(KMERSIZE,9,9,3,CORE_NUMBER,6,0);
+		// IF YOU DONT KNOW WHAT TO DO THIS SHOULD WORKS GOOD -> kmer_Set_Light ksl(KMERSIZE,10,10,3,CORE_NUMBER,6,0);
 		ksl.construct_index(input);
 
 
 		high_resolution_clock::time_point t1 = high_resolution_clock::now();
-
 
 		// I PARSE THE FILE OF FILE
 		ifstream fofin(fof);
@@ -173,7 +172,6 @@ int main(int argc, char ** argv){
 		{
 			string qline;
 			vector<string> lines;
-			//~ vector<int64_t> kmer_ids;
 			// FOR EACH LINE OF THE QUERY FILE
 			while(not query_file.eof()){
 				#pragma omp critical(i_file)
@@ -197,10 +195,8 @@ int main(int argc, char ** argv){
 							if(kmer_ids[i]>=0){
 
 							// I KNOW THE COLORS OF THIS KMER !... I'M BLUE DABEDI DABEDA...
-							//~ cout<<"I HAVE BEEN SEEN IN THE FILE ";
 								for(uint64_t i_color(0);i_color<color_number;++i_color){
 									if(color_me_amaze[kmer_ids[i]*color_number+i_color]){
-										//~ cout<<i_color<<" ";
 										toWrite+=to_string(i_color)+"	";
 									}
 								}

@@ -20,9 +20,14 @@
 using namespace std;
 
 
-
+// FOR k<32
 #define kmer uint64_t
-//~ #define kmer __uint128_t
+// FOR k<64
+//#define kmer __uint128_t
+
+
+
+
 #define minimizer_type uint32_t
 
 

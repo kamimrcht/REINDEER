@@ -38,8 +38,8 @@ int main(int argc, char ** argv){
 	char ch;
 	string input,query;
 	uint k(31);
-	uint m1(9);
-	uint m2(0);
+	uint m1(10);
+	uint m2(10);
 	uint m3(3);
 	uint c(1);
 	uint bit(6);
@@ -89,7 +89,7 @@ int main(int argc, char ** argv){
 		<<"-g graph file"<<endl
 		<<"-q query file"<<endl
 		<<"-k k value used for graph (31) "<<endl<<endl
-		<<"-m minimizer size (9)"<<endl
+		<<"-m minimizer size (10)"<<endl
 		<<"-n to create 4^n mphf (m). More mean slower construction but better index, must be <=m"<<endl
 		<<"-s to use 4^s files (3). More reduce memory usage and use more files, must be <=n"<<endl
 		<<"-t core used (1)"<<endl
@@ -103,16 +103,8 @@ int main(int argc, char ** argv){
 
 		ksl.file_query(query);
 
-		//~ ksl.file_query(query,true);
-		//~ high_resolution_clock::time_point t4 = high_resolution_clock::now();
-		//~ duration<double> time_span3 = duration_cast<duration<double>>(t4 - t3);
-		//~ cout << "The optimized query took me " << time_span3.count() << " seconds."<<endl;
-
 		cout<<"I am glad you are here with me. Here at the end of all things."<<endl;
-		//~ cout<<ksl.bucketSeq.size()<<endl;
-		//~ cout<<ksl.positions.size()<<endl;
 	}
-	//~ cin.get();
 	return 0;
 }
 

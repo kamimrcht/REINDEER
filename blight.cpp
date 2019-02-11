@@ -39,7 +39,7 @@ static inline kmer nuc2int(char c){
 		case 'T': return 3;
 		case 'N': return 0;
 	}
-	cout<<"bug"<<c<<"!"<<endl;
+	cout<<"Unknow nucleotide: "<<c<<"!"<<endl;
 	exit(0);
 	return 0;
 }
@@ -60,7 +60,7 @@ static inline kmer nuc2intrc(char c){
 		case 'T': return 0;
 		case 'N': return 0;
 	}
-	cout<<"bug"<<c<<"!"<<endl;
+	cout<<"Unknow nucleotide: "<<c<<"!"<<endl;
 	exit(0);
 	return 0;
 }
@@ -147,12 +147,15 @@ inline uint32_t revhash ( uint32_t x ) {
 	return x;
 }
 
+
+
 inline uint32_t unrevhash ( uint32_t x ) {
 	x = ( ( x >> 16 ) ^ x ) * 0x0cf0b109; // PowerMod[0x297a2d39, -1, 2^32]
 	x = ( ( x >> 16 ) ^ x ) * 0x64ea2d65;
 	x = ( ( x >> 16 ) ^ x );
 	return x;
 }
+
 
 
 inline uint64_t revhash ( uint64_t x ) {
@@ -162,6 +165,8 @@ inline uint64_t revhash ( uint64_t x ) {
 	return x;
 }
 
+
+
 inline uint64_t unrevhash ( uint64_t x ) {
 	x = ( ( x >> 32 ) ^ x ) * 0xCFEE444D8B59A89B;
 	x = ( ( x >> 32 ) ^ x ) * 0xCFEE444D8B59A89B;
@@ -170,38 +175,12 @@ inline uint64_t unrevhash ( uint64_t x ) {
 }
 
 
-//~ uint64_t xs(uint64_t y){
-	//~ y^=(y<<13); y^=(y>>17);y=(y^=(y<<15)); return y;
-//~ }
-//~ uint64_t xs(uint64_t y){
-	//~ return y;
-//~ }
-// uint64_t xs(uint32_t y){
-// 	uint64_t z(0);
-// 	MurmurHash3_x86_32 ( &y, 4, 17869, &z);
-// 	return z;
-// }
+
 template<typename T>
 inline T xs(const T& x) { return revhash(x); }
 
 
 
-//~ string min_accordingtoXS(const string& seq1,const string& seq2){
-	//~ uint32_t u1(str2num(seq1)),u2(str2num(seq2));
-	//~ if(xs(u1)<xs(u2)){
-		//~ return seq1;
-	//~ }
-	//~ return seq2;
-//~ }
-
-
-
-//~ kmer min_accordingtoXS(const kmer& u1,const kmer& u2){
-	//~ if(xs(u1)<xs(u2)){
-		//~ return u1;
-	//~ }
-	//~ return u2;
-//~ }
 
 
 // It's quite complex to bitshift mmx register without an immediate (constant) count
@@ -218,6 +197,8 @@ inline __m128i mm_bitshift_left(__m128i x, unsigned count)
 	x = _mm_slli_epi64(x, count);
 	return _mm_or_si128(x, carry);
 }
+
+
 
 inline __m128i mm_bitshift_right(__m128i x, unsigned count)
 {
@@ -259,6 +240,8 @@ inline __uint128_t rcb(const __uint128_t& in, uint n){
 	return res.k;
 }
 
+
+
 inline uint64_t rcb(uint64_t in, uint n) {
 	assume(n <= 32, "n=%u > 32", n);
 	// Complement, swap byte order
@@ -274,6 +257,8 @@ inline uint64_t rcb(uint64_t in, uint n) {
 
 	return res;
 }
+
+
 
 inline uint32_t rcb(uint32_t in, uint n) {
 	assume(n <= 16, "n=%u > 16", n);
@@ -291,6 +276,7 @@ inline uint32_t rcb(uint32_t in, uint n) {
 
 	return res;
 }
+
 
 
 inline void kmer_Set_Light::updateK(kmer& min, char nuc){
@@ -363,7 +349,6 @@ extended_minimizer kmer_Set_Light::get_extended_minimizer_from_min(kmer seq, uin
 	}else{
 		res.suffix_fragile=extension_minimizer-position_minimizer;
 		res.extended_mini=get_int_in_kmer(seq,0,m1-extension_minimizer+position_minimizer);
-		//~ res.extended_mini<<=(2*(extension_minimizer-position_minimizer));
 	}
 	if(position_minimizer-extension_minimizer+m1>k){
 		res.prefix_fragile=m1+position_minimizer-extension_minimizer-k;
@@ -372,13 +357,6 @@ extended_minimizer kmer_Set_Light::get_extended_minimizer_from_min(kmer seq, uin
 	if(not res.fragile){
 		res.extended_mini=min(res.extended_mini,rcb(res.extended_mini,m1));
 	}
-	//~ uint32_t rc(rcb(res.extended_mini,m1));
-	//~ if(rc<res.extended_mini){
-		//~ res.extended_mini=rc;
-		//~ uint tmp=res.suffix_fragile;
-		//~ res.suffix_fragile=res.prefix_fragile;
-		//~ res.prefix_fragile=tmp;
-	//~ }
 	return res;
 }
 
@@ -387,12 +365,6 @@ extended_minimizer kmer_Set_Light::get_extended_minimizer_from_min(kmer seq, uin
 void kmer_Set_Light::print_extended(extended_minimizer min){
 	print_kmer(min.mini);
 	print_kmer(min.extended_mini);
-	if(min.fragile){
-		cout<<"fragile"<<endl;
-		cout<<"prefix"<<min.prefix_fragile<<endl;
-		cout<<"suffix"<<min.suffix_fragile<<endl;
-		cin.get();
-	}else{cout<<"SOLID"<<endl;}
 }
 
 
@@ -501,49 +473,27 @@ void kmer_Set_Light::abundance_minimizer_construct(const string& input_file){
 		if(not ref.empty() and not useless.empty()){
 			//FOREACH KMER
 			kmer seq(str2num(ref.substr(0,m1))),rcSeq(rcb(seq,m1)),canon(min_k(seq,rcSeq));
-			//~ abundance_minimizer[canon]++;
-			//~ if(all_buckets[canon]==NULL){
-				//~ all_buckets[canon]=new bucket_minimizer;
-				//~ all_buckets[canon]->abundance_minimizer=0;
-				//~ all_buckets[canon]->nuc_minimizer=0;
-				//~ all_buckets[canon]->current_pos=0;
-			//~ }else{
-				//~ all_buckets[canon].abundance_minimizer++;
 				abundance_minimizer_temp[canon]++;
-			//~ }
 			uint i(0);
 			for(;i+m1<ref.size();++i){
 				updateM(seq,ref[i+m1]);
 				updateRCM(rcSeq,ref[i+m1]);
 				canon=(min_k(seq,rcSeq));
-				//~ if(all_buckets[canon]==NULL){
-					//~ all_buckets[canon]=new bucket_minimizer;
-					//~ all_buckets[canon]->abundance_minimizer=0;
-					//~ all_buckets[canon]->nuc_minimizer=0;
-					//~ all_buckets[canon]->current_pos=0;
-				//~ }else{
-					//~ all_buckets[canon].abundance_minimizer++;
 					abundance_minimizer_temp[canon]++;
-				//~ }
 			}
 		}
 	}
 	for(uint i(0);i<minimizer_number;++i){
 		abundance_minimizer[i]=(uint8_t)(log2(abundance_minimizer_temp[i])*8);
-		//~ abundance_minimizer[i]=(abundance_minimizer_temp[i]);
 	}
 	delete[] abundance_minimizer_temp;
 	delete inUnitigs;
 }
 
+
+
 static inline int64_t round_eight(int64_t n){
 	return n+8;
-	//~ if(n%8==0){
-		//~ return n+1;
-	//~ }else{
-		//~ return n+9-n%8;
-	//~ }
-
 }
 
 
@@ -648,7 +598,6 @@ void kmer_Set_Light::create_super_buckets_extended(const string& input_file){
 		max_bucket_mphf=max(all_buckets[BC].nuc_minimizer,max_bucket_mphf);
 		if((BC+1)%number_bucket_per_mphf==0){
 			int n_bits_to_encode((ceil(log2(max_bucket_mphf+1))-bit_saved_sub));
-			//~ cout<<n_bits_to_encode<<" ";
 			if(n_bits_to_encode<1){n_bits_to_encode=1;}
 			all_mphf[BC/number_bucket_per_mphf].bit_to_encode=n_bits_to_encode;
 			all_mphf[BC/number_bucket_per_mphf].start=total_pos_size;
@@ -708,7 +657,6 @@ void kmer_Set_Light::create_super_buckets_regular(const string& input_file){
 	}
 	vector<ostream*> out_files;
 	for(uint i(0);i<number_superbuckets;++i){
-		//~ auto out =new ofstream("_out"+to_string(i));
 		auto out =new zstr::ofstream("_out"+to_string(i));
 		out_files.push_back(out);
 	}
@@ -719,7 +667,7 @@ void kmer_Set_Light::create_super_buckets_regular(const string& input_file){
 	#pragma omp parallel num_threads(coreNumber)
 	{
 		string ref,useless;
-		minimizer_type old_minimizer,minimizer; //,precise_minimizer,old_precise_minimizer;
+		minimizer_type old_minimizer,minimizer;
 		while(not inUnitigs->eof()){
 			#pragma omp critical(dataupdate)
 			{
@@ -731,14 +679,12 @@ void kmer_Set_Light::create_super_buckets_regular(const string& input_file){
 				old_minimizer=minimizer=minimizer_number_graph.value();
 				uint last_position(0);
 				//FOREACH KMER
-				kmer seq(str2num(ref.substr(0,k))),rcSeq(rcb(seq,k)); //canon(min_k(seq,rcSeq));
+				kmer seq(str2num(ref.substr(0,k)));
 				minimizer=regular_minimizer(seq);
 				old_minimizer=minimizer;
 				uint i(0);
 				for(;i+k<ref.size();++i){
 					updateK(seq,ref[i+k]);
-					updateRCK(rcSeq,ref[i+k]);
-					//canon=(min_k(seq, rcSeq));
 					//COMPUTE KMER MINIMIZER
 					minimizer=regular_minimizer(seq);
 					if(old_minimizer!=minimizer){
@@ -838,14 +784,12 @@ void kmer_Set_Light::str2bool(const string& str,uint mini){
 
 void kmer_Set_Light::read_super_buckets(const string& input_file){
 	uint64_t total_size(0);
-	//~ cout<<"go"<<endl;
 	//#pragma omp parallel num_threads(1)
 	Valid_kmer=new vector<bool>[bucket_per_superBuckets.value()]();
 	{
 		string useless,line;
 		//#pragma omp for
 		for(uint SBC=0;SBC<number_superbuckets.value();++SBC){
-			//~ cout<<"go"<<endl;
 			uint BC(SBC*bucket_per_superBuckets);
 			zstr::ifstream in((input_file+to_string(SBC)));
 			while(not in.eof() and in.good()){
@@ -863,11 +807,8 @@ void kmer_Set_Light::read_super_buckets(const string& input_file){
 				}
 			}
 			remove((input_file+to_string(SBC)).c_str());
-			//~ cout<<"go1"<<endl;
 			create_mphf(BC,BC+bucket_per_superBuckets);
-			//~ cout<<"go2"<<endl;
 			fill_positions(BC,BC+bucket_per_superBuckets);
-			//~ cout<<"go3"<<endl;
 			BC+=bucket_per_superBuckets;
 			cout<<"-"<<flush;
 		}
@@ -1055,7 +996,6 @@ void kmer_Set_Light::int_to_bool(uint n_bits_to_encode,uint64_t X, uint64_t pos,
 uint32_t kmer_Set_Light::bool_to_int(uint n_bits_to_encode,uint64_t pos,uint64_t start){
 	uint32_t res(0);
 	uint32_t acc(1);
-	//~ cout<<"wut"<<endl;
 	for(uint64_t i(0);i<n_bits_to_encode;++i, acc<<=1){
 		if(positions[i+pos*n_bits_to_encode+start]){
 			res |= acc;
@@ -1067,39 +1007,29 @@ uint32_t kmer_Set_Light::bool_to_int(uint n_bits_to_encode,uint64_t pos,uint64_t
 
 
 void kmer_Set_Light::fill_positions(uint begin_BC,uint end_BC){
-	//~ uint64_t total_size(0);
 	#pragma omp parallel for num_threads(coreNumber)
 	for(uint BC=(begin_BC);BC<end_BC;++BC){
-		//~ cout<<"go4"<<endl;
 			if(all_buckets[BC].nuc_minimizer>0){
 				int n_bits_to_encode(all_mphf[BC/number_bucket_per_mphf].bit_to_encode);
 				kmer seq(get_kmer(BC,0)),rcSeq(rcb(seq,k)),canon(min_k(seq,rcSeq));
 				for(uint j(0);(j+k)<all_buckets[BC].nuc_minimizer;j++){
-					//~ cout<<"go5"<<endl;
 					if(not Valid_kmer[BC%bucket_per_superBuckets][j+1]){
 						j+=k-1;
 						if((j+k)<all_buckets[BC].nuc_minimizer){
 							seq=(get_kmer(BC,j+1)),rcSeq=(rcb(seq,k)),canon=(min_k(seq,rcSeq));
-							//~ cout<<"go6"<<endl;
 							//~ #pragma omp critical(dataupdate)
 							{
 								int_to_bool(n_bits_to_encode,(j+1)/positions_to_check,all_mphf[BC/number_bucket_per_mphf].kmer_MPHF->lookup(canon),all_mphf[BC/number_bucket_per_mphf].start);
 							}
 						}
 					}else{
-						//~ cout<<"go7"<<endl;
 						seq=update_kmer(j+k,BC,seq);
-						//~ cout<<"7.1"<<endl;
 						rcSeq=(rcb(seq,k));
 						canon=(min_k(seq, rcSeq));
-						//~ cout<<"7.2"<<endl;
-						//~ cout<<BC<<endl;
-						//~ cout<<all_mphf.size()<<endl;
 						//~ #pragma omp critical(dataupdate)
 						{
 							int_to_bool(n_bits_to_encode,(j+1)/positions_to_check,all_mphf[BC/number_bucket_per_mphf].kmer_MPHF->lookup(canon),all_mphf[BC/number_bucket_per_mphf].start);
 						}
-						//~ cout<<"go8"<<endl;
 					}
 				}
 			}
@@ -1122,42 +1052,6 @@ int64_t kmer_Set_Light::correct_pos(uint32_t mini, uint64_t p){
 	}
 	return p;
 }
-
-
-
-//~ uint32_t kmer_Set_Light::get_anchors(const string& query,uint& minimizer, vector<kmer>& kmerV,uint pos){
-
-	//~ kmerV.clear();
-	//~ if(query.size()<k+pos){
-		//~ return pos;
-	//~ }
-	//~ kmer seq(str2num(query.substr(pos,k))),rcSeq(rcb(seq,k)),canon(min_k(seq,rcSeq)),canonR,seqR,rcSeqR;
-	//~ uint i(pos);
-	//~ canon=(min_k(seq, rcSeq));
-	//~ uint prefix,suffix;
-	//~ auto nadine(minimizer_and(canon,prefix,suffix));
-	//~ bool fragile(prefix==0 and suffix==0);
-	//~ minimizer=nadine.second;
-	//~ uint32_t minimizer2;
-	//~ kmerV.push_back(canon);
-	//~ for(;i+k<query.size();++i){
-		//~ updateK(seq,query[i+k]);
-		//~ updateRCK(rcSeq,query[i+k]);
-		//~ canon=(min_k(seq, rcSeq));
-		//~ auto nadine(minimizer_and_(canon,prefix,suffix));
-		//~ bool fragile(prefix==0 and suffix==0);
-		//~ if(fragile){
-			//~ //TODO
-		//~ }
-		//~ minimizer2=nadine2.second;
-		//~ if(minimizer2==minimizer){
-			//~ kmerV.push_back(canon);
-		//~ }else{
-			//~ return i+1;
-		//~ }
-	//~ }
-	//~ return i+1;
-//~ }
 
 
 
@@ -1197,7 +1091,6 @@ int64_t kmer_Set_Light::query_kmer_hash(kmer canon){
 			return query_get_hash(canon,minimizer);
 		}
 	}else{
-		//~ cout<<query_get_hash(canon,regular_minimizer(canon))<<endl;
 		return query_get_hash(canon,regular_minimizer(canon));
 	}
 }
@@ -1452,10 +1345,6 @@ void kmer_Set_Light::report_memusage(boomphf::memreport_t& report, const std::st
 		if(all_mphf[i].kmer_MPHF)
 			all_mphf[i].kmer_MPHF->report_memusage(report, prefix+"::kmer_MPHF");
 	}
-
-//	for(unsigned i=0; i < bucket_per_superBuckets ; i++)
-//		report[prefix+"::Valid_kmer::array"] += Valid_kmer[i].size() / CHAR_BIT;
-//	report[prefix+"::Valid_kmer::sizeof(vector)"] += sizeof(Valid_kmer[0]) * bucket_per_superBuckets;
 }
 
 
