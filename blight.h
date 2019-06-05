@@ -14,6 +14,7 @@
 #include <pthread.h>
 #include "common.h"
 #include "bbhash.h"
+#include "bm.h"
 
 
 
@@ -48,6 +49,7 @@ struct bucket_minimizer{
 	uint64_t start;
 	//~ uint32_t abundance_minimizer;
 	uint32_t nuc_minimizer;
+	uint32_t skmer_number;
 };
 
 
@@ -120,6 +122,9 @@ public:
 
 	vector<bool> bucketSeq;
 	vector<bool> positions;
+	vector<bm::bvector<>> position_super_kmers;
+	vector<bm::bvector<>::rs_index_type*> position_super_kmers_RS;
+
 	vector<bool>* Valid_kmer;
 	bucket_minimizer* all_buckets;
 	uint32_t* abundance_minimizer_temp;
@@ -160,6 +165,8 @@ public:
 		, positions_to_check(bit_saved_sub)
 	{
 		all_buckets=new bucket_minimizer[minimizer_number.value()]();
+		position_super_kmers.resize(minimizer_number.value());
+		position_super_kmers_RS.resize(minimizer_number.value());
 		all_mphf=new info_mphf[mphf_number.value()];
 		for(uint i(0);i<mphf_number;++i){
 			all_mphf[i].mphf_size=0;
