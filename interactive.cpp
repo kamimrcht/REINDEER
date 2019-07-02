@@ -18,6 +18,7 @@
 #include <chrono>
 #include <map>
 #include <set>
+#include <mutex>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,11 +41,14 @@ inline bool exists_test(string& name) {
 }
 
 
-void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_number, vector<bool>& color_me_amaze){
+void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_number, vector<bool>& color_me_amaze, uint k){
 	ifstream query_file(input);
 	ofstream out(name);
-	cout << "here"<<endl;
+	//~ cout << "here"<<endl;
 	//~ #pragma omp parallel
+	uint64_t num_seq(0);
+	//~ cout << "here\n" ;
+	mutex mm;
 	{
 		string qline;
 		vector<string> lines;
@@ -64,29 +68,66 @@ void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_numb
 
 				string toWrite;
 				string line=lines[i];
-				cout << line<<endl;
+				//~ cout << line<<endl;
 				if(line[0]=='A' or line[0]=='C' or line[0]=='G' or line[0]=='T'){
+					mm.lock();
+					num_seq ++;
+					mm.unlock();
+					vector<int64_t> kmers_colors; 
 					// I GOT THEIR INDICES
 					vector<int64_t> kmer_ids=ksl.query_sequence_hash(line);
 					for(uint64_t i(0);i<kmer_ids.size();++i){
 						// KMERS WITH NEGATIVE INDICE ARE ALIEN/STRANGER/COLORBLIND KMERS
 						if(kmer_ids[i]>=0){
-						cout << "111111111111111\n";
+						//~ cout << "111111111111111\n";
 						// I KNOW THE COLORS OF THIS KMER !... I'M BLUE DABEDI DABEDA...
 							for(uint64_t i_color(0);i_color<color_number;++i_color){
-								cout << "222222222222222222\n";
+								//~ cout << "222222222222222222\n";
 								if(color_me_amaze[kmer_ids[i]*color_number+i_color]){
-									toWrite+=to_string(i_color)+"	";
+									kmers_colors.push_back(i_color);
 								}
 
 							}
 						}
-						toWrite+="\n";
-						cout << toWrite;
+						//~ toWrite+="\n";
+						//~ cout << toWrite;
 					}
+					if (not  kmers_colors.empty())
+					{
+						sort(kmers_colors.begin(), kmers_colors.end());
+						vector<pair<uint64_t, double_t>> percents;
+						int64_t val(-1);
+						for (uint64_t i_col(0); i_col < kmers_colors.size(); ++i_col)
+						{
+							if (kmers_colors[i_col] != val){
+								percents.push_back({kmers_colors[i_col],1});
+								val = kmers_colors[i_col];
+							} else {
+								//~ cout << "happens" ;
+								percents.back().second++;
+							}
+						}
+						toWrite += "query" + to_string(num_seq) +":";
+						for (uint per(0); per < percents.size(); ++per)
+						{
+							//~ cout << percents[per].second << " " << line.size() << endl ;
+
+							percents[per].second = percents[per].second *100 /(line.size() -k);
+							if (percents[per].second >= 30){
+								toWrite += "dataset" + to_string(percents[per].first+1) + ": " + to_string(percents[per].second) + "% ";
+							}
+						}
+						
+						toWrite += "\n";
+						
+						
+					} 
 				}
 				#pragma omp ordered
-				out<<toWrite;
+				if (toWrite != "query" + to_string(num_seq) +":\n")
+				{
+					out<<toWrite;
+				}
 			}
 			lines={};
 		}
@@ -250,7 +291,7 @@ int main(int argc, char ** argv){
 				patience=0;
 				if(exists_test(entry)){
 					string outName("out_query_BLight" + to_string(counter) + ".out");
-					doQuery(entry, outName, ksl, color_number, color_me_amaze);
+					doQuery(entry, outName, ksl, color_number, color_me_amaze, k);
 					memset(str, 0, 255);
 					counter++;
 					//~ high_resolution_clock::time_point t13 = high_resolution_clock::now();
