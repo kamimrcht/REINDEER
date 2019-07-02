@@ -34,15 +34,17 @@ using namespace std;
 using namespace chrono;
 
 
+
 inline bool exists_test(string& name) {
     return ( access( name.c_str(), F_OK ) != -1 );
 }
 
+
 void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_number, vector<bool>& color_me_amaze){
 	ifstream query_file(input);
-	ofstream out(name); 
-	//~ cout << "here\n" ;
-	#pragma omp parallel
+	ofstream out(name);
+	cout << "here"<<endl;
+	//~ #pragma omp parallel
 	{
 		string qline;
 		vector<string> lines;
@@ -59,26 +61,28 @@ void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_numb
 			uint i;
 			#pragma omp for ordered
 			for(i=(0);i<lines.size();++i){
+
 				string toWrite;
 				string line=lines[i];
+				cout << line<<endl;
 				if(line[0]=='A' or line[0]=='C' or line[0]=='G' or line[0]=='T'){
 					// I GOT THEIR INDICES
 					vector<int64_t> kmer_ids=ksl.query_sequence_hash(line);
 					for(uint64_t i(0);i<kmer_ids.size();++i){
 						// KMERS WITH NEGATIVE INDICE ARE ALIEN/STRANGER/COLORBLIND KMERS
 						if(kmer_ids[i]>=0){
-						//~ cout << "111111111111111\n";
+						cout << "111111111111111\n";
 						// I KNOW THE COLORS OF THIS KMER !... I'M BLUE DABEDI DABEDA...
 							for(uint64_t i_color(0);i_color<color_number;++i_color){
-								//~ cout << "222222222222222222\n";
+								cout << "222222222222222222\n";
 								if(color_me_amaze[kmer_ids[i]*color_number+i_color]){
 									toWrite+=to_string(i_color)+"	";
 								}
-								
+
 							}
 						}
 						toWrite+="\n";
-						//~ cout << toWrite;
+						cout << toWrite;
 					}
 				}
 				#pragma omp ordered
@@ -91,12 +95,14 @@ void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_numb
 	out.close();
 }
 
+
+
 int main(int argc, char ** argv){
 	omp_set_nested(1);
 
 	char ch;
 	string input,query,fof;
-	uint k(0);
+	uint k(31);
 	uint m1(10);
 	uint m2(10);
 	uint m3(3);
@@ -138,12 +144,11 @@ int main(int argc, char ** argv){
 		}
 	}
 
-	if(query=="" or input=="" or fof=="" or k==0){
+	if(input=="" or fof=="" or k==0){
 		cout
 		<<"Mandatory arguments"<<endl
 		<<"-g graph file constructed fom all your file"<<endl
 		<<"-o your original files in a file of file"<<endl
-		<<"-q query file"<<endl
 		<<"-k k value used for graph "<<endl<<endl
 
 		<<"Performances arguments"<<endl
@@ -181,7 +186,7 @@ int main(int argc, char ** argv){
 
 		// FOR EACH LINE OF EACH INDEXED FILE
 		uint i_file;
-		#pragma omp parallel for num_threads(file_names.size())
+		#pragma omp parallel for num_threads(10)
 		for(i_file=0;i_file<file_names.size();++i_file){
 			ifstream in(file_names[i_file]);
 			#pragma omp parallel num_threads(10)
@@ -223,21 +228,27 @@ int main(int argc, char ** argv){
 		cout<<"Coloration done: "<< time_span12.count() << " seconds."<<endl;
 
 		// query //
-		uint counter(0);
-		while(true)
-		{
+		uint counter(0),patience(0);
+		while(true){
 			char str[256];
 			cout << "Enter the name of the query file: ";
+
 			cin.get (str,256);
+			cin.clear();
+			cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 			cout << str << endl;
 			string entry(str);
-			if (entry == "")
-			{
-				exit(0);
-			} else 
-				{
-				if (exists_test(entry))
-				{
+			if (entry == ""){
+				if(patience>0){
+					cout<<"See you soon !"<<endl;
+					exit(0);
+				}else{
+					cout<<"Empty query file !  Type return again if you  want to quit"<<endl;
+					patience++;
+				}
+			}else{
+				patience=0;
+				if(exists_test(entry)){
 					string outName("out_query_BLight" + to_string(counter) + ".out");
 					doQuery(entry, outName, ksl, color_number, color_me_amaze);
 					memset(str, 0, 255);
@@ -245,60 +256,11 @@ int main(int argc, char ** argv){
 					//~ high_resolution_clock::time_point t13 = high_resolution_clock::now();
 					//~ duration<double> time_span13 = duration_cast<duration<double>>(t13 - t12);
 					//~ cout<<"Query done: "<< time_span13.count() << " seconds."<<endl;
-				} else
-				{
+				}else{
 					cout << "The entry is not a file" << endl;
-					cin.get();
 				}
 			}
 		}
-		//~ ifstream query_file(query);
-		//~ #pragma omp parallel
-		//~ {
-			//~ string qline;
-			//~ vector<string> lines;
-			//~ // FOR EACH LINE OF THE QUERY FILE
-			//~ while(not query_file.eof()){
-				//~ #pragma omp critical(i_file)
-				//~ {
-					//~ for(uint i(0);i<1000;++i){
-						//~ getline(query_file,qline);
-						//~ if(qline.empty()){break;}
-						//~ lines.push_back(qline);
-					//~ }
-				//~ }
-				//~ uint i;
-				//~ #pragma omp for ordered
-				//~ for(i=(0);i<lines.size();++i){
-					//~ string toWrite;
-					//~ string line=lines[i];
-					//~ if(line[0]=='A' or line[0]=='C' or line[0]=='G' or line[0]=='T'){
-						//~ // I GOT THEIR INDICES
-						//~ vector<int64_t> kmer_ids=ksl.query_sequence_hash(line);
-						//~ for(uint64_t i(0);i<kmer_ids.size();++i){
-							//~ // KMERS WITH NEGATIVE INDICE ARE ALIEN/STRANGER/COLORBLIND KMERS
-							//~ if(kmer_ids[i]>=0){
-
-							//~ // I KNOW THE COLORS OF THIS KMER !... I'M BLUE DABEDI DABEDA...
-								//~ for(uint64_t i_color(0);i_color<color_number;++i_color){
-									//~ if(color_me_amaze[kmer_ids[i]*color_number+i_color]){
-										//~ toWrite+=to_string(i_color)+"	";
-									//~ }
-								//~ }
-							//~ }
-							//~ toWrite+="\n";
-						//~ }
-					//~ }
-					//~ #pragma omp ordered
-					//~ out<<toWrite;
-				//~ }
-				//~ lines={};
-			//~ }
-		//~ }
-
-		//~ high_resolution_clock::time_point t13 = high_resolution_clock::now();
-		//~ duration<double> time_span13 = duration_cast<duration<double>>(t13 - t12);
-		//~ cout<<"Query done: "<< time_span13.count() << " seconds."<<endl;
 	}
 	return 0;
 }

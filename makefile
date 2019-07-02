@@ -17,12 +17,15 @@ endif
 
 CFLAGS+=-std=c++11 -pipe -lz -fopenmp ${WARNS}
 INC=blight.h bbhash.h common.h
-EXEC=bench_blight Colored_De_Bruijn_graph_snippet Abundance_De_Bruijn_graph_snippet
+EXEC=bench_blight Colored_De_Bruijn_graph_snippet Abundance_De_Bruijn_graph_snippet interactive
 
 
 all: $(EXEC)
 
 Colored_De_Bruijn_graph_snippet: Colored_De_Bruijn_graph_snippet.o blight.o
+	$(CC) -o $@ $^ $(CFLAGS)
+
+interactive: interactive.o blight.o
 	$(CC) -o $@ $^ $(CFLAGS)
 
 Abundance_De_Bruijn_graph_snippet: Abundance_De_Bruijn_graph_snippet.o blight.o
@@ -35,6 +38,9 @@ bench_blight.o: bench_blight.cpp $(INC)
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 Colored_De_Bruijn_graph_snippet.o: Colored_De_Bruijn_graph_snippet.cpp $(INC)
+	$(CC) -o $@ -c $< $(CFLAGS)
+
+interactive.o: interactive.cpp $(INC)
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 Abundance_De_Bruijn_graph_snippet.o: Abundance_De_Bruijn_graph_snippet.cpp $(INC)
