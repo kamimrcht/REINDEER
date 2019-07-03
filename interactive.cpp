@@ -41,7 +41,7 @@ inline bool exists_test(string& name) {
 }
 
 
-void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_number, vector<bool>& color_me_amaze, uint k){
+void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_number, vector<vector<bool>>& color_me_amaze, uint k){
 	ifstream query_file(input);
 	ofstream out(name);
 	//~ cout << "here"<<endl;
@@ -80,7 +80,7 @@ void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_numb
 						// I KNOW THE COLORS OF THIS KMER !... I'M BLUE DABEDI DABEDA...
 							for(uint64_t i_color(0);i_color<color_number;++i_color){
 								//~ cout << "222222222222222222\n";
-								if(color_me_amaze[kmer_ids[i]*color_number+i_color]){
+								if(color_me_amaze[i_color][kmer_ids[i]]){
 									kmers_colors.push_back(i_color);
 								}
 
@@ -201,7 +201,7 @@ int main(int argc, char ** argv){
 		return 0;
 	}
 	{
-		vector<mutex> MUTEXES(1000);
+		//~ vector<mutex> MUTEXES(1000);
 		// I BUILD THE INDEX
 		kmer_Set_Light ksl(k,m1,m2,m3,c,bit,ex);
 		// IF YOU DONT KNOW WHAT TO DO THIS SHOULD WORKS GOOD -> kmer_Set_Light ksl(KMERSIZE,10,10,3,CORE_NUMBER,6,0);
@@ -224,7 +224,9 @@ int main(int argc, char ** argv){
 		uint64_t color_number(file_names.size());
 
 		// I ALLOCATE THE COLOR VECTOR
-		vector<bool> color_me_amaze(ksl.number_kmer*color_number,false);
+
+		vector<bool> colorV(ksl.number_kmer,false);
+		vector<vector<bool>> color_me_amaze(color_number,colorV);
 		//NOT VERY SMART I KNOW...
 
 		// FOR EACH LINE OF EACH INDEXED FILE
@@ -255,11 +257,11 @@ int main(int argc, char ** argv){
 								//I COLOR THEM
 								if(kmer_ids[i]>=0){
 									//~ #pragma omp critical(color)
-									MUTEXES[(kmer_ids[i]*color_number+i_file)%1000].lock();
+									//~ MUTEXES[(kmer_ids[i]*color_number+i_file)%1000].lock();
 									{
-										color_me_amaze[kmer_ids[i]*color_number+i_file]=true;
+										color_me_amaze[i_file][kmer_ids[i]]=true;
 									}
-									MUTEXES[(kmer_ids[i]*color_number+i_file)%1000].unlock();
+									//~ MUTEXES[(kmer_ids[i]*color_number+i_file)%1000].unlock();
 								}
 							}
 						}
