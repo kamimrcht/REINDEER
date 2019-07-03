@@ -56,23 +56,20 @@ void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_numb
 		while(not query_file.eof()){
 			#pragma omp critical(i_file)
 			{
-				for(uint i(0);i<1000;++i){
+				for(uint i(0);i<4000;++i){
 					getline(query_file,qline);
 					if(qline.empty()){break;}
 					lines.push_back(qline);
 				}
 			}
 			uint i;
+			string header;
 			#pragma omp for ordered
 			for(i=(0);i<lines.size();++i){
-
 				string toWrite;
 				string line=lines[i];
 				//~ cout << line<<endl;
 				if(line[0]=='A' or line[0]=='C' or line[0]=='G' or line[0]=='T'){
-					mm.lock();
-					num_seq ++;
-					mm.unlock();
 					vector<int64_t> kmers_colors;
 					// I GOT THEIR INDICES
 					vector<int64_t> kmer_ids=ksl.query_sequence_hash(line);
@@ -107,24 +104,27 @@ void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_numb
 								percents.back().second++;
 							}
 						}
-						toWrite += "query" + to_string(num_seq) +":";
+						toWrite += header ;
 						for (uint per(0); per < percents.size(); ++per)
 						{
 							//~ cout << percents[per].second << " " << line.size() << endl ;
 
 							percents[per].second = percents[per].second *100 /(line.size() -k);
 							if (percents[per].second >= 30){
-								toWrite += "dataset" + to_string(percents[per].first+1) + ": " + to_string(percents[per].second) + "% ";
+								toWrite += " dataset" + to_string(percents[per].first+1) + ":" + to_string(percents[per].second) + "%";
 							}
 						}
-
 						toWrite += "\n";
-
-
 					}
 				}
+				else if (line[0]=='@' or line[0]=='>')
+				{
+					//~ mm.lock();
+					header = line;
+					//~ mm.unlock();
+				}
 				#pragma omp ordered
-				if (toWrite != "query" + to_string(num_seq) +":\n")
+				if (toWrite != header +"\n")
 				{
 					out<<toWrite;
 				}
