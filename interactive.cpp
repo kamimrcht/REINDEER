@@ -73,7 +73,7 @@ void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_numb
 					mm.lock();
 					num_seq ++;
 					mm.unlock();
-					vector<int64_t> kmers_colors; 
+					vector<int64_t> kmers_colors;
 					// I GOT THEIR INDICES
 					vector<int64_t> kmer_ids=ksl.query_sequence_hash(line);
 					for(uint64_t i(0);i<kmer_ids.size();++i){
@@ -117,11 +117,11 @@ void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_numb
 								toWrite += "dataset" + to_string(percents[per].first+1) + ": " + to_string(percents[per].second) + "% ";
 							}
 						}
-						
+
 						toWrite += "\n";
-						
-						
-					} 
+
+
+					}
 				}
 				#pragma omp ordered
 				if (toWrite != "query" + to_string(num_seq) +":\n")
@@ -201,10 +201,12 @@ int main(int argc, char ** argv){
 		return 0;
 	}
 	{
+		vector<mutex> MUTEXES(1000);
 		// I BUILD THE INDEX
 		kmer_Set_Light ksl(k,m1,m2,m3,c,bit,ex);
 		// IF YOU DONT KNOW WHAT TO DO THIS SHOULD WORKS GOOD -> kmer_Set_Light ksl(KMERSIZE,10,10,3,CORE_NUMBER,6,0);
 		ksl.construct_index(input);
+
 
 
 		high_resolution_clock::time_point t1 = high_resolution_clock::now();
@@ -227,34 +229,37 @@ int main(int argc, char ** argv){
 
 		// FOR EACH LINE OF EACH INDEXED FILE
 		uint i_file;
-		#pragma omp parallel for num_threads(10)
+		#pragma omp parallel for
 		for(i_file=0;i_file<file_names.size();++i_file){
 			ifstream in(file_names[i_file]);
-			#pragma omp parallel num_threads(10)
+			string read;
+			//~ #pragma omp parallel num_threads(c)
 			{
 				vector<string> lines;
-				string line;
-				vector<int64_t> kmer_ids;
 				while(not in.eof()){
-					#pragma omp critical(i_file)
+					//~ #pragma omp critical(i_file)
 					{
-						for(uint i(0);i<100;++i){
-							getline(in,line);
-							lines.push_back(line);
+						for(uint i(0);i<1000;++i){
+							getline(in,read);
+							lines.push_back(read);
 						}
 					}
-					for(uint i(0);i<100;++i){
-						line=lines[i];
+					uint i_buffer;
+					#pragma omp parallel for
+					for(i_buffer=0;i_buffer<1000;++i_buffer){
+						string line=lines[i_buffer];
 						if(line[0]=='A' or line[0]=='C' or line[0]=='G' or line[0]=='T'){
 							// I GOT THE IDENTIFIER OF EACH KMER
-							kmer_ids=ksl.query_sequence_hash(line);
+							auto kmer_ids=ksl.query_sequence_hash(line);
 							for(uint64_t i(0);i<kmer_ids.size();++i){
 								//I COLOR THEM
 								if(kmer_ids[i]>=0){
-									#pragma omp critical(color)
+									//~ #pragma omp critical(color)
+									MUTEXES[(kmer_ids[i]*color_number+i_file)%1000].lock();
 									{
 										color_me_amaze[kmer_ids[i]*color_number+i_file]=true;
 									}
+									MUTEXES[(kmer_ids[i]*color_number+i_file)%1000].unlock();
 								}
 							}
 						}
