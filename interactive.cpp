@@ -36,18 +36,63 @@ using namespace chrono;
 
 
 
-inline bool exists_test(string& name) {
+inline bool exists_test(const string& name) {
     return ( access( name.c_str(), F_OK ) != -1 );
 }
 
 
-void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_number, vector<vector<bool>>& color_me_amaze, uint k){
+void write_color_matrix(const string& output_file, vector<vector<uint8_t>>& color_matrix){
+	auto out=new ofstream(output_file);
+	uint64_t color_number(color_matrix.size());
+	uint64_t line_size(color_matrix[0].size());
+	uint i(0);
+	
+	out->write(reinterpret_cast<char*>(&color_number),sizeof(uint64_t));
+	out->write(reinterpret_cast<char*>(&line_size),sizeof(uint64_t));
+	//~ auto out=new zstr::ofstream(output_file);
+	for (uint vec(0); vec < color_matrix.size(); ++vec)
+	{
+		auto point =&(color_matrix[vec][0]);
+		out->write((char*)point,(line_size));
+	}
+	delete out;
+}
+
+
+
+vector<vector<uint8_t>> load_written_matrix(const string& input_file){
+	if(not exists_test(input_file))
+	{
+		cout<<"File problem"<<endl;
+		exit(0);
+	}
+	uint64_t color_number;
+	uint64_t line_size;
+	auto in=new ifstream(input_file);
+	in-> read(reinterpret_cast<char *>(&color_number), sizeof(uint64_t));
+	in-> read(reinterpret_cast<char *>(&line_size), sizeof(uint64_t));
+	cout << "line size " << line_size << " color number " << color_number << endl;
+	vector<uint8_t> colorV(line_size,0);
+	vector<vector<uint8_t>> color_matrix(color_number,colorV);
+	//~ auto in=new zstr::ifstream(input);
+	//~ assign(bloom_size/8,0);
+	for (uint vec(0); vec < color_matrix.size(); ++vec)
+	{
+		in->read( (char*)((color_matrix[vec].data())) , line_size);
+	}
+	uint i(0);
+	delete(in);
+	return color_matrix;
+}
+
+
+
+void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_number, vector<vector<uint8_t>>& color_me_amaze, uint k){
 	ifstream query_file(input);
 	ofstream out(name);
-	//~ cout << "here"<<endl;
+	
 	//~ #pragma omp parallel
 	uint64_t num_seq(0);
-	//~ cout << "here\n" ;
 	mutex mm;
 	{
 		string qline;
@@ -68,7 +113,6 @@ void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_numb
 			for(i=(0);i<lines.size();++i){
 				string toWrite;
 				string line=lines[i];
-				//~ cout << line<<endl;
 				if(line[0]=='A' or line[0]=='C' or line[0]=='G' or line[0]=='T'){
 					vector<int64_t> kmers_colors;
 					// I GOT THEIR INDICES
@@ -76,18 +120,15 @@ void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_numb
 					for(uint64_t i(0);i<kmer_ids.size();++i){
 						// KMERS WITH NEGATIVE INDICE ARE ALIEN/STRANGER/COLORBLIND KMERS
 						if(kmer_ids[i]>=0){
-						//~ cout << "111111111111111\n";
+						
 						// I KNOW THE COLORS OF THIS KMER !... I'M BLUE DABEDI DABEDA...
 							for(uint64_t i_color(0);i_color<color_number;++i_color){
-								//~ cout << "222222222222222222\n";
 								if(color_me_amaze[i_color][kmer_ids[i]]){
 									kmers_colors.push_back(i_color);
 								}
 
 							}
 						}
-						//~ toWrite+="\n";
-						//~ cout << toWrite;
 					}
 					if (not  kmers_colors.empty())
 					{
@@ -100,17 +141,14 @@ void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_numb
 								percents.push_back({kmers_colors[i_col],1});
 								val = kmers_colors[i_col];
 							} else {
-								//~ cout << "happens" ;
 								percents.back().second++;
 							}
 						}
 						toWrite += header ;
 						for (uint per(0); per < percents.size(); ++per)
 						{
-							//~ cout << percents[per].second << " " << line.size() << endl ;
-
 							percents[per].second = percents[per].second *100 /(line.size() -k);
-							if (percents[per].second >= 30){
+							if (percents[per].second >= 30 and percents[per].second < 101){
 								toWrite += " dataset" + to_string(percents[per].first+1) + ":" + to_string(percents[per].second) + "%";
 							}
 						}
@@ -225,8 +263,8 @@ int main(int argc, char ** argv){
 
 		// I ALLOCATE THE COLOR VECTOR
 
-		vector<bool> colorV(ksl.number_kmer,false);
-		vector<vector<bool>> color_me_amaze(color_number,colorV);
+		vector<uint8_t> colorV(ksl.number_kmer,0);
+		vector<vector<uint8_t>> color_me_amaze(color_number,colorV);
 		//NOT VERY SMART I KNOW...
 
 		// FOR EACH LINE OF EACH INDEXED FILE
@@ -259,7 +297,7 @@ int main(int argc, char ** argv){
 									//~ #pragma omp critical(color)
 									//~ MUTEXES[(kmer_ids[i]*color_number+i_file)%1000].lock();
 									{
-										color_me_amaze[i_file][kmer_ids[i]]=true;
+										color_me_amaze[i_file][kmer_ids[i]]=1;
 									}
 									//~ MUTEXES[(kmer_ids[i]*color_number+i_file)%1000].unlock();
 								}
@@ -270,7 +308,17 @@ int main(int argc, char ** argv){
 				}
 			}
 		}
-
+		uint count(0);
+		for (uint c(0); c < color_me_amaze.size(); ++c)
+		{
+			for (uint i(0); i < color_me_amaze[c].size(); ++i)
+				if (color_me_amaze[c][i] == 1)
+				{
+					++count;
+				}
+		}
+		//~ write_color_matrix("test_serial.txt", color_me_amaze);
+		//~ color_me_amaze = load_written_matrix("test_serial.txt");
 		high_resolution_clock::time_point t12 = high_resolution_clock::now();
 		duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
 		cout<<"Coloration done: "<< time_span12.count() << " seconds."<<endl;
@@ -284,7 +332,7 @@ int main(int argc, char ** argv){
 			cin.get (str,256);
 			cin.clear();
 			cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-			cout << str << endl;
+			//~ cout << str << endl;
 			string entry(str);
 			if (entry == ""){
 				if(patience>0){
@@ -301,6 +349,7 @@ int main(int argc, char ** argv){
 					doQuery(entry, outName, ksl, color_number, color_me_amaze, k);
 					memset(str, 0, 255);
 					counter++;
+					
 					//~ high_resolution_clock::time_point t13 = high_resolution_clock::now();
 					//~ duration<double> time_span13 = duration_cast<duration<double>>(t13 - t12);
 					//~ cout<<"Query done: "<< time_span13.count() << " seconds."<<endl;
