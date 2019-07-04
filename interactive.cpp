@@ -228,7 +228,7 @@ int main(int argc, char ** argv){
 				break;
 		}
 	}
-	cout << input << " " << fof << " " << color_load_file << k << endl;
+	//~ cout << input << " " << fof << " " << color_load_file << k << endl;
 	if(input=="" or (fof=="" and color_load_file=="") or k==0){
 		cout
 		<<"Mandatory arguments"<<endl
@@ -279,7 +279,7 @@ int main(int argc, char ** argv){
 				}
 			}
 		
-			cout << "here" << endl;
+			//~ cout << "here" << endl;
 			color_number = file_names.size();
 			for (uint c(0); c < color_number; ++c){
 				color_me_amaze.push_back(colorV);
@@ -331,7 +331,7 @@ int main(int argc, char ** argv){
 			{
 				write_color_matrix(color_dump_file, color_me_amaze);
 			}
-			cout << "here2" << endl;
+			//~ cout << "here2" << endl;
 		} else 
 		{ // use color from file on disk
 			color_me_amaze = load_written_matrix(color_load_file);
