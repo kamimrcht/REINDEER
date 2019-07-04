@@ -180,7 +180,7 @@ int main(int argc, char ** argv){
 	omp_set_nested(1);
 
 	char ch;
-	string input,query,fof;
+	string input,query,fof, color_dump_file(""), color_load_file("");
 	uint k(31);
 	uint m1(10);
 	uint m2(10);
@@ -188,10 +188,16 @@ int main(int argc, char ** argv){
 	uint c(1);
 	uint bit(6);
 	uint ex(0);
-	while ((ch = getopt (argc, argv, "g:q:k:m:n:s:t:b:e:o:")) != -1){
+	while ((ch = getopt (argc, argv, "g:q:k:m:n:s:t:b:e:o:w:l:")) != -1){
 		switch(ch){
 			case 'q':
 				query=optarg;
+				break;
+			case 'w':
+				color_dump_file=optarg;
+				break;
+			case 'l':
+				color_load_file=optarg;
 				break;
 			case 'g':
 				input=optarg;
@@ -222,12 +228,12 @@ int main(int argc, char ** argv){
 				break;
 		}
 	}
-
-	if(input=="" or fof=="" or k==0){
+	cout << input << " " << fof << " " << color_load_file << k << endl;
+	if(input=="" or (fof=="" and color_load_file=="") or k==0){
 		cout
 		<<"Mandatory arguments"<<endl
 		<<"-g graph file constructed fom all your file"<<endl
-		<<"-o your original files in a file of file"<<endl
+		<<"-o your original files in a file of file OR -l a binary color matrix"<<endl
 		<<"-k k value used for graph "<<endl<<endl
 
 		<<"Performances arguments"<<endl
@@ -235,7 +241,11 @@ int main(int argc, char ** argv){
 		<<"-n to create 4^n mphf (7). More mean slower construction but better index, must be <=m"<<endl
 		<<"-s to use 4^s files (3). More reduce memory usage and use more files, must be <=n"<<endl
 		<<"-t core used (1)"<<endl
-		<<"-b bit saved to encode positions (6). Will reduce the memory usage of b bit per kmer but query have to check 2^b kmers"<<endl;
+		<<"-b bit saved to encode positions (6). Will reduce the memory usage of b bit per kmer but query have to check 2^b kmers"<<endl << endl
+		
+		<<"Serialization arguments"<<endl
+		<<"-w file where to write the index colors (-o is mandatory)"<<endl
+		<<"-l file from which index colors are loaded (do not use with -o)"<<endl;
 		return 0;
 	}
 	{
@@ -250,72 +260,82 @@ int main(int argc, char ** argv){
 		high_resolution_clock::time_point t1 = high_resolution_clock::now();
 
 		// I PARSE THE FILE OF FILE
-		ifstream fofin(fof);
-		vector <string> file_names;
-		string file_name;
-		while(not fofin.eof()){
-			getline(fofin,file_name);
-			if(not file_name.empty()){
-				file_names.push_back(file_name);
-			}
-		}
-		uint64_t color_number(file_names.size());
+		
 
 		// I ALLOCATE THE COLOR VECTOR
-
+		uint64_t color_number;
 		vector<uint8_t> colorV(ksl.number_kmer,0);
-		vector<vector<uint8_t>> color_me_amaze(color_number,colorV);
-		//NOT VERY SMART I KNOW...
+		vector<vector<uint8_t>> color_me_amaze;
+		//~ vector<vector<uint8_t>> color_me_amaze(color_number,colorV);
+		if (color_load_file.empty()) // use colors from the file of file
+		{
+			ifstream fofin(fof);
+			vector <string> file_names;
+			string file_name;
+			while(not fofin.eof()){
+				getline(fofin,file_name);
+				if(not file_name.empty()){
+					file_names.push_back(file_name);
+				}
+			}
+		
+			cout << "here" << endl;
+			color_number = file_names.size();
+			for (uint c(0); c < color_number; ++c){
+				color_me_amaze.push_back(colorV);
+			}
+			//NOT VERY SMART I KNOW...
 
-		// FOR EACH LINE OF EACH INDEXED FILE
-		uint i_file;
-		#pragma omp parallel for
-		for(i_file=0;i_file<file_names.size();++i_file){
-			ifstream in(file_names[i_file]);
-			string read;
-			//~ #pragma omp parallel num_threads(c)
-			{
-				vector<string> lines;
-				while(not in.eof()){
-					//~ #pragma omp critical(i_file)
-					{
-						for(uint i(0);i<1000;++i){
-							getline(in,read);
-							lines.push_back(read);
+			// FOR EACH LINE OF EACH INDEXED FILE
+			uint i_file;
+			#pragma omp parallel for
+			for(i_file=0;i_file<file_names.size();++i_file){
+				ifstream in(file_names[i_file]);
+				string read;
+				//~ #pragma omp parallel num_threads(c)
+				{
+					vector<string> lines;
+					while(not in.eof()){
+						//~ #pragma omp critical(i_file)
+						{
+							for(uint i(0);i<1000;++i){
+								getline(in,read);
+								lines.push_back(read);
+							}
 						}
-					}
-					uint i_buffer;
-					#pragma omp parallel for
-					for(i_buffer=0;i_buffer<1000;++i_buffer){
-						string line=lines[i_buffer];
-						if(line[0]=='A' or line[0]=='C' or line[0]=='G' or line[0]=='T'){
-							// I GOT THE IDENTIFIER OF EACH KMER
-							auto kmer_ids=ksl.query_sequence_hash(line);
-							for(uint64_t i(0);i<kmer_ids.size();++i){
-								//I COLOR THEM
-								if(kmer_ids[i]>=0){
-									//~ #pragma omp critical(color)
-									//~ MUTEXES[(kmer_ids[i]*color_number+i_file)%1000].lock();
-									{
-										color_me_amaze[i_file][kmer_ids[i]]=1;
+						uint i_buffer;
+						#pragma omp parallel for
+						for(i_buffer=0;i_buffer<1000;++i_buffer){
+							string line=lines[i_buffer];
+							if(line[0]=='A' or line[0]=='C' or line[0]=='G' or line[0]=='T'){
+								// I GOT THE IDENTIFIER OF EACH KMER
+								auto kmer_ids=ksl.query_sequence_hash(line);
+								for(uint64_t i(0);i<kmer_ids.size();++i){
+									//I COLOR THEM
+									if(kmer_ids[i]>=0){
+										//~ #pragma omp critical(color)
+										//~ MUTEXES[(kmer_ids[i]*color_number+i_file)%1000].lock();
+										{
+											color_me_amaze[i_file][kmer_ids[i]]=1;
+										}
+										//~ MUTEXES[(kmer_ids[i]*color_number+i_file)%1000].unlock();
 									}
-									//~ MUTEXES[(kmer_ids[i]*color_number+i_file)%1000].unlock();
 								}
 							}
 						}
+						lines={};
 					}
-					lines={};
 				}
 			}
-		}
-		uint count(0);
-		for (uint c(0); c < color_me_amaze.size(); ++c)
-		{
-			for (uint i(0); i < color_me_amaze[c].size(); ++i)
-				if (color_me_amaze[c][i] == 1)
-				{
-					++count;
-				}
+			if (not color_dump_file.empty()) 
+			{
+				write_color_matrix(color_dump_file, color_me_amaze);
+			}
+			cout << "here2" << endl;
+		} else 
+		{ // use color from file on disk
+			color_me_amaze = load_written_matrix(color_load_file);
+			color_number = color_me_amaze.size();
 		}
 		//~ write_color_matrix("test_serial.txt", color_me_amaze);
 		//~ color_me_amaze = load_written_matrix("test_serial.txt");
