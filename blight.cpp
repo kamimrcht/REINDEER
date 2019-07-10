@@ -730,12 +730,19 @@ void kmer_Set_Light::create_super_buckets_regular(const string& input_file){
 	bucketSeq.shrink_to_fit();
 	uint64_t i(0),total_pos_size(0);
 	uint max_bucket_mphf(0);
-	uint64_t hash_base(0),old_hash_base(0);
+	uint64_t hash_base(0),old_hash_base(0), nb_skmer_before(0);
 	for(uint BC(0);BC<minimizer_number;++BC){
 		all_buckets[BC].start=i;
 		all_buckets[BC].current_pos=i;
 		i+=all_buckets[BC].nuc_minimizer;
 		max_bucket_mphf=max(all_buckets[BC].skmer_number,max_bucket_mphf);
+		if (BC == 0)
+		{
+			all_buckets[BC].skmer_number = 0; // I replace skmer_number by the total number of minitigs before this bucket
+		} else {
+			all_buckets[BC].skmer_number  = all_buckets[BC].skmer_number + nb_skmer_before;
+		}
+		nb_skmer_before = all_buckets[BC].skmer_number;
 		if((BC+1)%number_bucket_per_mphf==0){
 			int n_bits_to_encode((ceil(log2(max_bucket_mphf+1))));
 			if(n_bits_to_encode<1){n_bits_to_encode=1;}
@@ -1109,6 +1116,20 @@ int64_t kmer_Set_Light::query_kmer_hash(kmer canon){
 		return query_get_hash(canon,regular_minimizer(canon));
 	}
 }
+int64_t kmer_Set_Light::query_kmer_minitig(kmer canon){
+	if(extension_minimizer>0){
+		auto nadine(minimizer_and_more(canon));
+		uint fragile(nadine.fragile);
+		uint32_t minimizer=nadine.extended_mini;
+		if(fragile){
+			return multiple_minimizer_query_hash(minimizer,  canon, nadine.prefix_fragile,nadine.suffix_fragile);
+		}else{
+			return query_get_rank_minitig(canon,minimizer);
+		}
+	}else{
+		return query_get_rank_minitig(canon,regular_minimizer(canon));
+	}
+}
 
 
 pair<uint32_t,uint32_t> kmer_Set_Light::query_sequence_bool(const string& query){
@@ -1146,6 +1167,23 @@ vector<int64_t> kmer_Set_Light::query_sequence_hash(const string& query){
 		updateRCK(rcSeq,query[i+k]);
 		canon=(min_k(seq, rcSeq));
 		res.push_back(query_kmer_hash(canon));
+	}
+	return res;
+}
+vector<int64_t> kmer_Set_Light::query_sequence_minitig(const string& query){
+	vector<int64_t> res;
+	if(query.size()<k){
+		return res;
+	}
+	kmer seq(str2num(query.substr(0,k))),rcSeq(rcb(seq,k)),canon(min_k(seq,rcSeq));
+	uint i(0);
+	canon=(min_k(seq, rcSeq));
+	res.push_back(query_kmer_minitig(canon));
+	for(;i+k<query.size();++i){
+		updateK(seq,query[i+k]);
+		updateRCK(rcSeq,query[i+k]);
+		canon=(min_k(seq, rcSeq));
+		res.push_back(query_kmer_minitig(canon));
 	}
 	return res;
 }
@@ -1270,7 +1308,7 @@ int32_t kmer_Set_Light::query_get_pos_unitig(const kmer canon,uint minimizer){
 	uint64_t rank(bool_to_int( n_bits_to_encode, hash, all_mphf[minimizer/number_bucket_per_mphf].start));
 	bm::id_t pos;
 
-	bool found =position_super_kmers[minimizer].select(rank+1, pos, *(position_super_kmers_RS[minimizer]));
+	bool found = position_super_kmers[minimizer].select(rank+1, pos, *(position_super_kmers_RS[minimizer]));
 	if(not found){
 		bm::bvector<>::enumerator en = position_super_kmers[minimizer].first();
 		bm::bvector<>::enumerator en_end = position_super_kmers[minimizer].end();
@@ -1298,6 +1336,7 @@ int32_t kmer_Set_Light::query_get_pos_unitig(const kmer canon,uint minimizer){
 }
 
 
+
 int64_t kmer_Set_Light::query_get_hash(const kmer canon,uint minimizer){
 	#pragma omp atomic
 	number_query++;
@@ -1310,6 +1349,7 @@ int64_t kmer_Set_Light::query_get_hash(const kmer canon,uint minimizer){
 
 	int n_bits_to_encode(all_mphf[minimizer/number_bucket_per_mphf].bit_to_encode);
 	uint64_t pos(bool_to_int( n_bits_to_encode, hash, all_mphf[minimizer/number_bucket_per_mphf].start));
+	
 	if(likely((pos+k-1)<all_buckets[minimizer].nuc_minimizer)){
 		kmer seqR=get_kmer(minimizer,pos);
 		kmer rcSeqR, canonR;
@@ -1318,6 +1358,34 @@ int64_t kmer_Set_Light::query_get_hash(const kmer canon,uint minimizer){
 			canonR=(min_k(seqR, rcSeqR));
 			if(canon==canonR){
 				return hash+all_mphf[minimizer/number_bucket_per_mphf].mphf_size;
+			}
+			seqR=update_kmer(j+k,minimizer,seqR);//can be avoided
+		}
+	}
+	return -1;
+}
+int64_t kmer_Set_Light::query_get_rank_minitig(const kmer canon,uint minimizer){
+	#pragma omp atomic
+	number_query++;
+	if(unlikely(all_mphf[minimizer/number_bucket_per_mphf].empty))
+		return -1;
+
+	uint64_t hash=(all_mphf[minimizer/number_bucket_per_mphf].kmer_MPHF->lookup(canon));
+	if(unlikely(hash == ULLONG_MAX))
+		return -1;
+
+	int n_bits_to_encode(all_mphf[minimizer/number_bucket_per_mphf].bit_to_encode);
+	uint64_t pos(bool_to_int( n_bits_to_encode, hash, all_mphf[minimizer/number_bucket_per_mphf].start));
+	//~ uint64_t rank(bool_to_int( n_bits_to_encode, hash, all_mphf[minimizer/number_bucket_per_mphf].start));
+	if(likely((pos+k-1)<all_buckets[minimizer].nuc_minimizer)){
+		kmer seqR=get_kmer(minimizer,pos);
+		kmer rcSeqR, canonR;
+		for(uint64_t j=(pos);j<pos+positions_to_check;++j){
+			rcSeqR=(rcb(seqR,k));
+			canonR=(min_k(seqR, rcSeqR));
+			if(canon==canonR){
+				return pos + all_buckets[minimizer].skmer_number; // unique rank ID of a minitig
+				//~ return pos+all_mphf[minimizer/number_bucket_per_mphf].mphf_size;
 			}
 			seqR=update_kmer(j+k,minimizer,seqR);//can be avoided
 		}

@@ -116,7 +116,7 @@ void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_numb
 				if(line[0]=='A' or line[0]=='C' or line[0]=='G' or line[0]=='T'){
 					vector<int64_t> kmers_colors;
 					// I GOT THEIR INDICES
-					vector<int64_t> kmer_ids=ksl.query_sequence_hash(line);
+					vector<int64_t> kmer_ids=ksl.query_sequence_minitig(line);
 					for(uint64_t i(0);i<kmer_ids.size();++i){
 						// KMERS WITH NEGATIVE INDICE ARE ALIEN/STRANGER/COLORBLIND KMERS
 						if(kmer_ids[i]>=0){
