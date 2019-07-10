@@ -28,7 +28,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include "blight.h"
-
+#include "zstr.hpp"
+#include "strict_fstream.hpp"
 
 
 using namespace std;
@@ -42,7 +43,7 @@ inline bool exists_test(const string& name) {
 
 
 void write_color_matrix(const string& output_file, vector<vector<uint8_t>>& color_matrix){
-	auto out=new ofstream(output_file);
+	auto out=new zstr::ofstream(output_file);
 	uint64_t color_number(color_matrix.size());
 	uint64_t line_size(color_matrix[0].size());
 	uint i(0);
@@ -68,7 +69,7 @@ vector<vector<uint8_t>> load_written_matrix(const string& input_file){
 	}
 	uint64_t color_number;
 	uint64_t line_size;
-	auto in=new ifstream(input_file);
+	auto in=new zstr::ifstream(input_file);
 	in-> read(reinterpret_cast<char *>(&color_number), sizeof(uint64_t));
 	in-> read(reinterpret_cast<char *>(&line_size), sizeof(uint64_t));
 	cout << "line size " << line_size << " color number " << color_number << endl;
