@@ -265,7 +265,7 @@ int main(int argc, char ** argv){
 
 		// I ALLOCATE THE COLOR VECTOR
 		uint64_t color_number;
-		vector<uint8_t> colorV(ksl.number_kmer,0);
+		vector<uint8_t> colorV(ksl.total_nb_minitigs,0);
 		vector<vector<uint8_t>> color_me_amaze;
 		//~ vector<vector<uint8_t>> color_me_amaze(color_number,colorV);
 		if (color_load_file.empty()) // use colors from the file of file
@@ -310,14 +310,14 @@ int main(int argc, char ** argv){
 							string line=lines[i_buffer];
 							if(line[0]=='A' or line[0]=='C' or line[0]=='G' or line[0]=='T'){
 								// I GOT THE IDENTIFIER OF EACH KMER
-								auto kmer_ids=ksl.query_sequence_hash(line);
-								for(uint64_t i(0);i<kmer_ids.size();++i){
+								auto minitig_ids=ksl.query_sequence_minitig(line);
+								for(uint64_t i(0);i<minitig_ids.size();++i){
 									//I COLOR THEM
-									if(kmer_ids[i]>=0){
+									if(minitig_ids[i]>=0){
 										//~ #pragma omp critical(color)
 										//~ MUTEXES[(kmer_ids[i]*color_number+i_file)%1000].lock();
 										{
-											color_me_amaze[i_file][kmer_ids[i]]=1;
+											color_me_amaze[i_file][minitig_ids[i]]=1;
 										}
 										//~ MUTEXES[(kmer_ids[i]*color_number+i_file)%1000].unlock();
 									}

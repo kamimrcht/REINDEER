@@ -730,7 +730,7 @@ void kmer_Set_Light::create_super_buckets_regular(const string& input_file){
 	bucketSeq.shrink_to_fit();
 	uint64_t i(0),total_pos_size(0);
 	uint max_bucket_mphf(0);
-	uint64_t hash_base(0),old_hash_base(0), nb_skmer_before(0);
+	uint64_t hash_base(0),old_hash_base(0), nb_skmer_before(0), last_skmer_number(0);
 	for(uint BC(0);BC<minimizer_number;++BC){
 		all_buckets[BC].start=i;
 		all_buckets[BC].current_pos=i;
@@ -740,6 +740,7 @@ void kmer_Set_Light::create_super_buckets_regular(const string& input_file){
 		{
 			all_buckets[BC].skmer_number = 0; // I replace skmer_number by the total number of minitigs before this bucket
 		} else {
+			last_skmer_number = all_buckets[BC].skmer_number;
 			all_buckets[BC].skmer_number  = all_buckets[BC].skmer_number + nb_skmer_before;
 		}
 		nb_skmer_before = all_buckets[BC].skmer_number;
@@ -755,6 +756,7 @@ void kmer_Set_Light::create_super_buckets_regular(const string& input_file){
 			max_bucket_mphf=0;
 		}
 	}
+	total_nb_minitigs = all_buckets[(uint) minimizer_number - 1].skmer_number + last_skmer_number; // total number of minitigs
 	positions.resize(total_pos_size);
 	positions.shrink_to_fit();
 }
