@@ -42,6 +42,23 @@ inline bool exists_test(const string& name) {
 }
 
 
+double parseCoverage(const string& str){
+	size_t pos(str.find("km:f:"));
+	if(pos==string::npos)
+	{
+		pos=(str.find("KM:f:"));
+	}
+	if(pos==string::npos){
+		return 1;
+	}
+	uint i(1);
+	while(str[i+pos+5]!=' '){
+		++i;
+	}
+	return stof(str.substr(pos+5,i));
+}
+
+
 void write_color_matrix(const string& output_file, vector<vector<uint8_t>>& color_matrix){
 	auto out=new zstr::ofstream(output_file);
 	uint64_t color_number(color_matrix.size());
@@ -88,7 +105,7 @@ vector<vector<uint8_t>> load_written_matrix(const string& input_file){
 
 
 
-void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_number, vector<vector<uint8_t>>& color_me_amaze, uint k){
+void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_number, vector<vector<uint8_t>>& color_me_amaze, uint k, bool record_counts){
 	ifstream query_file(input);
 	ofstream out(name);
 
@@ -116,6 +133,7 @@ void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_numb
 				string line=lines[i];
 				if(line[0]=='A' or line[0]=='C' or line[0]=='G' or line[0]=='T'){
 					vector<int64_t> kmers_colors;
+					vector<int64_t> color_counts(color_number,0);
 					// I GOT THEIR INDICES
 					vector<int64_t> kmer_ids=ksl.query_sequence_minitig(line);
 					for(uint64_t i(0);i<kmer_ids.size();++i){
@@ -126,6 +144,10 @@ void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_numb
 							for(uint64_t i_color(0);i_color<color_number;++i_color){
 								if(color_me_amaze[i_color][kmer_ids[i]]){
 									kmers_colors.push_back(i_color);
+									if (record_counts)
+									{
+										color_counts[i_color] = color_me_amaze[i_color][kmer_ids[i]];
+									}
 								}
 
 							}
@@ -149,8 +171,16 @@ void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_numb
 						for (uint per(0); per < percents.size(); ++per)
 						{
 							percents[per].second = percents[per].second *100 /(line.size() -k);
-							if (percents[per].second >= 30 and percents[per].second < 101){
-								toWrite += " dataset" + to_string(percents[per].first+1) + ":" + to_string(percents[per].second) + "%";
+							if (percents[per].second >= 30 and percents[per].second < 101)
+							{
+								if (not record_counts)
+								{
+									toWrite += " dataset" + to_string(percents[per].first+1) + ":" + to_string(percents[per].first) + "%";
+								}
+								else 
+								{
+									toWrite += " dataset" + to_string(percents[per].first+1) + ":" +  to_string(color_counts[percents[per].first]);
+								}
 							}
 						}
 						toWrite += "\n";
@@ -189,7 +219,8 @@ int main(int argc, char ** argv){
 	uint c(1);
 	uint bit(6);
 	uint ex(0);
-	while ((ch = getopt (argc, argv, "g:q:k:m:n:s:t:b:e:o:w:l:")) != -1){
+	bool record_counts(false);
+	while ((ch = getopt (argc, argv, "g:q:k:m:n:s:t:b:e:o:w:l:c")) != -1){
 		switch(ch){
 			case 'q':
 				query=optarg;
@@ -227,6 +258,8 @@ int main(int argc, char ** argv){
 			case 'b':
 				bit=stoi(optarg);
 				break;
+			case 'c':
+				record_counts=true;
 		}
 	}
 	//~ cout << input << " " << fof << " " << color_load_file << k << endl;
@@ -243,6 +276,9 @@ int main(int argc, char ** argv){
 		<<"-s to use 4^s files (3). More reduce memory usage and use more files, must be <=n"<<endl
 		<<"-t core used (1)"<<endl
 		<<"-b bit saved to encode positions (6). Will reduce the memory usage of b bit per kmer but query have to check 2^b kmers"<<endl << endl
+
+		<<"Options"<<endl
+		<<"-c record the k-mers counts"<<endl
 
 		<<"Serialization arguments"<<endl
 		<<"-w file where to write the index colors (-o is mandatory)"<<endl
@@ -264,7 +300,7 @@ int main(int argc, char ** argv){
 
 
 		// I ALLOCATE THE COLOR VECTOR
-		uint64_t color_number;
+		uint64_t color_number, count;
 		vector<uint8_t> colorV(ksl.total_nb_minitigs,0);
 		vector<vector<uint8_t>> color_me_amaze;
 		//~ vector<vector<uint8_t>> color_me_amaze(color_number,colorV);
@@ -317,10 +353,27 @@ int main(int argc, char ** argv){
 										//~ #pragma omp critical(color)
 										//~ MUTEXES[(kmer_ids[i]*color_number+i_file)%1000].lock();
 										{
-											color_me_amaze[i_file][minitig_ids[i]]=1;
+											if (not record_counts)
+											{
+												color_me_amaze[i_file][minitig_ids[i]]=1;
+											} 
+											else 
+											{
+												if (color_me_amaze[i_file][minitig_ids[i]] == 0)
+												{
+													color_me_amaze[i_file][minitig_ids[i]]=count;
+												}
+											}
 										}
 										//~ MUTEXES[(kmer_ids[i]*color_number+i_file)%1000].unlock();
 									}
+								}
+							} 
+							else 
+							{
+								if (record_counts)
+								{
+									count = (uint8_t) parseCoverage(line);
 								}
 							}
 						}
@@ -367,7 +420,7 @@ int main(int argc, char ** argv){
 				patience=0;
 				if(exists_test(entry)){
 					string outName("out_query_BLight" + to_string(counter) + ".out");
-					doQuery(entry, outName, ksl, color_number, color_me_amaze, k);
+					doQuery(entry, outName, ksl, color_number, color_me_amaze, k, record_counts);
 					memset(str, 0, 255);
 					counter++;
 
