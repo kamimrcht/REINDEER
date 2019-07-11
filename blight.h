@@ -137,7 +137,7 @@ public:
 	uint64_t positions_total_size = 0;
 	uint64_t number_query=0;
 
-
+	uint64_t total_nb_minitigs = 0;
 	//~ uint hell_bucket;
 	double bit_per_kmer = 0;
 	uint largest_bucket_nuc_all = 0;
@@ -232,6 +232,10 @@ public:
 	vector<int64_t> query_sequence_hash(const string& query);
 	void construct_index(const string& input_file);
 	void report_memusage(boomphf::memreport_t& report, const std::string& prefix="blight", bool add_struct=true);
+	vector<int64_t> query_sequence_minitig(const string& query);
+	int64_t query_get_rank_minitig(const kmer canon,uint minimizer);
+	int64_t query_kmer_minitig(kmer canon);
+	
 };
 
 
