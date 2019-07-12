@@ -106,27 +106,33 @@ vector<vector<uint8_t>> load_written_matrix(const string& input_file){
 
 
 void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_number, vector<vector<uint8_t>>& color_me_amaze, uint k, bool record_counts){
+	cout<<"GO QUERY"<<endl;
 	ifstream query_file(input);
 	ofstream out(name);
-
 	//~ #pragma omp parallel
 	uint64_t num_seq(0);
-	mutex mm;
+	//~ mutex mm;
 	{
 		string qline;
 		vector<string> lines;
 		// FOR EACH LINE OF THE QUERY FILE
 		while(not query_file.eof()){
+			//~ cout<<8<<endl;
 			#pragma omp critical(i_file)
 			{
-				for(uint i(0);i<4000;++i){
+				for(uint i(0);i<4000 and (not query_file.eof());++i){
+					//~ cout<<7<<endl;
 					getline(query_file,qline);
 					if(qline.empty()){break;}
-					lines.push_back(qline);
+					if(qline[0]=='A' or qline[0]=='C' or qline[0]=='G' or qline[0]=='T'){
+						lines.push_back(qline);
+					}
 				}
+				//~ cout<<6<<endl;
 			}
 			uint i;
 			string header;
+			//~ cout<<9<<endl;
 			#pragma omp for ordered
 			for(i=(0);i<lines.size();++i){
 				string toWrite;
@@ -135,11 +141,12 @@ void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_numb
 					vector<int64_t> kmers_colors;
 					vector<int64_t> color_counts(color_number,0);
 					// I GOT THEIR INDICES
+					//~ cout<<0<<endl;
 					vector<int64_t> kmer_ids=ksl.query_sequence_minitig(line);
 					for(uint64_t i(0);i<kmer_ids.size();++i){
 						// KMERS WITH NEGATIVE INDICE ARE ALIEN/STRANGER/COLORBLIND KMERS
 						if(kmer_ids[i]>=0){
-
+						//~ cout<<1<<endl;
 						// I KNOW THE COLORS OF THIS KMER !... I'M BLUE DABEDI DABEDA...
 							for(uint64_t i_color(0);i_color<color_number;++i_color){
 								if(color_me_amaze[i_color][kmer_ids[i]]){
@@ -175,7 +182,7 @@ void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_numb
 							{
 								if (not record_counts)
 								{
-									toWrite += " dataset" + to_string(percents[per].first+1) + ":" + to_string(percents[per].first) + "%";
+									toWrite += " dataset" + to_string(percents[per].first+1) + ":" + to_string(percents[per].second) + "%";
 								}
 								else
 								{
@@ -314,7 +321,7 @@ int main(int argc, char ** argv){
 					if(not file_name.empty()){
 						if(exists_test(file_name)){
 							file_names.push_back(file_name);
-						}{
+						}else{
 							cout<<file_name<<" is not here :X"<<endl;
 						}
 					}
