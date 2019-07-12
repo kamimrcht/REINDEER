@@ -177,7 +177,7 @@ void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_numb
 								{
 									toWrite += " dataset" + to_string(percents[per].first+1) + ":" + to_string(percents[per].first) + "%";
 								}
-								else 
+								else
 								{
 									toWrite += " dataset" + to_string(percents[per].first+1) + ":" +  to_string(color_counts[percents[per].first]);
 								}
@@ -304,16 +304,23 @@ int main(int argc, char ** argv){
 		vector<uint8_t> colorV(ksl.total_nb_minitigs,0);
 		vector<vector<uint8_t>> color_me_amaze;
 		//~ vector<vector<uint8_t>> color_me_amaze(color_number,colorV);
-		if (color_load_file.empty()) // use colors from the file of file
-		{
-			ifstream fofin(fof);
+		if (color_load_file.empty()){ // use colors from the file of file
 			vector <string> file_names;
-			string file_name;
-			while(not fofin.eof()){
-				getline(fofin,file_name);
-				if(not file_name.empty()){
-					file_names.push_back(file_name);
+			if(exists_test(fof)){
+				ifstream fofin(fof);
+				string file_name;
+				while(not fofin.eof()){
+					getline(fofin,file_name);
+					if(not file_name.empty()){
+						if(exists_test(file_name)){
+							file_names.push_back(file_name);
+						}{
+							cout<<file_name<<" is not here :X"<<endl;
+						}
+					}
 				}
+			}else{
+				cout<<"File of file problem"<<endl;
 			}
 
 			//~ cout << "here" << endl;
@@ -356,8 +363,8 @@ int main(int argc, char ** argv){
 											if (not record_counts)
 											{
 												color_me_amaze[i_file][minitig_ids[i]]=1;
-											} 
-											else 
+											}
+											else
 											{
 												if (color_me_amaze[i_file][minitig_ids[i]] == 0)
 												{
@@ -368,8 +375,8 @@ int main(int argc, char ** argv){
 										//~ MUTEXES[(kmer_ids[i]*color_number+i_file)%1000].unlock();
 									}
 								}
-							} 
-							else 
+							}
+							else
 							{
 								if (record_counts)
 								{
