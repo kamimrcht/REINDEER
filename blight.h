@@ -177,6 +177,10 @@ public:
 	}
 
 	~kmer_Set_Light () {
+		//~ delete[] position_super_kmers_RS;
+		for(uint i(0);i<position_super_kmers_RS.size();++i){
+			delete (position_super_kmers_RS[i]);
+		}
 		delete[] all_buckets;
 		for(uint i(0);i<mphf_number;++i){
 			delete all_mphf[i].kmer_MPHF;

@@ -738,12 +738,15 @@ void kmer_Set_Light::create_super_buckets_regular(const string& input_file){
 		max_bucket_mphf=max(all_buckets[BC].skmer_number,max_bucket_mphf);
 		if (BC == 0)
 		{
-			all_buckets[BC].skmer_number = 0; // I replace skmer_number by the total number of minitigs before this bucket
-		} else {
-			last_skmer_number = all_buckets[BC].skmer_number;
-			all_buckets[BC].skmer_number  = all_buckets[BC].skmer_number + nb_skmer_before;
+			nb_skmer_before = 0; // I replace skmer_number by the total number of minitigs before this bucket
 		}
-		nb_skmer_before = all_buckets[BC].skmer_number;
+		else
+		{
+			nb_skmer_before = all_buckets[BC-1].skmer_number; 
+		}
+		uint64_t local_skmercount( all_buckets[BC].skmer_number);
+		all_buckets[BC].skmer_number=total_nb_minitigs;
+		total_nb_minitigs+=local_skmercount;
 		if((BC+1)%number_bucket_per_mphf==0){
 			int n_bits_to_encode((ceil(log2(max_bucket_mphf+1))));
 			if(n_bits_to_encode<1){n_bits_to_encode=1;}
@@ -756,7 +759,7 @@ void kmer_Set_Light::create_super_buckets_regular(const string& input_file){
 			max_bucket_mphf=0;
 		}
 	}
-	total_nb_minitigs = all_buckets[(uint) minimizer_number - 1].skmer_number + last_skmer_number; // total number of minitigs
+	//~ total_nb_minitigs = all_buckets[(uint) minimizer_number - 1].skmer_number + last_skmer_number; // total number of minitigs
 	positions.resize(total_pos_size);
 	positions.shrink_to_fit();
 }
@@ -1352,7 +1355,7 @@ int64_t kmer_Set_Light::query_get_hash(const kmer canon,uint minimizer){
 			rcSeqR=(rcb(seqR,k));
 			canonR=(min_k(seqR, rcSeqR));
 			if(canon==canonR){
-				return hash+all_mphf[minimizer/number_bucket_per_mphf].mphf_size;;
+				return hash+all_mphf[minimizer/number_bucket_per_mphf].mphf_size;
 			}
 			seqR=update_kmer(j+k,minimizer,seqR);//can be avoided
 		}

@@ -55,7 +55,15 @@ double parseCoverage(const string& str){
 	while(str[i+pos+5]!=' '){
 		++i;
 	}
-	return stof(str.substr(pos+5,i));
+	// WARNING WE RETURN COUNTS BETWEEN 0 AND 255
+	float result(stof(str.substr(pos+5,i)));
+	if (result > 255){
+		return 255;
+	}
+	else
+	{
+		return result;
+	}
 }
 
 
@@ -89,7 +97,6 @@ vector<vector<uint8_t>> load_written_matrix(const string& input_file){
 	auto in=new zstr::ifstream(input_file);
 	in-> read(reinterpret_cast<char *>(&color_number), sizeof(uint64_t));
 	in-> read(reinterpret_cast<char *>(&line_size), sizeof(uint64_t));
-	cout << "line size " << line_size << " color number " << color_number << endl;
 	vector<uint8_t> colorV(line_size,0);
 	vector<vector<uint8_t>> color_matrix(color_number,colorV);
 	//~ auto in=new zstr::ifstream(input);
@@ -105,34 +112,27 @@ vector<vector<uint8_t>> load_written_matrix(const string& input_file){
 
 
 
-void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_number, vector<vector<uint8_t>>& color_me_amaze, uint k, bool record_counts){
-	cout<<"GO QUERY"<<endl;
+void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_number, vector<vector<uint8_t>>& color_me_amaze, uint k, bool record_counts, uint threshold){
 	ifstream query_file(input);
 	ofstream out(name);
-	//~ #pragma omp parallel
+	// #pragma omp parallel
 	uint64_t num_seq(0);
-	//~ mutex mm;
-	{
+	// mutex mm;
+	// {
 		string qline;
 		vector<string> lines;
 		// FOR EACH LINE OF THE QUERY FILE
 		while(not query_file.eof()){
-			//~ cout<<8<<endl;
 			#pragma omp critical(i_file)
 			{
-				for(uint i(0);i<4000 and (not query_file.eof());++i){
-					//~ cout<<7<<endl;
+				for(uint i(0);i<4000;++i){
 					getline(query_file,qline);
 					if(qline.empty()){break;}
-					if(qline[0]=='A' or qline[0]=='C' or qline[0]=='G' or qline[0]=='T'){
-						lines.push_back(qline);
-					}
+					lines.push_back(qline);
 				}
-				//~ cout<<6<<endl;
 			}
 			uint i;
 			string header;
-			//~ cout<<9<<endl;
 			#pragma omp for ordered
 			for(i=(0);i<lines.size();++i){
 				string toWrite;
@@ -141,12 +141,10 @@ void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_numb
 					vector<int64_t> kmers_colors;
 					vector<int64_t> color_counts(color_number,0);
 					// I GOT THEIR INDICES
-					//~ cout<<0<<endl;
 					vector<int64_t> kmer_ids=ksl.query_sequence_minitig(line);
 					for(uint64_t i(0);i<kmer_ids.size();++i){
 						// KMERS WITH NEGATIVE INDICE ARE ALIEN/STRANGER/COLORBLIND KMERS
 						if(kmer_ids[i]>=0){
-						//~ cout<<1<<endl;
 						// I KNOW THE COLORS OF THIS KMER !... I'M BLUE DABEDI DABEDA...
 							for(uint64_t i_color(0);i_color<color_number;++i_color){
 								if(color_me_amaze[i_color][kmer_ids[i]]){
@@ -177,17 +175,18 @@ void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_numb
 						toWrite += header ;
 						for (uint per(0); per < percents.size(); ++per)
 						{
-							percents[per].second = percents[per].second *100 /(line.size() -k);
-							if (percents[per].second >= 30 and percents[per].second < 101)
+							if (not record_counts)
 							{
-								if (not record_counts)
+								percents[per].second = percents[per].second *100 /(line.size() -k +1);
+								if (percents[per].second >= (double_t) threshold )
 								{
-									toWrite += " dataset" + to_string(percents[per].first+1) + ":" + to_string(percents[per].second) + "%";
+							
+									toWrite += " dataset" + to_string(percents[per].first+1) + ":" + to_string((int)(percents[per].second*10)/10) + "%";
 								}
-								else
-								{
-									toWrite += " dataset" + to_string(percents[per].first+1) + ":" +  to_string(color_counts[percents[per].first]);
-								}
+							}
+							else
+							{
+								toWrite += " dataset" + to_string(percents[per].first+1) + ":" +  to_string(color_counts[percents[per].first]);
 							}
 						}
 						toWrite += "\n";
@@ -195,9 +194,7 @@ void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_numb
 				}
 				else if (line[0]=='@' or line[0]=='>')
 				{
-					//~ mm.lock();
 					header = line;
-					//~ mm.unlock();
 				}
 				#pragma omp ordered
 				if (toWrite != header +"\n")
@@ -207,11 +204,99 @@ void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_numb
 			}
 			lines={};
 		}
-	}
+	// }
 	query_file.close();
 	out.close();
 }
 
+
+void doColoring(string& color_load_file, string& color_dump_file, string& fof, kmer_Set_Light& ksl, vector<vector<uint8_t>>& color_me_amaze, bool record_counts, uint k, uint64_t& color_number){
+	if (color_load_file.empty()){ // use colors from the file of file
+		vector <string> file_names;
+		if(exists_test(fof)){
+			ifstream fofin(fof);
+			string file_name;
+			while(not fofin.eof()){
+				getline(fofin,file_name);
+				if(not file_name.empty()){
+					if(exists_test(file_name)){
+						file_names.push_back(file_name);
+					}else{
+						cout<<file_name<<" is not here"<<endl;
+					}
+				}
+			}
+		}else{
+			cout<<"File of file problem"<<endl;
+		}
+		color_number = file_names.size();
+		color_me_amaze=vector<vector<uint8_t>>(color_number,vector<uint8_t>(ksl.total_nb_minitigs,0));
+		
+		// FOR EACH LINE OF EACH INDEXED FILE
+		uint i_file;
+		#pragma omp parallel for
+		for(i_file=0;i_file<file_names.size();++i_file){
+			ifstream in(file_names[i_file]);
+			string line;
+			uint64_t count;
+
+			// #pragma omp parallel num_threads(c)
+			//{
+				while(not in.eof()){
+					// #pragma omp critical(i_file)
+					// uint i_buffer;
+					// #pragma omp parallel for
+					// for(i_buffer=0;i_buffer<lines.size();++i_buffer){
+						getline(in,line);
+						if(line.empty()){continue;}
+						if(line[0]=='A' or line[0]=='C' or line[0]=='G' or line[0]=='T'){
+							if (line.size() >= k){
+							// I GOT THE IDENTIFIER OF EACH KMER
+								auto minitig_ids=ksl.query_sequence_minitig(line);
+								for(uint64_t i(0);i<minitig_ids.size();++i){
+									//I COLOR THEM
+									if(minitig_ids[i]>=0 and minitig_ids[i]<color_me_amaze[0].size()){
+										if (not record_counts){
+											color_me_amaze[i_file][minitig_ids[i]]=1;
+										}else{
+											
+											if (color_me_amaze[i_file][minitig_ids[i]] == 0){
+												color_me_amaze[i_file][minitig_ids[i]]=count;
+											}
+											//~ if (line=="AAAAAAAAAACAAAAAATATAAAAAAAAAAAAAAAAAAA"){
+												//~ cout << i_file << " " << minitig_ids[i] << " count " << count << endl;
+											//~ }
+										}
+									}
+								}
+								//~ if (line=="AAAAAAAAAACAAAAAATATAAAAAAAAAAAAAAAAAAA"){
+												//~ cout << "end for" << endl;
+								//~ }
+							}
+						}
+						else{
+							if (record_counts){
+								
+								count = (uint8_t) parseCoverage(line);
+								//~ if (line == ">1 LN:i:33 KC:i:6 km:f:2.0  L:-:808:+ L:-:814:+ L:-:160162:+"){
+									//~ cout << count << endl;
+									//~ cin.get();
+								//~ }
+							}
+						}
+					}
+				//}
+		}
+		if (not color_dump_file.empty())
+		{	
+			write_color_matrix(color_dump_file, color_me_amaze);
+		}
+	}else{ // use color from file on disk
+		color_me_amaze = load_written_matrix(color_load_file);
+		color_number = color_me_amaze.size();
+	}
+	
+}
 
 
 int main(int argc, char ** argv){
@@ -227,7 +312,8 @@ int main(int argc, char ** argv){
 	uint bit(6);
 	uint ex(0);
 	bool record_counts(false);
-	while ((ch = getopt (argc, argv, "g:q:k:m:n:s:t:b:e:o:w:l:c")) != -1){
+	uint threshold(30);
+	while ((ch = getopt (argc, argv, "g:q:k:m:n:s:t:b:e:o:w:l:S:c")) != -1){
 		switch(ch){
 			case 'q':
 				query=optarg;
@@ -265,11 +351,14 @@ int main(int argc, char ** argv){
 			case 'b':
 				bit=stoi(optarg);
 				break;
+			case 'S':
+				threshold=stoi(optarg);
+				break;
 			case 'c':
 				record_counts=true;
+				break;
 		}
 	}
-	//~ cout << input << " " << fof << " " << color_load_file << k << endl;
 	if(input=="" or (fof=="" and color_load_file=="") or k==0){
 		cout
 		<<"Mandatory arguments"<<endl
@@ -286,164 +375,61 @@ int main(int argc, char ** argv){
 
 		<<"Options"<<endl
 		<<"-c record the k-mers counts"<<endl
+		<<"-S minimum percent of query k-mers present in a dataset (default 30)" << endl
 
 		<<"Serialization arguments"<<endl
 		<<"-w file where to write the index colors (-o is mandatory)"<<endl
 		<<"-l file from which index colors are loaded (do not use with -o)"<<endl;
 		return 0;
 	}
-	{
-		//~ vector<mutex> MUTEXES(1000);
-		// I BUILD THE INDEX
-		kmer_Set_Light ksl(k,m1,m2,m3,c,bit,ex);
-		// IF YOU DONT KNOW WHAT TO DO THIS SHOULD WORKS GOOD -> kmer_Set_Light ksl(KMERSIZE,10,10,3,CORE_NUMBER,6,0);
-		ksl.construct_index(input);
+	
+	//~ vector<mutex> MUTEXES(1000);
+	// I BUILD THE INDEX
+	kmer_Set_Light ksl(k,m1,m2,m3,c,bit,ex);
+	// IF YOU DONT KNOW WHAT TO DO THIS SHOULD WORKS GOOD -> kmer_Set_Light ksl(KMERSIZE,10,10,3,CORE_NUMBER,6,0);
+	ksl.construct_index(input);
+	high_resolution_clock::time_point t1 = high_resolution_clock::now();
+	// I PARSE THE FILE OF FILE
+	// I ALLOCATE THE COLOR VECTOR
+	uint64_t color_number;
+	vector<vector<uint8_t>> color_me_amaze;
+	doColoring(color_load_file, color_dump_file, fof, ksl, color_me_amaze, record_counts, k, color_number );
+	high_resolution_clock::time_point t12 = high_resolution_clock::now();
+	duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
+	cout<<"Coloration done: "<< time_span12.count() << " seconds."<<endl;
+	// query //
+	uint counter(0),patience(0);
+	while(true){
+		char str[256];
+		cout << "Enter the name of the query file: ";
 
-
-
-		high_resolution_clock::time_point t1 = high_resolution_clock::now();
-
-		// I PARSE THE FILE OF FILE
-
-
-		// I ALLOCATE THE COLOR VECTOR
-		uint64_t color_number, count;
-		vector<uint8_t> colorV(ksl.total_nb_minitigs,0);
-		vector<vector<uint8_t>> color_me_amaze;
-		//~ vector<vector<uint8_t>> color_me_amaze(color_number,colorV);
-		if (color_load_file.empty()){ // use colors from the file of file
-			vector <string> file_names;
-			if(exists_test(fof)){
-				ifstream fofin(fof);
-				string file_name;
-				while(not fofin.eof()){
-					getline(fofin,file_name);
-					if(not file_name.empty()){
-						if(exists_test(file_name)){
-							file_names.push_back(file_name);
-						}else{
-							cout<<file_name<<" is not here :X"<<endl;
-						}
-					}
-				}
+		cin.get (str,256);
+		cin.clear();
+		cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+		string entry(str);
+		if (entry == ""){
+			if(patience>0){
+				cout<<"See you soon !"<<endl;
+				exit(0);
 			}else{
-				cout<<"File of file problem"<<endl;
+				cout<<"Empty query file !  Type return again if you  want to quit"<<endl;
+				patience++;
 			}
+		}else{
+			patience=0;
+			if(exists_test(entry)){
+				string outName("out_query_BLight" + to_string(counter) + ".out");
+				high_resolution_clock::time_point t121 = high_resolution_clock::now();
 
-			//~ cout << "here" << endl;
-			color_number = file_names.size();
-			for (uint c(0); c < color_number; ++c){
-				color_me_amaze.push_back(colorV);
-			}
-			//NOT VERY SMART I KNOW...
+				doQuery(entry, outName, ksl, color_number, color_me_amaze, k, record_counts, threshold);
+				memset(str, 0, 255);
+				counter++;
 
-			// FOR EACH LINE OF EACH INDEXED FILE
-			uint i_file;
-			#pragma omp parallel for
-			for(i_file=0;i_file<file_names.size();++i_file){
-				ifstream in(file_names[i_file]);
-				string read;
-				//~ #pragma omp parallel num_threads(c)
-				{
-					vector<string> lines;
-					while(not in.eof()){
-						//~ #pragma omp critical(i_file)
-						{
-							for(uint i(0);i<1000;++i){
-								getline(in,read);
-								lines.push_back(read);
-							}
-						}
-						uint i_buffer;
-						//~ #pragma omp parallel for
-						for(i_buffer=0;i_buffer<1000;++i_buffer){
-							string line=lines[i_buffer];
-							if(line[0]=='A' or line[0]=='C' or line[0]=='G' or line[0]=='T'){
-								// I GOT THE IDENTIFIER OF EACH KMER
-								auto minitig_ids=ksl.query_sequence_minitig(line);
-								for(uint64_t i(0);i<minitig_ids.size();++i){
-									//I COLOR THEM
-									if(minitig_ids[i]>=0){
-										//~ #pragma omp critical(color)
-										//~ MUTEXES[(kmer_ids[i]*color_number+i_file)%1000].lock();
-										{
-											if (not record_counts)
-											{
-												color_me_amaze[i_file][minitig_ids[i]]=1;
-											}
-											else
-											{
-												if (color_me_amaze[i_file][minitig_ids[i]] == 0)
-												{
-													color_me_amaze[i_file][minitig_ids[i]]=count;
-												}
-											}
-										}
-										//~ MUTEXES[(kmer_ids[i]*color_number+i_file)%1000].unlock();
-									}
-								}
-							}
-							else
-							{
-								if (record_counts)
-								{
-									count = (uint8_t) parseCoverage(line);
-								}
-							}
-						}
-						lines={};
-					}
-				}
-			}
-			if (not color_dump_file.empty())
-			{
-				write_color_matrix(color_dump_file, color_me_amaze);
-			}
-			//~ cout << "here2" << endl;
-		} else
-		{ // use color from file on disk
-			color_me_amaze = load_written_matrix(color_load_file);
-			color_number = color_me_amaze.size();
-		}
-		//~ write_color_matrix("test_serial.txt", color_me_amaze);
-		//~ color_me_amaze = load_written_matrix("test_serial.txt");
-		high_resolution_clock::time_point t12 = high_resolution_clock::now();
-		duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
-		cout<<"Coloration done: "<< time_span12.count() << " seconds."<<endl;
-
-		// query //
-		uint counter(0),patience(0);
-		while(true){
-			char str[256];
-			cout << "Enter the name of the query file: ";
-
-			cin.get (str,256);
-			cin.clear();
-			cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-			//~ cout << str << endl;
-			string entry(str);
-			if (entry == ""){
-				if(patience>0){
-					cout<<"See you soon !"<<endl;
-					exit(0);
-				}else{
-					cout<<"Empty query file !  Type return again if you  want to quit"<<endl;
-					patience++;
-				}
+				high_resolution_clock::time_point t13 = high_resolution_clock::now();
+				duration<double> time_span13 = duration_cast<duration<double>>(t13 - t121);
+				cout<<"Query done: "<< time_span13.count() << " seconds."<<endl;
 			}else{
-				patience=0;
-				if(exists_test(entry)){
-					string outName("out_query_BLight" + to_string(counter) + ".out");
-					doQuery(entry, outName, ksl, color_number, color_me_amaze, k, record_counts);
-					memset(str, 0, 255);
-					counter++;
-
-					//~ high_resolution_clock::time_point t13 = high_resolution_clock::now();
-					//~ duration<double> time_span13 = duration_cast<duration<double>>(t13 - t12);
-					//~ cout<<"Query done: "<< time_span13.count() << " seconds."<<endl;
-				}else{
-					cout << "The entry is not a file" << endl;
-				}
+				cout << "The entry is not a file" << endl;
 			}
 		}
 	}
