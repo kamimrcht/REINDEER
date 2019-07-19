@@ -83,6 +83,22 @@ void write_color_matrix(const string& output_file, vector<vector<uint8_t>>& colo
 	}
 	delete out;
 }
+void write_color_matrix_counts(const string& output_file, vector<vector<uint16_t>>& color_matrix){
+	auto out=new zstr::ofstream(output_file);
+	uint64_t color_number(color_matrix.size());
+	uint64_t line_size(color_matrix[0].size());
+	uint i(0);
+
+	out->write(reinterpret_cast<char*>(&color_number),sizeof(uint64_t));
+	out->write(reinterpret_cast<char*>(&line_size),sizeof(uint64_t));
+	//~ auto out=new zstr::ofstream(output_file);
+	for (uint vec(0); vec < color_matrix.size(); ++vec)
+	{
+		auto point =&(color_matrix[vec][0]);
+		out->write((char*)point,(line_size));
+	}
+	delete out;
+}
 
 
 
@@ -99,6 +115,29 @@ vector<vector<uint8_t>> load_written_matrix(const string& input_file){
 	in-> read(reinterpret_cast<char *>(&line_size), sizeof(uint64_t));
 	vector<uint8_t> colorV(line_size,0);
 	vector<vector<uint8_t>> color_matrix(color_number,colorV);
+	//~ auto in=new zstr::ifstream(input);
+	//~ assign(bloom_size/8,0);
+	for (uint vec(0); vec < color_matrix.size(); ++vec)
+	{
+		in->read( (char*)((color_matrix[vec].data())) , line_size);
+	}
+	uint i(0);
+	delete(in);
+	return color_matrix;
+}
+vector<vector<uint16_t>> load_written_matrix_counts(const string& input_file){
+	if(not exists_test(input_file))
+	{
+		cout<<"File problem"<<endl;
+		exit(0);
+	}
+	uint64_t color_number;
+	uint64_t line_size;
+	auto in=new zstr::ifstream(input_file);
+	in-> read(reinterpret_cast<char *>(&color_number), sizeof(uint64_t));
+	in-> read(reinterpret_cast<char *>(&line_size), sizeof(uint64_t));
+	vector<uint16_t> colorV(line_size,0);
+	vector<vector<uint16_t>> color_matrix(color_number,colorV);
 	//~ auto in=new zstr::ifstream(input);
 	//~ assign(bloom_size/8,0);
 	for (uint vec(0); vec < color_matrix.size(); ++vec)
@@ -210,7 +249,7 @@ void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_numb
 }
 
 
-void doColoring(string& color_load_file, string& color_dump_file, string& fof, kmer_Set_Light& ksl, vector<vector<uint8_t>>& color_me_amaze, bool record_counts, uint k, uint64_t& color_number){
+void doColoring(string& color_load_file, string& color_dump_file, string& fof, kmer_Set_Light& ksl, vector<vector<uint8_t>>& color_me_amaze, vector<vector<uint16_t>>& color_me_amaze_counts,bool record_counts, uint k, uint64_t& color_number){
 	if (color_load_file.empty()){ // use colors from the file of file
 		vector <string> file_names;
 		if(exists_test(fof)){
@@ -230,8 +269,14 @@ void doColoring(string& color_load_file, string& color_dump_file, string& fof, k
 			cout<<"File of file problem"<<endl;
 		}
 		color_number = file_names.size();
-		color_me_amaze=vector<vector<uint8_t>>(color_number,vector<uint8_t>(ksl.total_nb_minitigs,0));
-		
+		if (not record_counts)
+		{
+			color_me_amaze=vector<vector<uint8_t>>(color_number,vector<uint8_t>(ksl.total_nb_minitigs,0));
+		}
+		else 
+		{
+			color_me_amaze_counts=vector<vector<uint16_t>>(color_number,vector<uint16_t>(ksl.total_nb_minitigs,0));
+		}
 		// FOR EACH LINE OF EACH INDEXED FILE
 		uint i_file;
 		#pragma omp parallel for
@@ -260,8 +305,8 @@ void doColoring(string& color_load_file, string& color_dump_file, string& fof, k
 											color_me_amaze[i_file][minitig_ids[i]]=1;
 										}else{
 											
-											if (color_me_amaze[i_file][minitig_ids[i]] == 0){
-												color_me_amaze[i_file][minitig_ids[i]]=count;
+											if (color_me_amaze_counts[i_file][minitig_ids[i]] == 0){
+												color_me_amaze_counts[i_file][minitig_ids[i]]=count;
 											}
 											//~ if (line=="AAAAAAAAAACAAAAAATATAAAAAAAAAAAAAAAAAAA"){
 												//~ cout << i_file << " " << minitig_ids[i] << " count " << count << endl;
@@ -289,11 +334,26 @@ void doColoring(string& color_load_file, string& color_dump_file, string& fof, k
 		}
 		if (not color_dump_file.empty())
 		{	
-			write_color_matrix(color_dump_file, color_me_amaze);
+			if (not record_counts)
+			{
+				write_color_matrix(color_dump_file, color_me_amaze);
+			} 
+			else 
+			{
+				write_color_matrix_counts(color_dump_file, color_me_amaze_counts);
+			}
 		}
 	}else{ // use color from file on disk
-		color_me_amaze = load_written_matrix(color_load_file);
-		color_number = color_me_amaze.size();
+		if (not record_counts)
+		{
+			color_me_amaze = load_written_matrix(color_load_file);
+			color_number = color_me_amaze.size();
+		}
+		else 
+		{
+			color_me_amaze_counts = load_written_matrix_counts(color_load_file);
+			color_number = color_me_amaze_counts.size();
+		}
 	}
 	
 }
@@ -393,7 +453,8 @@ int main(int argc, char ** argv){
 	// I ALLOCATE THE COLOR VECTOR
 	uint64_t color_number;
 	vector<vector<uint8_t>> color_me_amaze;
-	doColoring(color_load_file, color_dump_file, fof, ksl, color_me_amaze, record_counts, k, color_number );
+	vector<vector<uint16_t>> color_me_amaze_counts;
+	doColoring(color_load_file, color_dump_file, fof, ksl, color_me_amaze, color_me_amaze_counts, record_counts, k, color_number );
 	high_resolution_clock::time_point t12 = high_resolution_clock::now();
 	duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
 	cout<<"Coloration done: "<< time_span12.count() << " seconds."<<endl;
