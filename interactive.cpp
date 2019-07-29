@@ -36,6 +36,7 @@ using namespace std;
 using namespace chrono;
 
 
+//todo typedef for vector 16 bits (counts) / 8 bits (pres/abs)
 
 inline bool exists_test(const string& name) {
     return ( access( name.c_str(), F_OK ) != -1 );
@@ -151,7 +152,7 @@ vector<vector<uint16_t>> load_written_matrix_counts(const string& input_file){
 
 
 
-void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_number, vector<vector<uint8_t>>& color_me_amaze, uint k, bool record_counts, uint threshold){
+void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_number, vector<vector<uint8_t>>& color_me_amaze, vector<vector<uint16_t>>& color_me_amaze_counts, uint k, bool record_counts, uint threshold){
 	ifstream query_file(input);
 	ofstream out(name);
 	// #pragma omp parallel
@@ -185,15 +186,29 @@ void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_numb
 						// KMERS WITH NEGATIVE INDICE ARE ALIEN/STRANGER/COLORBLIND KMERS
 						if(kmer_ids[i]>=0){
 						// I KNOW THE COLORS OF THIS KMER !... I'M BLUE DABEDI DABEDA...
-							for(uint64_t i_color(0);i_color<color_number;++i_color){
-								if(color_me_amaze[i_color][kmer_ids[i]]){
-									kmers_colors.push_back(i_color);
-									if (record_counts)
+							if (not record_counts)
+							{
+								for(uint64_t i_color(0);i_color<color_number;++i_color){
+									if(color_me_amaze[i_color][kmer_ids[i]]){
+										kmers_colors.push_back(i_color);
+										//~ if (record_counts)
+										//~ {
+											//~ color_counts[i_color] = color_me_amaze[i_color][kmer_ids[i]];
+										//~ }
+									}
+
+								}
+							} else {
+								//~ cout << "here 1" << endl;
+								//~ cout << 
+								for(uint64_t i_color(0);i_color<color_number;++i_color)
+								{
+									if(color_me_amaze_counts[i_color][kmer_ids[i]])
 									{
-										color_counts[i_color] = color_me_amaze[i_color][kmer_ids[i]];
+										kmers_colors.push_back(i_color);
+										color_counts[i_color] = color_me_amaze_counts[i_color][kmer_ids[i]];
 									}
 								}
-
 							}
 						}
 					}
@@ -251,6 +266,7 @@ void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_numb
 
 void doColoring(string& color_load_file, string& color_dump_file, string& fof, kmer_Set_Light& ksl, vector<vector<uint8_t>>& color_me_amaze, vector<vector<uint16_t>>& color_me_amaze_counts,bool record_counts, uint k, uint64_t& color_number){
 	if (color_load_file.empty()){ // use colors from the file of file
+		//~ cout << "here" << endl;
 		vector <string> file_names;
 		if(exists_test(fof)){
 			ifstream fofin(fof);
@@ -268,6 +284,7 @@ void doColoring(string& color_load_file, string& color_dump_file, string& fof, k
 		}else{
 			cout<<"File of file problem"<<endl;
 		}
+		//~ cout << "here 111 " << endl;
 		color_number = file_names.size();
 		if (not record_counts)
 		{
@@ -276,6 +293,7 @@ void doColoring(string& color_load_file, string& color_dump_file, string& fof, k
 		else 
 		{
 			color_me_amaze_counts=vector<vector<uint16_t>>(color_number,vector<uint16_t>(ksl.total_nb_minitigs,0));
+			//~ cout << "here 3" << endl;
 		}
 		// FOR EACH LINE OF EACH INDEXED FILE
 		uint i_file;
@@ -298,31 +316,41 @@ void doColoring(string& color_load_file, string& color_dump_file, string& fof, k
 							if (line.size() >= k){
 							// I GOT THE IDENTIFIER OF EACH KMER
 								auto minitig_ids=ksl.query_sequence_minitig(line);
+								//~ cout << "here 31 " <<  minitig_ids.size() << " " << color_me_amaze.size() << endl;
 								for(uint64_t i(0);i<minitig_ids.size();++i){
 									//I COLOR THEM
-									if(minitig_ids[i]>=0 and minitig_ids[i]<color_me_amaze[0].size()){
-										if (not record_counts){
+									//~ cout << "check " << minitig_ids[i] << " " << color_me_amaze[0].size() <<  endl;
+									
+									if (not record_counts){
+										if(minitig_ids[i]>=0 and minitig_ids[i]<color_me_amaze[0].size())
+										{
 											color_me_amaze[i_file][minitig_ids[i]]=1;
-										}else{
-											
-											if (color_me_amaze_counts[i_file][minitig_ids[i]] == 0){
+										}
+									}else{
+										//~ cout << "here 4" << endl;
+										if(minitig_ids[i]>=0 and minitig_ids[i]<color_me_amaze_counts[0].size())
+										{
+											if (color_me_amaze_counts[i_file][minitig_ids[i]] == 0)
+											{
 												color_me_amaze_counts[i_file][minitig_ids[i]]=count;
 											}
+										}
 											//~ if (line=="AAAAAAAAAACAAAAAATATAAAAAAAAAAAAAAAAAAA"){
 												//~ cout << i_file << " " << minitig_ids[i] << " count " << count << endl;
 											//~ }
-										}
+										
 									}
 								}
 								//~ if (line=="AAAAAAAAAACAAAAAATATAAAAAAAAAAAAAAAAAAA"){
 												//~ cout << "end for" << endl;
 								//~ }
 							}
+							//~ cout << "here 11" << endl;
 						}
 						else{
 							if (record_counts){
 								
-								count = (uint8_t) parseCoverage(line);
+								count = (uint16_t) parseCoverage(line);
 								//~ if (line == ">1 LN:i:33 KC:i:6 km:f:2.0  L:-:808:+ L:-:814:+ L:-:160162:+"){
 									//~ cout << count << endl;
 									//~ cin.get();
@@ -482,7 +510,7 @@ int main(int argc, char ** argv){
 				string outName("out_query_BLight" + to_string(counter) + ".out");
 				high_resolution_clock::time_point t121 = high_resolution_clock::now();
 
-				doQuery(entry, outName, ksl, color_number, color_me_amaze, k, record_counts, threshold);
+				doQuery(entry, outName, ksl, color_number, color_me_amaze, color_me_amaze_counts, k, record_counts, threshold);
 				memset(str, 0, 255);
 				counter++;
 
