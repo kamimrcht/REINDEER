@@ -42,6 +42,32 @@ inline bool exists_test(const string& name) {
     return ( access( name.c_str(), F_OK ) != -1 );
 }
 
+uint64_t harmonic_mean(vector<uint64_t>& counts)
+{
+		//~ cout << "ha" << endl;
+
+	if (counts.size() > 0)
+	{
+		//~ cout << "ha?" << endl;
+		float harmonicMean(0);
+		for (uint i(0); i < counts.size(); ++i)
+		{
+			if (counts[i] > 0)
+			{
+				harmonicMean += 1/(float)(counts[i]);
+			}
+		}
+		if (harmonicMean > 0)
+		{
+				//~ cout << "haa" << endl;
+			return (uint64_t)(counts.size()/harmonicMean);
+		} else {
+			return 0;
+		}
+	} else {
+		return 0;
+	}
+}
 
 double parseCoverage(const string& str){
 	size_t pos(str.find("km:f:"));
@@ -159,6 +185,7 @@ void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_numb
 	uint64_t num_seq(0);
 	// mutex mm;
 	// {
+	//~ cout << "in" << endl;
 		string qline;
 		vector<string> lines;
 		// FOR EACH LINE OF THE QUERY FILE
@@ -179,9 +206,10 @@ void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_numb
 				string line=lines[i];
 				if(line[0]=='A' or line[0]=='C' or line[0]=='G' or line[0]=='T'){
 					vector<int64_t> kmers_colors;
-					vector<int64_t> color_counts(color_number,0);
+					vector<uint64_t> color_counts(color_number,0);
 					// I GOT THEIR INDICES
 					vector<int64_t> kmer_ids=ksl.query_sequence_minitig(line);
+					vector<vector<uint64_t>> query_counts(color_number,{0});
 					for(uint64_t i(0);i<kmer_ids.size();++i){
 						// KMERS WITH NEGATIVE INDICE ARE ALIEN/STRANGER/COLORBLIND KMERS
 						if(kmer_ids[i]>=0){
@@ -199,17 +227,24 @@ void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_numb
 
 								}
 							} else {
-								//~ cout << "here 1" << endl;
-								//~ cout << 
+								//~ cout << "here" << endl;
 								for(uint64_t i_color(0);i_color<color_number;++i_color)
 								{
 									if(color_me_amaze_counts[i_color][kmer_ids[i]])
 									{
 										kmers_colors.push_back(i_color);
-										color_counts[i_color] = color_me_amaze_counts[i_color][kmer_ids[i]];
+										//~ color_counts[i_color] = color_me_amaze_counts[i_color][kmer_ids[i]];
+										query_counts[i_color].push_back(color_me_amaze_counts[i_color][kmer_ids[i]]);
 									}
 								}
 							}
+						}
+					}
+					if (record_counts)
+					{
+						for (uint i(0); i < query_counts.size(); ++i){
+							color_counts[i] = harmonic_mean(query_counts[i]);
+
 						}
 					}
 					if (not  kmers_colors.empty())
