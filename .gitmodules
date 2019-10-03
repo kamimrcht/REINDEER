@@ -1,0 +1,3 @@
+[submodule "bcalm2"]
+	path = bcalm2
+	url = https://github.com/GATB/bcalm
