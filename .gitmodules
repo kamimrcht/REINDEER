@@ -4,3 +4,6 @@
 [submodule "blight"]
 	path = blight
 	url = https://github.com/Malfoy/Blight.git
+[submodule "bct"]
+	path = bct
+	url = https://github.com/Malfoy/BCT.git
