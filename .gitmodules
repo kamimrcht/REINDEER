@@ -1,3 +1,6 @@
 [submodule "bcalm2"]
 	path = bcalm2
 	url = https://github.com/GATB/bcalm
+[submodule "blight"]
+	path = blight
+	url = https://github.com/Malfoy/Blight.git
