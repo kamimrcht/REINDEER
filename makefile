@@ -16,16 +16,16 @@ ifeq ($(DEBUG_SYMS), 1)
 endif
 
 CFLAGS+=-std=c++11 -pipe -lz -fopenmp ${WARNS}
-INC=blight/blight.h blight/bbhash.h blight/common.h src/utils.hpp
+INC=blight/blight.h blight/bbhash.h blight/common.h src/utils.hpp src/reindeer.hpp src/launch_bcalm.hpp
 EXEC=Reindeer
 
 
 all: $(EXEC)
 
-Reindeer: reindeer.o blight.o
+Reindeer: main.o blight.o
 	$(CC) -o $@ $^ $(CFLAGS)
 
-reindeer.o: reindeer.cpp $(INC)
+main.o: main.cpp $(INC)
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 blight.o: blight/blight.cpp $(INC)
