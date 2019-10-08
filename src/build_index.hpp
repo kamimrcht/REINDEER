@@ -1,3 +1,12 @@
+#ifndef BUI
+#define BUI
+
+
+
+
+
+using namespace std;
+
 
 void doColoring(string& color_load_file, string& color_dump_file, string& fof, kmer_Set_Light& ksl, vector<vector<uint8_t>>& color_me_amaze, vector<vector<uint16_t>>& color_me_amaze_counts, vector<vector<uint32_t>>& color_me_amaze_reads, bool record_counts, bool record_reads, uint k, uint64_t& color_number){
 	if (color_load_file.empty()){ // use colors from the file of file
@@ -133,3 +142,6 @@ void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, uint ex, str
 	// ALLOCATE THE COLOR VECTOR
 	doColoring(color_load_file, color_dump_file, fof, ksl, color_me_amaze, color_me_amaze_counts, color_me_amaze_reads, record_counts, record_reads, k, color_number );
 }
+
+
+#endif
