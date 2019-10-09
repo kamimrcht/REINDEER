@@ -59,7 +59,7 @@ void PrintHelp()
             "                              OR you need Bcalm to be run tp obtain unitigs per sample, in this case use --bcalm option\n"
             "* Options\n"
             "-k                      :     k-mer size (default 31)\n"
-            "--abundance             :     retain abundances instead of presence/absence\n"
+            "--count                 :     retain abundances instead of presence/absence\n"
             "--bcalm                 :     launch bcalm on each single read dataset\n\n"
             "-g                      :     provide union DBG of all datasets\n\n"
             "* Output options\n"
