@@ -2,11 +2,27 @@
 #define UTIL
 
 
-
+#include <sys/types.h>
+#include <sys/stat.h>
 
 
 using namespace std;
 
+
+int dirExists(string& path)
+{
+    struct stat info;
+
+    int statRC = stat( path.c_str(), &info );
+    if( statRC != 0 )
+    {
+        if (errno == ENOENT)  { return 0; } // something along the path does not exist
+        if (errno == ENOTDIR) { return 0; } // something in path prefix is not a dir
+        return -1;
+    }
+
+    return ( info.st_mode & S_IFDIR ) ? 1 : 0;
+}
 
 inline bool exists_test(const string& name) {
 	return ( access( name.c_str(), F_OK ) != -1 );

@@ -164,7 +164,7 @@ uint ex(0);
 //~ }
 
 
-void reindeer_index(uint k, string& graph, string& fof,  string& color_dump_file, bool record_counts, bool record_reads, string& color_load_file)
+void reindeer_index(uint k, string& graph, string& fof,  string& color_dump_file, bool record_counts, bool record_reads, string& output, string& color_load_file)
 {
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
 	uint64_t color_number;
@@ -172,18 +172,20 @@ void reindeer_index(uint k, string& graph, string& fof,  string& color_dump_file
 	vector<vector<uint16_t>> color_me_amaze_counts;
 	vector<vector<uint32_t>> color_me_amaze_reads;
 	kmer_Set_Light ksl(k,m1,m2,m3,c,bit,ex);
-	
+	int systemRet;
+
 	// BUILD THE INDEX
 	if (not graph.empty())
 	{
 		high_resolution_clock::time_point t12 = high_resolution_clock::now();
 		build_index(k, m1, m2, m3, c, bit, ex, graph, color_load_file, color_dump_file, fof, color_me_amaze, color_me_amaze_counts, color_me_amaze_reads, record_counts, record_reads, color_number, ksl);
 		duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
+		systemRet=system(("mv " + color_dump_file + " " + output ).c_str());
 		cout<<"Index building and Coloration done: "<< time_span12.count() << " seconds."<<endl;
 	}
 }
 
-void reindeer_query(uint k, string& graph, string& fof,  string& color_load_file, bool record_counts, bool record_reads, uint threshold, string& bgreat_paths_fof, string& query)
+void reindeer_query(uint k, string& graph, string& fof,  string& color_dump_file, string& color_load_file, bool record_counts, bool record_reads, uint threshold, string& bgreat_paths_fof, string& query)
 {
 	// QUERY //
 	uint64_t color_number;
@@ -191,6 +193,7 @@ void reindeer_query(uint k, string& graph, string& fof,  string& color_load_file
 	vector<vector<uint16_t>> color_me_amaze_counts;
 	vector<vector<uint32_t>> color_me_amaze_reads;
 	kmer_Set_Light ksl(k,m1,m2,m3,c,bit,ex);
+	build_index(k, m1, m2, m3, c, bit, ex, graph, color_load_file, color_dump_file, fof, color_me_amaze, color_me_amaze_counts, color_me_amaze_reads, record_counts, record_reads, color_number, ksl);
 	perform_query(ksl, color_number, color_me_amaze,  color_me_amaze_counts,color_me_amaze_reads, k, record_counts,  record_reads,  threshold, bgreat_paths_fof, query);
 }
 

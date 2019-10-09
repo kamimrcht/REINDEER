@@ -68,6 +68,10 @@ void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_numb
 				vector<uint64_t> color_counts(color_number,0);
 				// I GOT THEIR INDICES
 				vector<int64_t> kmer_ids=ksl.query_sequence_minitig(line);
+				cout << kmer_ids.size() << endl;
+				for(uint64_t i(0);i<kmer_ids.size();++i){
+					cout << kmer_ids[i] << endl;
+				}
 				vector<vector<uint64_t>> query_counts(color_number,{0});
 				for(uint64_t i(0);i<kmer_ids.size();++i){
 					// KMERS WITH NEGATIVE INDICE ARE ALIEN/STRANGER/COLORBLIND KMERS
