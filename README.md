@@ -29,6 +29,7 @@ and query:
 
 `./Reindeer --query -q test/query_test.fa -l output_reindeer`
 
+Results should be in `output_reindeer/query_results`.
 
 Help:
 
@@ -36,7 +37,7 @@ Help:
 
 # Index construction
 
-## Starting with read files (fasta/fastq).
+## Starting with read files (fasta/fastq)
 
 Let's assume you work with two files, `reads_1.fastq` and `reads_2.fastq`.
 The first thing needed to is to create a file of file (fof) that record the path to the reads.
