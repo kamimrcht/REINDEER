@@ -3,7 +3,7 @@ REINDEER  REad Index for abuNDancE quERy
 
 
 
-#Installation
+# Installation
 
 ## Requirements
 * GCC >= 4.8
