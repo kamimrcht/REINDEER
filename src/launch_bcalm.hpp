@@ -91,7 +91,8 @@ string getRealPaths(string& fof, string& main_output)
 		names = list_graphs[i];
 		f = &(input[0]);
 		char* full_path = getcwd(f, names.size());
-		file_list_graphs << string(full_path) << "/" << names << endl;
+		string fp(full_path);
+		file_list_graphs << fp << "/" << names << endl;
 
 	}
 	return main_output + "/graphs.lst";

@@ -39,7 +39,7 @@ using namespace chrono;
 
 
 
-void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_number, vector<vector<uint8_t>>& color_me_amaze, vector<vector<uint16_t>>& color_me_amaze_counts,vector<vector<uint32_t>>& color_me_amaze_reads, uint k, bool record_counts, bool record_reads, uint threshold,vector<vector<uint32_t>>& query_unitigID){
+void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t color_number, vector<vector<uint8_t>>& color_me_amaze, vector<vector<uint16_t>>& color_me_amaze_counts,vector<vector<uint32_t>>& color_me_amaze_reads, uint k, bool record_counts, bool record_reads, uint threshold,vector<vector<uint32_t>>& query_unitigID){
 	ifstream query_file(input);
 	ofstream out(name);
 	// #pragma omp parallel
@@ -68,10 +68,6 @@ void doQuery(string input, string name, kmer_Set_Light& ksl, uint64_t color_numb
 				vector<uint64_t> color_counts(color_number,0);
 				// I GOT THEIR INDICES
 				vector<int64_t> kmer_ids=ksl.query_sequence_minitig(line);
-				cout << kmer_ids.size() << endl;
-				for(uint64_t i(0);i<kmer_ids.size();++i){
-					cout << kmer_ids[i] << endl;
-				}
 				vector<vector<uint64_t>> query_counts(color_number,{0});
 				for(uint64_t i(0);i<kmer_ids.size();++i){
 					// KMERS WITH NEGATIVE INDICE ARE ALIEN/STRANGER/COLORBLIND KMERS
@@ -242,9 +238,9 @@ string get_Bgreat_File(uint graph, string& bgread_output_file)
 
 
 
-void query_by_file(uint& counter, string& entry, kmer_Set_Light& ksl, uint64_t color_number,  vector<vector<uint8_t>>& color_me_amaze, vector<vector<uint16_t>>& color_me_amaze_counts, vector<vector<uint32_t>>& color_me_amaze_reads, uint k, bool record_counts, bool record_reads, uint threshold, vector<string>& bgreat_files)
+void query_by_file(uint& counter, string& entry, kmer_Set_Light& ksl, uint64_t color_number,  vector<vector<uint8_t>>& color_me_amaze, vector<vector<uint16_t>>& color_me_amaze_counts, vector<vector<uint32_t>>& color_me_amaze_reads, uint k, bool record_counts, bool record_reads, uint threshold, vector<string>& bgreat_files, string& output)
 {
-	string outName("out_query_BLight" + to_string(counter) + ".out");
+	string outName(output + "/out_query_Reindeer" + to_string(counter) + ".out");
 	vector<vector<uint32_t>> query_unitigID(color_number,{0});
 	doQuery(entry, outName, ksl, color_number, color_me_amaze, color_me_amaze_counts, color_me_amaze_reads, k, record_counts, record_reads, threshold, query_unitigID);
 	if (record_reads)
@@ -255,8 +251,9 @@ void query_by_file(uint& counter, string& entry, kmer_Set_Light& ksl, uint64_t c
 }
 
 
-void perform_query(kmer_Set_Light& ksl, uint64_t color_number, vector<vector<uint8_t>>& color_me_amaze, vector<vector<uint16_t>>& color_me_amaze_counts, vector<vector<uint32_t>>& color_me_amaze_reads, uint k, bool record_counts, bool record_reads, uint threshold, string& bgreat_paths_fof, string& query)
+void perform_query(kmer_Set_Light& ksl, uint64_t color_number, vector<vector<uint8_t>>& color_me_amaze, vector<vector<uint16_t>>& color_me_amaze_counts, vector<vector<uint32_t>>& color_me_amaze_reads, uint k, bool record_counts, bool record_reads, uint threshold, string& bgreat_paths_fof, string& query, string& output)
 {
+	
 	uint counter(0),patience(0);
 	vector<string> bgreat_files;
 	string entry;
@@ -273,7 +270,7 @@ void perform_query(kmer_Set_Light& ksl, uint64_t color_number, vector<vector<uin
 		if(exists_test(query))
 		{
 			high_resolution_clock::time_point t121 = high_resolution_clock::now();
-			query_by_file(counter, query, ksl, color_number,  color_me_amaze,  color_me_amaze_counts, color_me_amaze_reads, k, record_counts, record_reads,  threshold, bgreat_files);
+			query_by_file(counter, query, ksl, color_number,  color_me_amaze,  color_me_amaze_counts, color_me_amaze_reads, k, record_counts, record_reads,  threshold, bgreat_files, output);
 			high_resolution_clock::time_point t13 = high_resolution_clock::now();
 			duration<double> time_span13 = duration_cast<duration<double>>(t13 - t121);
 			cout<<"Query done: "<< time_span13.count() << " seconds."<<endl;
@@ -302,7 +299,7 @@ void perform_query(kmer_Set_Light& ksl, uint64_t color_number, vector<vector<uin
 				patience=0;
 				if(exists_test(entry)){
 					high_resolution_clock::time_point t121 = high_resolution_clock::now();
-					query_by_file(counter, entry, ksl, color_number,  color_me_amaze,  color_me_amaze_counts, color_me_amaze_reads, k, record_counts, record_reads,  threshold, bgreat_files);
+					query_by_file(counter, entry, ksl, color_number,  color_me_amaze,  color_me_amaze_counts, color_me_amaze_reads, k, record_counts, record_reads,  threshold, bgreat_files,output);
 					memset(str, 0, 255);
 					high_resolution_clock::time_point t13 = high_resolution_clock::now();
 					duration<double> time_span13 = duration_cast<duration<double>>(t13 - t121);

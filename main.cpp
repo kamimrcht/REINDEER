@@ -53,28 +53,28 @@ void PrintHelp()
 
 			"\n                    INDEX BUILDING\n"
 			"* Mandatory\n"
-            "--index <file>          :     Indexing mode"
+            "--index <file>          :     Indexing mode\n"
             "-f                      :     file of file for colors\n"
             "                              either you've already computed each DBG on your samples, in this case the fof is a list of unitig files\n"
-            "                              OR you need Bcalm to be run tp obtain unitigs per sample, in this case use --bcalm option"
-            "--dump <file>           :     choose a filename to write index on disk\n"
+            "                              OR you need Bcalm to be run tp obtain unitigs per sample, in this case use --bcalm option\n"
             "* Options\n"
             "-k                      :     k-mer size (default 31)\n"
             "--abundance             :     retain abundances instead of presence/absence\n"
             "--bcalm                 :     launch bcalm on each single read dataset\n\n"
             "-g                      :     provide union DBG of all datasets\n\n"
-            "--output <file>         :     directory to write output files\n"
+            "* Output options\n"
+            "-o <file>               :     directory to write output files\n"
+            "-w <file>               :     choose a filename to write index on disk\n"
 
 
             "                    QUERY\n"
 			"* Mandatory\n"
 			"--query                 :     Query mode\n"
-            "-l <file>               :     load index from file on disk\n"
+			"-l                      :     Reindeer index directory\n"
             "* Options\n"
             "--abundance             :     query abundances (index must have been built with --abundance)\n"
             "-q <FASTA>              :     FASTA query file with query sequences\n\n\n"
-            "--g                     :     provide union DBG of all datasets\n\n"
-            "--output <file>         :     directory to write output files\n"
+            "-o <file>               :     directory to write output files\n"
 
             "                    Performances\n"
             "-t <integer>            :     number of threads (default 1)\n\n\n"
@@ -86,16 +86,13 @@ void PrintHelp()
 void ProcessArgs(int argc, char** argv)
 {
 	
-    const char* const short_opts = "k:S:t:f:l:g:q:";
+    const char* const short_opts = "k:S:t:f:l:g:q:o:w:";
     const option long_opts[] = {
             {"index", no_argument, nullptr, 'i'},
-            {"dump", no_argument, nullptr, 'w'},
-            //~ {"load", required_argument, nullptr, 'l'},
             {"help", no_argument, nullptr, 'h'},
             {"count", no_argument, nullptr, 'c'},
             {"bcalm", no_argument, nullptr, 'b'},
             {"query", no_argument, nullptr, 'Q'},
-            {"output", required_argument, nullptr, 'o'},
             {nullptr, no_argument, nullptr, 0}
     };
 
@@ -161,12 +158,7 @@ int main(int argc, char **argv)
 {
 	int systRet;
     ProcessArgs(argc, argv);
-	if ( fof.empty() or k == 0 )
-	{
-		PrintHelp();
-		return 0;
-	}
-
+	
 	if (not dirExists(output)){
 		systRet=system(("mkdir " + output).c_str());
 	//~ } else {
@@ -187,6 +179,12 @@ int main(int argc, char **argv)
 	}
 	if (do_Index) //indexing only
 	{
+		if ( fof.empty() or k == 0 )
+		{
+			PrintHelp();
+			return 0;
+		}
+
 		if (graph.empty()){//todo try when fof is directly passed
 			cout << "Computing Union De Bruijn graph using Bcalm2...\n\n" << endl;
 			graph = bcalm_launcher_union(fof,  k,  t, output, output_union_bcalm);
@@ -196,13 +194,20 @@ int main(int argc, char **argv)
 		cout << "Indexing k-mers...\n\n" << endl;
 		reindeer_index(k, graph, fof, color_dump_file, record_counts,record_reads, output, cl);
 	} else {
-		if (graph.empty()){
-			cout << "Computing Union De Bruijn graph using Bcalm2...\n\n" << endl;
-			graph = bcalm_launcher_union(fof,  k,  t, output, output_union_bcalm);
-		}
+		//~ if (graph.empty()){
+			//~ cout << "Computing Union De Bruijn graph using Bcalm2...\n\n" << endl;
+			//~ graph = bcalm_launcher_union(fof,  k,  t, output, output_union_bcalm);
+		//~ }
 		cout << "Querying..." << endl;
-		string cd("");
-		reindeer_query(k, graph, fof, cd, color_load_file,  record_counts,  record_reads,  threshold,  bgreat_paths_fof,  query);
+		//~ reindeer_query(k, graph, fof, cd, color_load_file,  record_counts,  record_reads,  threshold,  bgreat_paths_fof,  query);
+		string output_query(output + "/query_results");
+		if (not dirExists(output_query)){
+			systRet=system(("mkdir " + output_query).c_str());
+	//~ } else {
+		//~ cout << "[WARNING] You should first remove current " << output << " directory or provide an output directory name using --output" << endl;
+		//~ return 0;
+		}
+		reindeer_query(k, output, output_query,  record_counts,  record_reads,  threshold,  bgreat_paths_fof,  query);
 		// todo interactive mode
 	}
     return 0;

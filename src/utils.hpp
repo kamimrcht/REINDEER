@@ -128,7 +128,15 @@ uint64_t harmonic_mean(vector<uint64_t>& counts)
 	}
 }
 
-
+string getRealPath(string file, string& dir){
+	char *symlinkpath = &dir[0];
+	char actualpath [PATH_MAX+1];
+	char *ptr;
+	ptr = realpath(symlinkpath, actualpath);
+	string rp(ptr);
+	cout << rp + "/" + file << endl;
+	return rp + "/" + file;
+}
 
 
 #endif

@@ -185,16 +185,25 @@ void reindeer_index(uint k, string& graph, string& fof,  string& color_dump_file
 	}
 }
 
-void reindeer_query(uint k, string& graph, string& fof,  string& color_dump_file, string& color_load_file, bool record_counts, bool record_reads, uint threshold, string& bgreat_paths_fof, string& query)
+//~ void reindeer_query(uint k, string& graph, string& fof,  string& color_dump_file, string& color_load_file, bool record_counts, bool record_reads, uint threshold, string& bgreat_paths_fof, string& query)
+void reindeer_query(uint k, string& output,string& output_query, bool record_counts, bool record_reads, uint threshold, string& bgreat_paths_fof, string& query)
 {
 	// QUERY //
+	string graph = getRealPath( "bcalm_union_out/union_graph.unitigs.fa", output);
+	string fof( getRealPath("graphs.lst", output));
+	//~ string graph("/home/camillemarchet/dev/test/REINDEER/output_reindeer/bcalm_union_out/union_graph.unitigs.fa");
+	//~ string fof(output + "/home/camillemarchet/dev/test/REINDEER/output_reindeer/graphs.lst");
+	string color_dump_file("");
+	string color_load_file(getRealPath("reindeer_matrix", output));
+	//~ string color_load_file("/home/camillemarchet/dev/test/REINDEER/output_reindeer/reindeer_matrix");
 	uint64_t color_number;
 	vector<vector<uint8_t>> color_me_amaze;
 	vector<vector<uint16_t>> color_me_amaze_counts;
 	vector<vector<uint32_t>> color_me_amaze_reads;
 	kmer_Set_Light ksl(k,m1,m2,m3,c,bit,ex);
 	build_index(k, m1, m2, m3, c, bit, ex, graph, color_load_file, color_dump_file, fof, color_me_amaze, color_me_amaze_counts, color_me_amaze_reads, record_counts, record_reads, color_number, ksl);
-	perform_query(ksl, color_number, color_me_amaze,  color_me_amaze_counts,color_me_amaze_reads, k, record_counts,  record_reads,  threshold, bgreat_paths_fof, query);
+
+	perform_query(ksl, color_number, color_me_amaze,  color_me_amaze_counts,color_me_amaze_reads, k, record_counts,  record_reads,  threshold, bgreat_paths_fof, query, output_query);
 }
 
 
