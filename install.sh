@@ -1,16 +1,10 @@
 #!/bin/bash
 
+rm -rf Reindeer bin;
 mkdir bin;
 
-cd bcalm2;
-mkdir build;
-cd build;
-cmake ..;
+( cd bcalm2 && rm -rf build && mkdir build &&  cd build && cmake .. && make -j4 )
+mv bcalm2/build/bcalm bin;
 make -j4;
-mv bcalm ../..bin;
 
-cd ../../src;
-make -j4;
-mv Reindeer ../bin;
-
-rm -f *.o
+rm -f *.o;

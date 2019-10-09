@@ -2,6 +2,23 @@
 REINDEER  REad Index for abuNDancE quERy
 
 
+
+#Installation
+
+## Requirements
+* GCC >= 4.8
+* cmake > 2.8
+
+To install, first clone the project:
+
+`git clone --recursive https://github.com/kamimrcht/REINDEER.git`
+
+Then:
+
+`cd REINDEER`
+
+`sh install.sh`
+
 ## Quick start
 Have a look at the file of file format in `test/fof.txt`.
 Then build the index:
@@ -12,6 +29,10 @@ and query:
 
 `./Reindeer --query -q test/query_test.fa -l output_reindeer`
 
+
+Help:
+
+`./Reindeer --help`
 
 # Index construction
 
