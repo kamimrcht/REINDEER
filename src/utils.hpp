@@ -134,7 +134,6 @@ string getRealPath(string file, string& dir){
 	char *ptr;
 	ptr = realpath(symlinkpath, actualpath);
 	string rp(ptr);
-	cout << rp + "/" + file << endl;
 	return rp + "/" + file;
 }
 

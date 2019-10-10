@@ -88,11 +88,18 @@ string getRealPaths(string& fof, string& main_output)
 	for (uint i(0); i < list_graphs.size(); ++i)
 	{
 		input = list_graphs[i];
-		names = list_graphs[i];
-		f = &(input[0]);
-		char* full_path = getcwd(f, names.size());
-		string fp(full_path);
-		file_list_graphs << fp << "/" << names << endl;
+		//~ names = list_graphs[i];
+		//~ f = &(input[0]);
+		//~ char* full_path = getcwd(f, names.size());
+		//~ string fp(full_path);
+		//~ cout << fp << endl;
+		//~ file_list_graphs << fp << "/" << names << endl;
+		char *symlinkpath = &input[0];
+		char actualpath [PATH_MAX+1];
+		char *ptr;
+		ptr = realpath(symlinkpath, actualpath);
+		string rp(ptr);
+		file_list_graphs << rp  << endl;
 
 	}
 	return main_output + "/graphs.lst";
