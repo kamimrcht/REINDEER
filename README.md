@@ -7,7 +7,7 @@ REINDEER  REad Index for abuNDancE quERy
 
 ## Requirements
 * GCC >= 4.8
-* cmake > 2.8
+* CMAKE >  3.10.0
 
 To install, first clone the project:
 
