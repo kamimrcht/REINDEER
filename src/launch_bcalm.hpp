@@ -19,7 +19,7 @@ void get_list_graphs_fof(string& fof, vector<string>& list_graphs)
 	}
 }
 
-string bcalm_launcher_single(string& input_fof, uint k, uint t, string& main_output, string& output_bcalm)
+string bcalm_launcher_single(string& input_fof, uint k, uint threads, string& main_output, string& output_bcalm)
 {
 	int systemRet;
 	string outputDir(main_output + "/" +output_bcalm);
@@ -35,7 +35,7 @@ string bcalm_launcher_single(string& input_fof, uint k, uint t, string& main_out
 	{
 		input = list_graphs[i];
 		output = split(split(list_graphs[i], '.')[0], '/').back();
-		cmd = "./bin/bcalm -in " + input + " -kmer-size " + to_string(k) + " -abundance-min 2  -nb-cores " + to_string(t) + " -out " + output;
+		cmd = "./bin/bcalm -in " + input + " -kmer-size " + to_string(k) + " -abundance-min 2  -nb-cores " + to_string(threads) + " -out " + output + " -nb-cores " ;
 		cout << cmd << endl;
 		systemRet = system(cmd.c_str());
 		if(systemRet == -1){
@@ -55,13 +55,13 @@ string bcalm_launcher_single(string& input_fof, uint k, uint t, string& main_out
 }
 
 
-string bcalm_launcher_union(string& graph_list, uint k, uint t, string& main_output, string& output_bcalm)
+string bcalm_launcher_union(string& graph_list, uint k,  uint threads, string& main_output, string& output_bcalm)
 {
 
 	int systemRet;
 	string outputDir(main_output + "/" +output_bcalm);
 	systemRet=system(("mkdir -p "+ outputDir).c_str());
-	string cmd("./bin/bcalm -in " + graph_list + " -kmer-size " + to_string(k) + " -abundance-min  1 -nb-cores " + to_string(t) + " -out union_graph");
+	string cmd("./bin/bcalm -in " + graph_list + " -kmer-size " + to_string(k) + " -abundance-min  1 -nb-cores " + to_string(threads) + " -out union_graph");
 	cout << cmd << endl;
 	systemRet = system((cmd).c_str());
 	if(systemRet == -1){}

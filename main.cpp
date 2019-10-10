@@ -37,8 +37,7 @@ using namespace chrono;
 
 char ch;
 string query,fof, color_dump_file("reindeer_matrix"), color_load_file(""), bgreat_paths_fof(""), output_bcalm("bcalm_out"),output_union_bcalm("bcalm_union_out"),output("output_reindeer"), output_index("index_out"), graph ;
-uint k(31);
-uint t(1);
+uint k(31), threads(1);
 bool record_counts(false);
 bool record_reads(false);
 bool bcalm(false), do_Index(false), do_Query(false);
@@ -114,9 +113,6 @@ void ProcessArgs(int argc, char** argv)
 			case 'g':
 				graph=optarg;
 				break;
-			case 't':
-				t=stoi(optarg);
-				break;
 			case 'Q':
 				do_Query=true;
 				break;
@@ -125,6 +121,9 @@ void ProcessArgs(int argc, char** argv)
 				break;
 			case 'k':
 				k=stoi(optarg);
+				break;
+			case 't':
+				threads=stoi(optarg);
 				break;
 			case 'c':
 				record_counts=true;
@@ -173,7 +172,7 @@ int main(int argc, char **argv)
 	if (bcalm)
 	{
 		cout << "Computing De Bruijn graphs on each dataset using Bcalm2...\n\n" << endl;
-		fof = bcalm_launcher_single(fof,  k,  t, output, output_bcalm); // from here fof is a fof of unitig files
+		fof = bcalm_launcher_single(fof,  k,  threads, output, output_bcalm); // from here fof is a fof of unitig files
 	} else {
 		fof = getRealPaths(fof, output);
 	}
@@ -187,12 +186,12 @@ int main(int argc, char **argv)
 
 		if (graph.empty()){//todo try when fof is directly passed
 			cout << "Computing Union De Bruijn graph using Bcalm2...\n\n" << endl;
-			graph = bcalm_launcher_union(fof,  k,  t, output, output_union_bcalm);
+			graph = bcalm_launcher_union(fof,  k,  threads, output, output_union_bcalm);
 		}
 		string cl("");
 		bcalm_cleanup();
 		cout << "Indexing k-mers...\n\n" << endl;
-		reindeer_index(k, graph, fof, color_dump_file, record_counts,record_reads, output, cl);
+		reindeer_index(k, graph, fof, color_dump_file, record_counts,record_reads, output, cl, threads);
 	} else {
 		//~ if (graph.empty()){
 			//~ cout << "Computing Union De Bruijn graph using Bcalm2...\n\n" << endl;
@@ -207,7 +206,7 @@ int main(int argc, char **argv)
 		//~ cout << "[WARNING] You should first remove current " << output << " directory or provide an output directory name using --output" << endl;
 		//~ return 0;
 		}
-		reindeer_query(k, output, output_query,  record_counts,  record_reads,  threshold,  bgreat_paths_fof,  query);
+		reindeer_query(k, output, output_query,  record_counts,  record_reads,  threshold,  bgreat_paths_fof,  query, threads);
 		// todo interactive mode
 	}
     return 0;
