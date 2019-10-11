@@ -35,7 +35,7 @@ string bcalm_launcher_single(string& input_fof, uint k, uint threads, string& ma
 	{
 		input = list_graphs[i];
 		output = split(split(list_graphs[i], '.')[0], '/').back();
-		cmd = "./bin/bcalm -in " + input + " -kmer-size " + to_string(k) + " -abundance-min 2  -nb-cores " + to_string(threads) + " -out " + output + " -nb-cores " ;
+		cmd = "./bin/bcalm -in " + input + " -kmer-size " + to_string(k) + " -abundance-min 2  -nb-cores " + to_string(threads) + " -out " + output;
 		cout << cmd << endl;
 		systemRet = system(cmd.c_str());
 		if(systemRet == -1){
