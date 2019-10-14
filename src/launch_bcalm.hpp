@@ -46,9 +46,12 @@ string bcalm_launcher_single(string& input_fof, uint k, uint threads, string& ma
 			// failed
 		}
 		filename = outputDir + "/" +output + ".unitigs.fa";
-		f = &(filename[0]);
-		char* full_path = getcwd(f, filename.size());
-		file_list_graphs << string(full_path) << "/" << outputDir << "/" << output + ".unitigs.fa" << endl;
+		char *symlinkpath = &filename[0];
+		char actualpath [PATH_MAX+1];
+		char *ptr;
+		ptr = realpath(symlinkpath, actualpath);
+		string full_path(ptr);
+		file_list_graphs << full_path << endl;
 		//~ cout << string(full_path) << "/" << outputDir << "/" << output + ".unitigs.fa" << endl;
 	}
 	return main_output + "/graphs.lst";
