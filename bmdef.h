@@ -71,7 +71,7 @@ For more information please visit:  http://bitmagic.io
 
 // cxx11 features
 //
-#if defined(BM_NO_CXX11)  ||  (defined(_MSC_VER)  &&  _MSC_VER < 1900)
+#if defined(BM_NO_CXX11) || (defined(_MSC_VER)  &&  _MSC_VER < 1900)
 # define BMNOEXEPT
 #else
 # ifndef BMNOEXEPT
@@ -79,6 +79,15 @@ For more information please visit:  http://bitmagic.io
 # endif
 #endif
 
+// WebAssembly compilation settings
+//
+// detects use of EMSCRIPTEN engine and tweaks settings
+// WebAssemply compiles into 32-bit ptr yet 64-bit wordsize use GCC extensions
+//
+#if defined(__EMSCRIPTEN__)
+# define BM64OPT
+# define BM_USE_GCC_BUILD
+#endif
 
 // disable 'register' keyword, which is obsolete in C++11
 //
@@ -90,7 +99,6 @@ For more information please visit:  http://bitmagic.io
 // Enable MSVC 8.0 (2005) specific optimization options
 //
 #if(_MSC_VER >= 1400)
-
 #  define BM_HASFORCEINLINE
 #  ifndef BMRESTRICT
 #    define BMRESTRICT __restrict
@@ -98,7 +106,6 @@ For more information please visit:  http://bitmagic.io
 #endif 
 
 #ifdef __GNUG__
-
 #  ifndef BMRESTRICT
 #    define BMRESTRICT __restrict__
 #  endif
@@ -108,9 +115,12 @@ For more information please visit:  http://bitmagic.io
 #  endif
 #endif
 
+# ifdef NDEBUG
+#    define BM_NOASSERT
+# endif
+
 
 #ifndef BM_ASSERT
-
 # ifndef BM_NOASSERT
 #  include <cassert>
 #  define BM_ASSERT assert
@@ -119,7 +129,6 @@ For more information please visit:  http://bitmagic.io
 #    define BM_ASSERT(x)
 #  endif
 # endif
-
 #endif
 
 
@@ -234,61 +243,113 @@ For more information please visit:  http://bitmagic.io
 # endif
 
 
+#if (defined(BMSSE2OPT) || defined(BMSSE42OPT) || defined(BMAVX2OPT) || defined(BMAVX512OPT))
+
+    # ifndef BM_SET_MMX_GUARD
+    #  define BM_SET_MMX_GUARD  sse_empty_guard  bm_mmx_guard_;
+    # endif
+
+    #ifdef _MSC_VER
+
+    #ifndef BM_ALIGN16
+    #  define BM_ALIGN16 __declspec(align(16))
+    #  define BM_ALIGN16ATTR
+    #endif
+
+    #ifndef BM_ALIGN32
+    #  define BM_ALIGN32 __declspec(align(32))
+    #  define BM_ALIGN32ATTR
+    #endif
+
+    #ifndef BM_ALIGN64
+    #  define BM_ALIGN64 __declspec(align(64))
+    #  define BM_ALIGN64ATTR
+    #endif
+
+    # else // GCC
+
+    #ifndef BM_ALIGN16
+    #  define BM_ALIGN16
+    #  define BM_ALIGN16ATTR __attribute__((aligned(16)))
+    #endif
+
+    #ifndef BM_ALIGN32
+    #  define BM_ALIGN32
+    #  define BM_ALIGN32ATTR __attribute__((aligned(32)))
+    #endif
+
+    #ifndef BM_ALIGN64
+    #  define BM_ALIGN64
+    #  define BM_ALIGN64ATTR __attribute__((aligned(64)))
+    #endif
+    #endif
+
+#else 
+
+    #define BM_ALIGN16 
+    #define BM_ALIGN16ATTR
+    #define BM_ALIGN32
+    #define BM_ALIGN32ATTR
+    #define BM_ALIGN64
+    #define BM_ALIGN64ATTR
+
+#endif
+
+
+/*
 #if !(defined(BMSSE2OPT) || defined(BMSSE42OPT) || defined(BMAVX2OPT) || defined(BMAVX512OPT))
 
-
-#define BM_ALIGN16 
-#define BM_ALIGN16ATTR
-#define BM_ALIGN32
-#define BM_ALIGN32ATTR
-#define BM_ALIGN64
-#define BM_ALIGN64ATTR
+    #define BM_ALIGN16 
+    #define BM_ALIGN16ATTR
+    #define BM_ALIGN32
+    #define BM_ALIGN32ATTR
+    #define BM_ALIGN64
+    #define BM_ALIGN64ATTR
 
 #else  
 
-# ifndef BM_SET_MMX_GUARD
-#  define BM_SET_MMX_GUARD  sse_empty_guard  bm_mmx_guard_;
-# endif
+    # ifndef BM_SET_MMX_GUARD
+    #  define BM_SET_MMX_GUARD  sse_empty_guard  bm_mmx_guard_;
+    # endif
 
-#ifdef _MSC_VER
+    #ifdef _MSC_VER
 
-#ifndef BM_ALIGN16
-#  define BM_ALIGN16 __declspec(align(16))
-#  define BM_ALIGN16ATTR
-#endif
+        #ifndef BM_ALIGN16
+        #  define BM_ALIGN16 __declspec(align(16))
+        #  define BM_ALIGN16ATTR
+        #endif
 
-#ifndef BM_ALIGN32
-#  define BM_ALIGN32 __declspec(align(32))
-#  define BM_ALIGN32ATTR
-#endif
+        #ifndef BM_ALIGN32
+        #  define BM_ALIGN32 __declspec(align(32))
+        #  define BM_ALIGN32ATTR
+        #endif
 
-#ifndef BM_ALIGN64
-#  define BM_ALIGN64 __declspec(align(64))
-#  define BM_ALIGN64ATTR
-#endif
+        #ifndef BM_ALIGN64
+        #  define BM_ALIGN64 __declspec(align(64))
+        #  define BM_ALIGN64ATTR
+        #endif
 
+    # else // GCC
 
-# else // GCC
+        #ifndef BM_ALIGN16
+        #  define BM_ALIGN16
+        #  define BM_ALIGN16ATTR __attribute__((aligned(16)))
+        #endif
 
-#ifndef BM_ALIGN16
-#  define BM_ALIGN16
-#  define BM_ALIGN16ATTR __attribute__((aligned(16)))
-#endif
+        #ifndef BM_ALIGN32
+        #  define BM_ALIGN32
+        #  define BM_ALIGN32ATTR __attribute__((aligned(32)))
+        #endif
 
-#ifndef BM_ALIGN32
-#  define BM_ALIGN32
-#  define BM_ALIGN32ATTR __attribute__((aligned(32)))
-#endif
-
-#ifndef BM_ALIGN64
-#  define BM_ALIGN64
-#  define BM_ALIGN64ATTR __attribute__((aligned(64)))
-#endif
-
-
-#endif
+        #ifndef BM_ALIGN64
+        #  define BM_ALIGN64
+        #  define BM_ALIGN64ATTR __attribute__((aligned(64)))
+        #endif
+    #endif
 
 #endif
+*/
+
 
 #if (defined(BMSSE2OPT) || defined(BMSSE42OPT))
 #   define BM_VECT_ALIGN BM_ALIGN16
@@ -337,6 +398,23 @@ For more information please visit:  http://bitmagic.io
 #endif
 
 
+#ifndef __has_cpp_attribute
+#  define __has_cpp_attribute(x) 0
+#endif
+#ifndef __has_attribute
+#  define __has_attribute(x) 0
+#endif
+#if __has_cpp_attribute(fallthrough)
+#  define BM_FALLTHROUGH [[fallthrough]]
+#elif __has_cpp_attribute(gcc::fallthrough)
+#  define BM_FALLTHROUGH [[gcc::fallthrough]]
+#elif __has_cpp_attribute(clang::fallthrough)
+#  define BM_FALLTHROUGH [[clang::fallthrough]]
+#elif __has_attribute(fallthrough)
+#  define BM_FALLTHROUGH __attribute__ ((fallthrough))
+#else
+#  define BM_FALLTHROUGH
+#endif
 
 #endif
 

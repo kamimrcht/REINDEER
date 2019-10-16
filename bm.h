@@ -899,7 +899,7 @@ public:
             bm::bvector<Alloc>::blocks_manager_type& bman =
                                                  this->bv_->get_blocks_manager();
             unsigned i0, j0;
-            bman.get_block_coord(nb, i0, j0);
+            bm::get_block_coord(nb, i0, j0);
             this->block_ = bman.get_block(i0, j0);
 
             BM_ASSERT(this->block_);
@@ -995,7 +995,7 @@ public:
             return false;
         }
         
-        bool decode_bit_group(block_descr_type* bdescr, bm::id_t& rank)
+        bool decode_bit_group(block_descr_type* bdescr, size_type& rank)
         {
             const word_t* block_end = this->block_ + bm::set_block_size;
             
@@ -1034,7 +1034,6 @@ public:
             BM_ASSERT(this->block_type_ == 1);
 
             block_descr_type* bdescr = &(this->bdescr_);
-
             bdescr->gap_.ptr = BMGAP_PTR(this->block_);
             unsigned bitval = *(bdescr->gap_.ptr) & 1;
 
@@ -1043,7 +1042,6 @@ public:
             for (;true;)
             {
                 unsigned val = *(bdescr->gap_.ptr);
-
                 if (bitval)
                 {
                     gap_word_t* first = BMGAP_PTR(this->block_) + 1;
@@ -1056,14 +1054,11 @@ public:
                         bdescr->gap_.gap_len = 
                              (gap_word_t)(val - *(bdescr->gap_.ptr-1));
                     }
-           
                     return true;
                 }
                 this->position_ += val + 1;
                 if (val == bm::gap_max_bits - 1)
-                {
                     break;
-                }
                 bitval ^= 1;
                 ++(bdescr->gap_.ptr);
             }
@@ -1073,15 +1068,29 @@ public:
         bool search_in_blocks()
         {
             ++(this->block_idx_);
+            const blocks_manager_type& bman = this->bv_->blockman_;
             block_idx_type i = this->block_idx_ >> bm::set_array_shift;
-            block_idx_type top_block_size = this->bv_->blockman_.top_block_size();
+            block_idx_type top_block_size = bman.top_block_size();
+            bm::word_t*** blk_root = bman.top_blocks_root();
             for (; i < top_block_size; ++i)
             {
-                bm::word_t** blk_blk = this->bv_->blockman_.top_blocks_root()[i];
+                bm::word_t** blk_blk = blk_root[i];
                 if (blk_blk == 0)
                 {
-                    this->block_idx_ += bm::set_sub_array_size;
-                    this->position_ += bm::bits_in_array;
+                    // fast scan fwd in top level 
+                    size_type bn = this->block_idx_ + bm::set_sub_array_size;
+                    size_type pos = this->position_ + bm::bits_in_array;
+                    for (++i; i < top_block_size; ++i)
+                    {
+                        if (blk_root[i])
+                            break;
+                        bn += bm::set_sub_array_size;
+                        pos += bm::bits_in_array;
+                    } // for i
+                    this->block_idx_ = bn;
+                    this->position_ = pos;
+                    if ((i < top_block_size) && blk_root[i])
+                        --i;
                     continue;
                 }
                 if ((bm::word_t*)blk_blk == FULL_BLOCK_FAKE_ADDR)
@@ -1203,6 +1212,7 @@ public:
                 bv_->set_allocator_pool(0);
         }
 
+        /// check if vector has no assigned allocator and set one
         void assign_if_not_set(allocator_pool_type& pool, bvector<Alloc>& bv)
         {
             if (bv.get_allocator_pool() == 0) // alloc pool not set yet
@@ -1675,7 +1685,7 @@ public:
         This number +1 gives you number of arr elements initialized during the
         function call.
     */
-    unsigned count_blocks(unsigned* arr) const;
+    block_idx_type count_blocks(unsigned* arr) const;
     
     /*!
        \brief Returns count of 1 bits in the given range [left..right]
@@ -1737,7 +1747,7 @@ public:
        \sa build_rs_index
        \sa count_to_test, select, rank
     */
-    bm::id_t rank(size_type n, const rs_index_type&  rs_idx) const
+    size_type rank(size_type n, const rs_index_type&  rs_idx) const
                                             {  return count_to(n, rs_idx); }
     
 
@@ -1942,8 +1952,8 @@ public:
         \param rank - rank to find (bitcount)
         \param from - start positioon for rank search
         \param pos  - position with speciefied rank (relative to from position)
-        \param blocks_cnt - block count structure to accelerate rank search
-                            should be prepared using build_rs_index
+        \param rs_idx - rank-select index to accelarate search 
+                        (should be prepared using build_rs_index)
 
         \sa build_rs_index, select
 
@@ -2264,7 +2274,7 @@ private:
     
     /// set bit in GAP block withlength extension control
     bool gap_block_set(bm::gap_word_t* gap_blk,
-                       bool val, unsigned nblock, unsigned nbit);
+                       bool val, block_idx_type nblock, unsigned nbit);
     
     /// check if specified bit is 1, and set it to 0
     /// if specified bit is 0, scan for the next 1 and returns it
@@ -2336,13 +2346,6 @@ private:
                              size_type right);
 
 private:
-    /**
-       \brief Extends GAP block to the next level or converts it to bit block.
-       \param nb - Block's linear index.
-       \param blk - Blocks's pointer 
-    */
-    void extend_gap_block(unsigned nb, gap_word_t* blk)
-                                    { blockman_.extend_gap_block(nb, blk); }
 
     /**
        \brief Set range without validity/bouds checking
@@ -2354,7 +2357,6 @@ private:
     */
     void clear_range_no_check(size_type left,
                               size_type right);
-    
     /**
         Compute rank in block using rank-select index
     */
@@ -2363,16 +2365,11 @@ private:
                             block_idx_type nb,
                             unsigned nbit_right,
                             const rs_index_type&  blocks_cnt);
-
     /**
         Return value of first bit in the block
     */
     bool test_first_block_bit(block_idx_type nb) const;
     
-    /*
-    block_idx_type find_max_effective_blocks() const;
-    */
-
 private:
     blocks_manager_type  blockman_;         //!< bitblocks manager
     strategy             new_blocks_strat_; //!< block allocation strategy
@@ -2605,15 +2602,17 @@ void bvector<Alloc>::build_rs_index(rs_index_type* rs_idx,
     if (!found)
         return;
     block_idx_type nb = (last_bit >> bm::set_block_shift);
+    unsigned i0, j0;
+    bm::get_block_coord(nb, i0, j0);
 
     unsigned real_top_blocks = blockman_.find_real_top_blocks();
     unsigned max_top_blocks = blockman_.find_max_top_blocks();
-    
-    rs_idx->resize(nb+1);
+    if (nb < (max_top_blocks * bm::set_sub_array_size))
+        nb = (max_top_blocks * bm::set_sub_array_size);
+    rs_idx->set_total(nb + 1);
+    rs_idx->resize(nb + 1);
     rs_idx->resize_effective_super_blocks(real_top_blocks);
-    rs_idx->set_total(nb+1);
-    
-
+ 
     // index construction
     //
     BM_ASSERT(max_top_blocks <= blockman_.top_block_size());
@@ -2654,16 +2653,15 @@ void bvector<Alloc>::build_rs_index(rs_index_type* rs_idx,
             {
                 bv_blocks->set(i * bm::set_sub_array_size + j);
             }
-
             
             // TODO: optimize sub-index compute
-            unsigned first, second;
+            unsigned local_first, local_second;
             if (BM_IS_GAP(block))
             {
                 const bm::gap_word_t* const gap_block = BMGAP_PTR(block);
-                first =
+                local_first =
                     bm::gap_bit_count_range(gap_block, 0, bm::rs3_border0);
-                second =
+                local_second =
                     bm::gap_bit_count_range(gap_block,
                                             bm::gap_word_t(bm::rs3_border0+1),
                                             bm::rs3_border1);
@@ -2672,15 +2670,15 @@ void bvector<Alloc>::build_rs_index(rs_index_type* rs_idx,
             {
                 block = BLOCK_ADDR_SAN(block); // TODO: optimize FULL
 
-                first =
+                local_first =
                     bm::bit_block_calc_count_range(block, 0, bm::rs3_border0);
-                second =
+                local_second =
                     bm::bit_block_calc_count_range(block,
                                                    bm::rs3_border0+1,
                                                    bm::rs3_border1);
             }
-            BM_ASSERT(cnt >= first + second);
-            sub_count[j] = first | (second << 16);
+            BM_ASSERT(cnt >= local_first + local_second);
+            sub_count[j] = local_first | (local_second << 16);
 
         } while (++j < bm::set_sub_array_size);
         
@@ -2694,13 +2692,14 @@ void bvector<Alloc>::build_rs_index(rs_index_type* rs_idx,
 // -----------------------------------------------------------------------
 
 template<typename Alloc>
-unsigned bvector<Alloc>::count_blocks(unsigned* arr) const
+typename bvector<Alloc>::block_idx_type
+bvector<Alloc>::count_blocks(unsigned* arr) const
 {
     bm::word_t*** blk_root = blockman_.top_blocks_root();
     if (blk_root == 0)
         return 0;
     typename blocks_manager_type::block_count_arr_func func(blockman_, &(arr[0]));
-    for_each_nzblock(blk_root, blockman_.top_block_size(), func);
+    bm::for_each_nzblock(blk_root, blockman_.top_block_size(), func);
     return func.last_block();
 }
 
@@ -2846,7 +2845,7 @@ bvector<Alloc>::count_to(size_type right,
     cnt = nblock_right ? rs_idx.rcount(nblock_right-1) : 0;
 
     unsigned i, j;
-    blockman_.get_block_coord(nblock_right, i, j);
+    bm::get_block_coord(nblock_right, i, j);
     const bm::word_t* block = blockman_.get_block_ptr(i, j);
 
     if (!block)
@@ -2893,7 +2892,7 @@ bvector<Alloc>::count_to_test(size_type right,
     //
     size_type cnt = 0;
     unsigned i, j;
-    blockman_.get_block_coord(nblock_right, i, j);
+    bm::get_block_coord(nblock_right, i, j);
     const bm::word_t* block = blockman_.get_block_ptr(i, j);
 
     if (!block)
@@ -2954,7 +2953,7 @@ bvector<Alloc>::count_range(size_type left, size_type right) const
     unsigned nblock_right = unsigned(right >>  bm::set_block_shift);
 
     unsigned i0, j0;
-    blockman_.get_block_coord(nblock_left, i0, j0);
+    bm::get_block_coord(nblock_left, i0, j0);
     const bm::word_t* block = blockman_.get_block(i0, j0);
 
     bool left_gap = BM_IS_GAP(block);
@@ -3003,7 +3002,7 @@ bvector<Alloc>::count_range(size_type left, size_type right) const
         cnt += func.count();
     }
     
-    blockman_.get_block_coord(nblock_right, i0, j0);
+    bm::get_block_coord(nblock_right, i0, j0);
     block = blockman_.get_block(i0, j0);
     bool right_gap = BM_IS_GAP(block);
 
@@ -3109,7 +3108,7 @@ bool bvector<Alloc>::get_bit(size_type n) const
     // calculate logical block number
     unsigned nb = unsigned(n >>  bm::set_block_shift);
     unsigned i, j;
-    blockman_.get_block_coord(nb, i, j);
+    bm::get_block_coord(nb, i, j);
     const bm::word_t* block = blockman_.get_block_ptr(i, j); // get unsanitized block ptr
 
     if (block)
@@ -3171,6 +3170,7 @@ void bvector<Alloc>::optimize(bm::word_t* temp_block,
         blocks_mem += sizeof(bm::word_t**) * top_size;
         blocks_mem += stat->ptr_sub_blocks * (sizeof(void*) * bm::set_sub_array_size);
         stat->memory_used += blocks_mem;
+        stat->bv_count = 1;
     }
     
     // don't need to keep temp block if we optimizing memory usage
@@ -3264,8 +3264,7 @@ int bvector<Alloc>::compare(const bvector<Alloc>& bv) const
 
             if (!blk || !arg_blk)  
             {
-                const bm::word_t*  pblk;
-                bool is_gap;
+                const bm::word_t*  pblk; bool is_gap;
 
                 if (blk)
                 {
@@ -3298,8 +3297,7 @@ int bvector<Alloc>::compare(const bvector<Alloc>& bv) const
             if (arg_gap != gap)
             {
                 BM_DECLARE_TEMP_BLOCK(temp_blk);
-                bm::wordop_t* blk1;
-                bm::wordop_t* blk2;
+                bm::wordop_t* blk1; bm::wordop_t* blk2;
 
                 if (gap)
                 {
@@ -3362,51 +3360,54 @@ void bvector<Alloc>::calc_stat(struct bvector<Alloc>::statistics* st) const
     ::memcpy(st->gap_levels, 
              blockman_.glen(), sizeof(gap_word_t) * bm::gap_levels);
 
-    unsigned empty_blocks = 0;
-
     st->max_serialize_mem = unsigned(sizeof(bm::id_t) * 4);
     unsigned top_size = blockman_.top_block_size();
 
     size_t blocks_mem = sizeof(blockman_);
     blocks_mem +=
-        (blockman_.temp_block_ ? sizeof(word_t) * bm::set_block_size : 0);
+        (blockman_.temp_block_ ? sizeof(bm::word_t) * bm::set_block_size : 0);
     blocks_mem += sizeof(bm::word_t**) * top_size;
-
-    for (unsigned i = 0; i < top_size; ++i)
+    bm::word_t*** blk_root = blockman_.top_blocks_root();
+    
+    if (blk_root)
     {
-        const bm::word_t* const* blk_blk = blockman_.get_topblock(i);
-        if (!blk_blk || (bm::word_t*)blk_blk == FULL_BLOCK_FAKE_ADDR)
+        for (unsigned i = 0; i < top_size; ++i)
         {
-            st->max_serialize_mem += unsigned(sizeof(unsigned) + 1);
-            continue;
-        }
-        
-        st->ptr_sub_blocks++;
-        for (unsigned j = 0; j < bm::set_sub_array_size; ++j)
-        {
-            const bm::word_t* blk = blk_blk[j];
-            if (IS_VALID_ADDR(blk))
+            const bm::word_t* const* blk_blk = blk_root[i];
+            if (!blk_blk)
             {
-                st->max_serialize_mem += unsigned(empty_blocks << 2);
-                empty_blocks = 0;
-
-                if (BM_IS_GAP(blk))
+                ++i;
+                bool found = bm::find_not_null_ptr(blk_root, i, top_size, &i);
+                if (!found)
+                    break;
+                blk_blk = blk_root[i];
+            }
+            if ((bm::word_t*)blk_blk == FULL_BLOCK_FAKE_ADDR)
+                continue;
+            st->ptr_sub_blocks++;
+            for (unsigned j = 0; j < bm::set_sub_array_size; ++j)
+            {
+                const bm::word_t* blk = blk_blk[j];
+                if (IS_VALID_ADDR(blk))
                 {
-                    bm::gap_word_t* gap_blk = BMGAP_PTR(blk);
-                    unsigned cap = bm::gap_capacity(gap_blk, blockman_.glen());
-                    unsigned len = gap_length(gap_blk);
-                    st->add_gap_block(cap, len);
+                    if (BM_IS_GAP(blk))
+                    {
+                        bm::gap_word_t* gap_blk = BMGAP_PTR(blk);
+                        unsigned cap = bm::gap_capacity(gap_blk, blockman_.glen());
+                        unsigned len = gap_length(gap_blk);
+                        st->add_gap_block(cap, len);
+                    }
+                    else // bit block
+                        st->add_bit_block();
                 }
-                else // bit block
-                    st->add_bit_block();
             }
-            else
-            {
-                ++empty_blocks;
-            }
-        }
-    } // for i
-
+        } // for i
+        
+        size_t full_null_size = blockman_.calc_serialization_null_full();
+        st->max_serialize_mem += full_null_size;
+        
+    } // if blk_root
+    
     size_t safe_inc = st->max_serialize_mem / 10; // 10% increment
     if (!safe_inc) safe_inc = 256;
     st->max_serialize_mem += safe_inc;
@@ -3415,6 +3416,8 @@ void bvector<Alloc>::calc_stat(struct bvector<Alloc>::statistics* st) const
     st->memory_used += unsigned(sizeof(*this) - sizeof(blockman_));
     blocks_mem += st->ptr_sub_blocks * (sizeof(void*) * bm::set_sub_array_size);
     st->memory_used += blocks_mem;
+    st->bv_count = 1;
+
 }
 
 // -----------------------------------------------------------------------
@@ -3608,6 +3611,7 @@ void bvector<Alloc>::import(const size_type* ids, size_type size_in,
             return;
         }
     }
+    break;
     default:
         break;
     } // switch
@@ -3659,14 +3663,14 @@ template<class Alloc>
 bool bvector<Alloc>::set_bit_no_check(size_type n, bool val)
 {
     // calculate logical block number
-    unsigned nblock = unsigned(n >>  bm::set_block_shift); 
+    block_idx_type nblock = (n >>  bm::set_block_shift);
 
     int block_type;
     bm::word_t* blk = 
         blockman_.check_allocate_block(nblock, 
-                                        val,
-                                        get_new_blocks_strat(), 
-                                        &block_type);
+                                       val,
+                                       get_new_blocks_strat(),
+                                       &block_type);
 
     if (!IS_VALID_ADDR(blk))
         return false;
@@ -3712,17 +3716,17 @@ bool bvector<Alloc>::set_bit_no_check(size_type n, bool val)
 
 template<class Alloc>
 bool bvector<Alloc>::gap_block_set(bm::gap_word_t* gap_blk,
-                                   bool val, unsigned nblock, unsigned nbit)
+                                   bool val, block_idx_type nblock, unsigned nbit)
 {
     unsigned is_set, new_block_len;
     new_block_len =
         bm::gap_set_value(val, gap_blk, nbit, &is_set);
     if (is_set)
     {
-        unsigned threshold =  bm::gap_limit(gap_blk, blockman_.glen());
+        unsigned threshold = bm::gap_limit(gap_blk, blockman_.glen());
         if (new_block_len > threshold)
         {
-            extend_gap_block(nblock, gap_blk);
+            blockman_.extend_gap_block(nblock, gap_blk);
         }
     }
     return is_set;
@@ -3734,7 +3738,7 @@ template<class Alloc>
 bool bvector<Alloc>::inc(size_type n)
 {
     // calculate logical block number
-    unsigned nblock = unsigned(n >>  bm::set_block_shift);
+    block_idx_type nblock = (n >>  bm::set_block_shift);
     bm::word_t* blk =
         blockman_.check_allocate_block(nblock,
                                        get_new_blocks_strat());
@@ -3771,7 +3775,7 @@ bool bvector<Alloc>::set_bit_conditional_impl(size_type n,
                                               bool     condition)
 {
     // calculate logical block number
-    unsigned nblock = unsigned(n >>  bm::set_block_shift);
+    block_idx_type nblock = (n >>  bm::set_block_shift);
     int block_type;
     bm::word_t* blk =
         blockman_.check_allocate_block(nblock, 
@@ -3838,7 +3842,7 @@ template<class Alloc>
 bool bvector<Alloc>::and_bit_no_check(size_type n, bool val)
 {
     // calculate logical block number
-    unsigned nblock = unsigned(n >>  bm::set_block_shift); 
+    block_idx_type nblock = (n >>  bm::set_block_shift);
 
     int block_type;
     bm::word_t* blk =
@@ -3914,6 +3918,8 @@ bool bvector<Alloc>::find_reverse(size_type& pos) const
     bool found;
     
     unsigned top_blocks = blockman_.top_block_size();
+    if (!top_blocks)
+        return false;
     for (unsigned i = top_blocks-1; true; --i)
     {
         const bm::word_t* const* blk_blk = blockman_.get_topblock(i);
@@ -4015,6 +4021,11 @@ bool bvector<Alloc>::find_range(size_type& in_first, size_type& in_last) const
     {
         found = find_reverse(in_last);
         BM_ASSERT(found);
+        BM_ASSERT(in_first <= in_last);
+    }
+    else
+    {
+        in_first = in_last = 0; // zero the output just in case
     }
     return found;
 }
@@ -4164,7 +4175,7 @@ bool bvector<Alloc>::select(size_type rank_in, size_type& pos,
         return found;
 
     unsigned i, j;
-    blockman_.get_block_coord(nb, i, j);
+    bm::get_block_coord(nb, i, j);
     const bm::word_t* block = blockman_.get_block_ptr(i, j);
     
     block = BLOCK_ADDR_SAN(block); // TODO: optimize FULL block selection
@@ -4191,7 +4202,7 @@ bvector<Alloc>::check_or_next(size_type prev) const
     // calculate logical block number
     block_idx_type nb = (prev >>  bm::set_block_shift);
     unsigned i, j;
-    blockman_.get_block_coord(nb, i, j);
+    bm::get_block_coord(nb, i, j);
     const bm::word_t* block = blockman_.get_block_ptr(i, j);
 
     if (block)
@@ -4313,7 +4324,7 @@ bool bvector<Alloc>::insert(size_type n, bool value)
     }
     
     // calculate logical block number
-    unsigned nb = unsigned(n >>  bm::set_block_shift);
+    block_idx_type nb = (n >>  bm::set_block_shift);
 
     int block_type;
     bm::word_t carry_over = 0;
@@ -4323,7 +4334,7 @@ bool bvector<Alloc>::insert(size_type n, bool value)
     else // process target block insertion
     {
         unsigned i, j;
-        blockman_.get_block_coord(nb, i, j);
+        bm::get_block_coord(nb, i, j);
         bm::word_t* block = blockman_.get_block_ptr(i, j);
 
         if (!block && !value) // nothing to do
@@ -4344,7 +4355,7 @@ bool bvector<Alloc>::insert(size_type n, bool value)
     }
     
     unsigned i0, j0;
-    blockman_.get_block_coord(nb, i0, j0);
+    bm::get_block_coord(nb, i0, j0);
 
     unsigned top_blocks = blockman_.top_block_size();
     bm::word_t*** blk_root = blockman_.top_blocks_root();
@@ -4367,7 +4378,7 @@ bool bvector<Alloc>::insert(size_type n, bool value)
             if (carry_over)
             {
                 // carry over: needs block-list extension and a block
-                unsigned nblock = (i * bm::set_sub_array_size) + 0;
+                block_idx_type nblock = (block_idx_type(i) * bm::set_sub_array_size) + 0;
                 if (nblock > nb)
                 {
                     block =
@@ -4394,7 +4405,7 @@ bool bvector<Alloc>::insert(size_type n, bool value)
         unsigned j = j0;
         do
         {
-            unsigned nblock = (i * bm::set_sub_array_size) + j;
+            block_idx_type nblock = (block_idx_type(i) * bm::set_sub_array_size) + j;
             block = blk_blk[j];
             if (!block)
             {
@@ -4443,7 +4454,7 @@ bool bvector<Alloc>::insert(size_type n, bool value)
                     unsigned threshold =  bm::gap_limit(gap_blk, blockman_.glen());
                     if (new_block_len > threshold)
                     {
-                        extend_gap_block(nblock, gap_blk);
+                        blockman_.extend_gap_block(nblock, gap_blk);
                     }
                     continue;
                 }
@@ -4484,14 +4495,14 @@ void bvector<Alloc>::erase(size_type n)
         return ;
     
     // calculate logical block number
-    unsigned nb = unsigned(n >>  bm::set_block_shift);
+    block_idx_type nb = (n >>  bm::set_block_shift);
     
     if (!n ) // regular shift-left by 1 bit
     {}
     else // process target block bit erase
     {
         unsigned i, j;
-        blockman_.get_block_coord(nb, i, j);
+        bm::get_block_coord(nb, i, j);
         bm::word_t* block = blockman_.get_block_ptr(i, j);
         bool carry_over = test_first_block_bit(nb+1);
         if (!block)
@@ -4515,7 +4526,7 @@ void bvector<Alloc>::erase(size_type n)
     // left shifting of all other blocks
     //
     unsigned i0, j0;
-    blockman_.get_block_coord(nb, i0, j0);
+    bm::get_block_coord(nb, i0, j0);
 
     unsigned top_blocks = blockman_.top_block_size();
     bm::word_t*** blk_root = blockman_.top_blocks_root();
@@ -4530,13 +4541,19 @@ void bvector<Alloc>::erase(size_type n)
             blk_blk = blk_root[i];
         
         if (!blk_blk) // top level group of blocks missing
+        {
+            bool found = bm::find_not_null_ptr(blk_root, i+1, top_blocks, &i);
+            if (!found)
+                break;
+            --i;
             continue;
+        }
         if ((bm::word_t*)blk_blk == FULL_BLOCK_FAKE_ADDR)
         {
             bool carry_over = 0;
             if (i + 1 < bm::set_top_array_size)
             {
-                size_type co_idx = (i+1) * bm::gap_max_bits * bm::set_sub_array_size;
+                size_type co_idx = (block_idx_type(i)+1) * bm::gap_max_bits * bm::set_sub_array_size;
                 carry_over = this->test(co_idx);
                 if (carry_over)
                     continue; // nothing to do (1 in)
@@ -4552,7 +4569,7 @@ void bvector<Alloc>::erase(size_type n)
         unsigned j = j0;
         do
         {
-            unsigned nblock = (i * bm::set_sub_array_size) + j;
+            block_idx_type nblock = (block_idx_type(i) * bm::set_sub_array_size) + j;
             bool carry_over = 0; // test_first_block_bit(nblock+1); // look ahead for CO
             block = blk_blk[j];
             if (!block)
@@ -4563,7 +4580,7 @@ void bvector<Alloc>::erase(size_type n)
                 {
                     if (0 != (block = blk_blk[j]))
                     {
-                        nblock = (i * bm::set_sub_array_size) + j;
+                        nblock = (block_idx_type(i) * bm::set_sub_array_size) + j;
                         break;
                     }
                 } // for j
@@ -4599,7 +4616,7 @@ void bvector<Alloc>::erase(size_type n)
                 carry_over = bm::gap_shift_l1(gap_blk, carry_over, &new_block_len);
                 unsigned threshold =  bm::gap_limit(gap_blk, blockman_.glen());
                 if (new_block_len > threshold)
-                    extend_gap_block(nblock, gap_blk);
+                    blockman_.extend_gap_block(nblock, gap_blk);
                 else
                 {
                     if (bm::gap_is_all_zero(gap_blk))
@@ -4713,7 +4730,7 @@ void bvector<Alloc>::combine_operation_with_block(block_idx_type nb,
                                                   bm::operation opcode)
 {
     unsigned i0, j0;
-    blockman_.get_block_coord(nb, i0, j0);
+    bm::get_block_coord(nb, i0, j0);
     bm::word_t* blk = blockman_.get_block_ptr(i0, j0);
 
     bool gap = BM_IS_GAP(blk);
@@ -4760,7 +4777,17 @@ bvector<Alloc>::bit_or(const bm::bvector<Alloc>& bv1,
         size_ = bv2.size_;
     
     bm::word_t*** blk_root_arg1 = bv1.blockman_.top_blocks_root();
+    if (!blk_root_arg1)
+    {
+        this->bit_or(bv2);
+        return *this;
+    }
     bm::word_t*** blk_root_arg2 = bv2.blockman_.top_blocks_root();
+    if (!blk_root_arg2)
+    {
+        this->bit_or(bv1);
+        return *this;
+    }
 
     for (unsigned i = 0; i < top_blocks; ++i)
     {
@@ -6289,16 +6316,11 @@ bvector<Alloc>::combine_operation_with_block(block_idx_type    nb,
                 // special case, maybe we can do the job without
                 // converting the GAP argument to bitblock
                 gap_operation_to_bitset_func_type gfunc =
-                    operation_functions<true>::gap_op_to_bit(opcode);
+                    bm::operation_functions<true>::gap_op_to_bit(opcode);
                 BM_ASSERT(gfunc);
                 (*gfunc)(blk, BMGAP_PTR(arg_blk));
 
-                if (opcode != BM_OR)
-                {
-                    bool b = bm::bit_is_all_zero(blk);
-                    if (b) // operation converged bit-block to empty
-                        blockman_.zero_block(nb);
-                }
+                blockman_.optimize_bit_block(nb);
                 return;
             }
             
@@ -6421,7 +6443,7 @@ void bvector<Alloc>::set_range_no_check(size_type left,
                                          (gap_word_t)nbit_left, 
                                          (gap_word_t)r, 
                                          (gap_word_t)1);
-        blockman_.get_block_coord(nblock_left, i, j);
+        bm::get_block_coord(nblock_left, i, j);
         block = blockman_.get_block_ptr(i, j);
         combine_operation_with_block(nblock_left,
             BM_IS_GAP(block),
@@ -6447,7 +6469,7 @@ void bvector<Alloc>::set_range_no_check(size_type left,
     if (nb_to > nblock_right)
         return;
 
-    blockman_.get_block_coord(nblock_right, i, j);
+    bm::get_block_coord(nblock_right, i, j);
     block = blockman_.get_block_ptr(i, j);
 
     gap_init_range_block<gap_word_t>(tmp_gap_blk, 
@@ -6483,7 +6505,7 @@ void bvector<Alloc>::clear_range_no_check(size_type left,
     tmp_gap_blk[0] = 0; // just to silence GCC warning on uninit var
   
     // Set bits in the starting block
-    bm::word_t* block;// = blockman_.get_block(nblock_left);
+    bm::word_t* block;
     
     unsigned nbit_left = unsigned(left  & bm::set_block_mask);
     if ((nbit_left == 0) && (r == bm::bits_in_block - 1)) // full block
@@ -6496,7 +6518,7 @@ void bvector<Alloc>::clear_range_no_check(size_type left,
             (gap_word_t)nbit_left,
             (gap_word_t)r,
             (gap_word_t)0);
-        blockman_.get_block_coord(nblock_left, i, j);
+        bm::get_block_coord(nblock_left, i, j);
         block = blockman_.get_block_ptr(i, j);
         combine_operation_with_block(nblock_left,
             BM_IS_GAP(block),
@@ -6523,7 +6545,7 @@ void bvector<Alloc>::clear_range_no_check(size_type left,
     if (nb_to > nblock_right)
         return;
 
-    blockman_.get_block_coord(nblock_right, i, j);
+    bm::get_block_coord(nblock_right, i, j);
     block = blockman_.get_block_ptr(i, j);
     gap_init_range_block<gap_word_t>(tmp_gap_blk,
         (gap_word_t)0,
@@ -6562,7 +6584,6 @@ void bvector<Alloc>::copy_range(const bvector<Alloc>& bvect,
     copy_range_no_check(bvect, left, right);
 }
 
-
 //---------------------------------------------------------------------
 
 template<class Alloc>
@@ -6582,16 +6603,18 @@ void bvector<Alloc>::copy_range_no_check(const bvector<Alloc>& bvect,
     //
     if (left)
     {
-        bm::id_t from =
-            (left + bm::gap_max_bits >= left) ? 0u : left - bm::gap_max_bits;
+        size_type from = 
+            (left < bm::gap_max_bits) ? 0 : (left - bm::gap_max_bits);
         clear_range_no_check(from, left-1); // TODO: optimize clear from
     }
     if (right < bm::id_max-1)
     {
-        clear_range_no_check(right+1, bm::id_max-1);
+        size_type last;
+        bool found = find_reverse(last);
+        if (found && (last > right))
+            clear_range_no_check(right+1, last);
     }
 }
-
 
 //---------------------------------------------------------------------
 
@@ -6605,6 +6628,7 @@ void bvector<Alloc>::throw_bad_alloc()
 #endif
 }
 
+//---------------------------------------------------------------------
 
 
 

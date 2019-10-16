@@ -39,10 +39,10 @@ int main(int argc, char ** argv){
 	string input,query;
 	uint k(31);
 	uint m1(10);
-	uint m2(10);
+	uint m2(0);
 	uint m3(3);
 	uint c(1);
-	uint bit(6);
+	uint bit(0);
 	uint ex(0);
 	while ((ch = getopt (argc, argv, "g:q:k:m:n:s:t:b:e:")) != -1){
 		switch(ch){
@@ -75,7 +75,9 @@ int main(int argc, char ** argv){
 				break;
 		}
 	}
-
+	if(m2==0){
+		m2=m1;
+	}
 	if(query=="" and input!=""){
 		query=input;
 	}

@@ -17,7 +17,7 @@ endif
 
 CFLAGS+=-std=c++11 -pipe -lz -fopenmp ${WARNS}
 INC=blight.h bbhash.h common.h
-EXEC=bench_blight Colored_De_Bruijn_graph_snippet Abundance_De_Bruijn_graph_snippet interactive
+EXEC=bench_blight
 
 
 all: $(EXEC)

@@ -23,6 +23,8 @@ For more information please visit:  http://bitmagic.io
     @internal
 */
 
+#include <cstdint>
+
 namespace bm
 {
 
@@ -40,9 +42,12 @@ typedef unsigned short short_t;
 # define BM_DEFAULT_POOL_SIZE 4096
 #endif
 
-
-const unsigned id_max32 = 0xFFFFFFFFu;
+#ifdef BM64ADDR
+const unsigned long long id_max32 = 0xFFFFFFFFull;
 const unsigned long long id_max48 = 0xFFFFFFFFFFFFull;
+#else
+const unsigned id_max32 = 0xFFFFFFFFu;
+#endif
 
 // Data Block parameters
 
@@ -73,9 +78,12 @@ typedef unsigned short gap_word_t;
 const unsigned gap_max_buff_len = 1280;
 const unsigned gap_max_bits = 65536;
 const unsigned gap_equiv_len = (unsigned)
-   ((sizeof(bm::word_t) * bm::set_block_size) / sizeof(gap_word_t));
+   ((sizeof(bm::word_t) * bm::set_block_size) / sizeof(bm::gap_word_t));
+const unsigned gap_max_bits_cmrz = bm::gap_max_bits / 2;
 const unsigned gap_levels = 4;
 const unsigned gap_max_level = bm::gap_levels - 1;
+
+const unsigned bie_cut_off = 16384; // binary interpolative encode size cut-off
 
 
 // Block Array parameters
@@ -86,10 +94,10 @@ const unsigned set_sub_array_size = set_array_size32;
 const unsigned set_array_shift = 8u;
 const unsigned set_array_mask  = 0xFFu;
 
-const unsigned set_total_blocks48 = bm::id_max48 / bm::gap_max_bits;
 const unsigned set_total_blocks32 = (bm::set_array_size32 * bm::set_array_size32);
 
 #ifdef BM64ADDR
+const unsigned set_total_blocks48 = bm::id_max48 / bm::gap_max_bits;
 const unsigned long long id_max = bm::id_max48;
 const unsigned long long set_array_size48 = 1 + (bm::id_max48 / (bm::set_sub_array_size * bm::gap_max_bits));
 const unsigned  set_top_array_size = bm::set_array_size48;
@@ -115,17 +123,13 @@ const unsigned sub_block3_size = bm::gap_max_bits / 4;
 
 
 #if defined(BM64OPT) || defined(BM64_SSE4)
-
 typedef id64_t  wordop_t;
-const id64_t    all_bits_mask = 0xffffffffffffffff;
+const id64_t    all_bits_mask = 0xffffffffffffffffULL;
 const unsigned set_block_size_op  = bm::set_block_size / 2;
-
 #else
-
 typedef word_t wordop_t;
 const word_t all_bits_mask = 0xffffffff;
 const unsigned set_block_size_op  = bm::set_block_size;
-
 #endif
 
 
@@ -223,8 +227,8 @@ template<bool T> struct _copyright
 };
 
 template<bool T> const char _copyright<T>::_p[] = 
-    "BitMagic C++ Library. v.4.0.0 (c) 2002-2019 Anatoliy Kuznetsov.";
-template<bool T> const unsigned _copyright<T>::_v[3] = {3, 20, 0};
+    "BitMagic C++ Library. v.5.2.0 (c) 2002-2019 Anatoliy Kuznetsov.";
+template<bool T> const unsigned _copyright<T>::_v[3] = {5, 2, 0};
 
 
 

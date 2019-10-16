@@ -24,7 +24,7 @@ using namespace std;
 // FOR k<32
 #define kmer uint64_t
 // FOR k<64
-//#define kmer __uint128_t
+//~ #define kmer __uint128_t
 
 
 
@@ -162,7 +162,7 @@ public:
 		, minimizer_number_graph(2*minimizer_size_graph)
 		, number_bucket_per_mphf(2*(m1-m2))
 		, bucket_per_superBuckets(2*(m1-m3))
-		, positions_to_check(bit_saved_sub)
+		, positions_to_check(bit_to_save)
 	{
 		all_buckets=new bucket_minimizer[minimizer_number.value()]();
 		position_super_kmers.resize(minimizer_number.value());
@@ -217,7 +217,6 @@ public:
 	kmer update_kmer_local(uint64_t pos,const vector<bool>& V,kmer input);
 	vector<bool> get_seq(uint32_t mini,uint64_t pos,uint32_t n);
 	uint32_t minimizer_graph(kmer seq);
-	uint32_t minimizer_extended(kmer seq);
 	pair<uint32_t,uint32_t> minimizer_and_more(kmer seq, uint& prefix_fragile, uint& suffix_fragile);
 	bool single_query(const uint minimizer, kmer kastor);
 	bool multiple_minimizer_query_bool(const uint minimizer,  kmer kastor,uint prefix_length,uint suffix_length);
@@ -229,7 +228,6 @@ public:
 	extended_minimizer get_extended_minimizer_from_min(kmer seq, uint32_t mini, uint position_minimizer);
 	void print_extended(extended_minimizer);
 	uint32_t regular_minimizer(kmer seq);
-	void create_super_buckets_extended(const string&);
 	void create_super_buckets_regular(const string&);
 	int64_t query_kmer_hash(kmer canon);
 	int64_t query_get_hash(const kmer canon,uint32_t minimizer);
@@ -239,7 +237,7 @@ public:
 	vector<int64_t> query_sequence_minitig(const string& query);
 	int64_t query_get_rank_minitig(const kmer canon,uint minimizer);
 	int64_t query_kmer_minitig(kmer canon);
-	
+
 };
 
 
