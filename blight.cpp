@@ -437,7 +437,7 @@ void kmer_Set_Light::create_super_buckets_regular(const string& input_file){
 	}
 	vector<ostream*> out_files;
 	for(uint i(0);i<number_superbuckets;++i){
-		auto out =new zstr::ofstream("_out"+to_string(i));
+		auto out =new zstr::ofstream("_out"+to_string(i),ofstream::app);
 		out_files.push_back(out);
 	}
 	omp_lock_t lock[number_superbuckets.value()];

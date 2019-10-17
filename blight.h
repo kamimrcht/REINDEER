@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include <unordered_map>
 #include <pthread.h>
+#include <sys/stat.h>
 #include "common.h"
 #include "bbhash.h"
 #include "bm.h"
@@ -186,6 +187,14 @@ public:
 			delete all_mphf[i].kmer_MPHF;
 		}
 		delete[] all_mphf;
+		struct stat buffer;
+		string filerm;
+		for(uint i(0);i<number_superbuckets;++i){
+			filerm=("_out"+to_string(i));
+			if((stat (filerm.c_str(), &buffer) == 0)){
+				remove(filerm.c_str());
+			}
+		}
 		//~ delete[] abundance_minimizer;;
 	}
 
