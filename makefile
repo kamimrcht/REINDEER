@@ -17,7 +17,7 @@ endif
 
 CFLAGS+=-std=c++11 -pipe -lz -fopenmp ${WARNS}
 INC=blight.h bbhash.h common.h
-EXEC=bench_blight
+EXEC=bench_blight split
 
 
 all: $(EXEC)
@@ -35,6 +35,12 @@ bench_blight: bench_blight.o blight.o
 	$(CC) -o $@ $^ $(CFLAGS)
 
 bench_blight.o: bench_blight.cpp $(INC)
+	$(CC) -o $@ -c $< $(CFLAGS)
+
+split: split.o blight.o
+	$(CC) -o $@ $^ $(CFLAGS)
+
+split.o: split.cpp $(INC)
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 Colored_De_Bruijn_graph_snippet.o: Colored_De_Bruijn_graph_snippet.cpp $(INC)
