@@ -38,7 +38,7 @@ int main(int argc, char ** argv){
 	char ch;
 	string input,query;
 	uint k(31);
-	uint m1(10);
+	uint m1(9);
 	uint m2(0);
 	uint m3(3);
 	uint c(1);
