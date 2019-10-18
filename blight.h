@@ -147,8 +147,8 @@ public:
 
 	kmer_Set_Light(uint k_val,uint m1_val, uint m2_val, uint m3_val, uint coreNumber_val, uint bit_to_save,uint ex)
 		: k(k_val)
-		, m1(m1_val)
-		, m2(m2_val ? m2_val : m1)
+		, m1(m1_val%2==0 ? m1_val-1 : m1_val)
+		, m2((m2_val%2==0) or m2_val>m1 ? m1 : m2_val)
 		, m3(m3_val)
 		, extension_minimizer(ex)
 		, minimizer_size_graph(m1-2*extension_minimizer)
@@ -159,10 +159,10 @@ public:
 		, offsetUpdateMinimizer(2*m1)
 		, mphf_number(2*m2)
 		, number_superbuckets(2*m3)
-		, minimizer_number(2*m1)
+		, minimizer_number(2*m1-1)
 		, minimizer_number_graph(2*minimizer_size_graph)
 		, number_bucket_per_mphf(2*(m1-m2))
-		, bucket_per_superBuckets(2*(m1-m3))
+		, bucket_per_superBuckets(2*(m1-m3)-1)
 		, positions_to_check(bit_to_save)
 	{
 		all_buckets=new bucket_minimizer[minimizer_number.value()]();
@@ -213,37 +213,37 @@ public:
 	void fill_positions(uint32_t beg,uint32_t end);
 	bool exists(const string& query);
 	void multiple_query(const string& query);
-	uint32_t minimizer_according_xs(kmer seq);
+	kmer minimizer_according_xs(kmer seq);
 	void abundance_minimizer_construct(const string& input_file);
-	int64_t correct_pos(uint32_t mini, uint64_t p);
+	int64_t correct_pos(kmer mini, uint64_t p);
 	void str2bool(const string& str,uint mini);
-	kmer update_kmer(uint64_t pos,uint32_t mini,kmer input);
+	kmer update_kmer(uint64_t pos,kmer mini,kmer input);
 	kmer get_kmer(uint64_t pos,uint64_t mini);
 	void print_kmer(kmer num,uint n=100);
-	int32_t query_get_pos_unitig(const kmer canon,uint minimizer);
-	uint32_t get_anchors(const string& query,uint& minimizer, vector<kmer>& kmerV,uint pos);
+	int32_t query_get_pos_unitig(const kmer canon,kmer minimizer);
+	uint32_t get_anchors(const string& query,kmer& minimizer, vector<kmer>& kmerV,uint pos);
 	uint multiple_query_serial(const uint minimizerV, const vector<kmer>& kmerV);
 	void file_query(const string& query_file);
 	uint32_t bool_to_int(uint n_bits_to_encode,uint64_t pos,uint64_t start);
-	uint multiple_query_optimized(uint minimizerV, const vector<kmer>& kmerV);
+	uint multiple_query_optimized(uint64_t minimizerV, const vector<kmer>& kmerV);
 	void int_to_bool(uint n_bits_to_encode,uint64_t X, uint64_t pos,uint64_t start);
 	kmer update_kmer_local(uint64_t pos,const vector<bool>& V,kmer input);
-	vector<bool> get_seq(uint32_t mini,uint64_t pos,uint32_t n);
-	uint32_t minimizer_graph(kmer seq);
+	vector<bool> get_seq(kmer mini,uint64_t pos,uint32_t n);
+	kmer minimizer_graph(kmer seq);
 	pair<uint32_t,uint32_t> minimizer_and_more(kmer seq, uint& prefix_fragile, uint& suffix_fragile);
-	bool single_query(const uint minimizer, kmer kastor);
-	bool multiple_minimizer_query_bool(const uint minimizer,  kmer kastor,uint prefix_length,uint suffix_length);
-	int64_t multiple_minimizer_query_hash(const uint minimizer,  kmer kastor,uint prefix_length,uint suffix_length);
+	bool single_query(const uint64_t minimizer, kmer kastor);
+	bool multiple_minimizer_query_bool(const kmer minimizer,  kmer kastor,uint prefix_length,uint suffix_length);
+	int64_t multiple_minimizer_query_hash(const kmer minimizer,  kmer kastor,uint prefix_length,uint suffix_length);
 	bool query_kmer_bool(kmer canon);
 	pair<uint32_t,uint32_t> query_sequence_bool(const string& query);
 	string kmer2str(kmer num);
 	extended_minimizer minimizer_and_more(kmer seq);
-	extended_minimizer get_extended_minimizer_from_min(kmer seq, uint32_t mini, uint position_minimizer);
+	extended_minimizer get_extended_minimizer_from_min(kmer seq, kmer mini, uint position_minimizer);
 	void print_extended(extended_minimizer);
-	uint32_t regular_minimizer(kmer seq);
+	kmer regular_minimizer(kmer seq);
 	void create_super_buckets_regular(const string&, bool clean=true);
 	int64_t query_kmer_hash(kmer canon);
-	int64_t query_get_hash(const kmer canon,uint32_t minimizer);
+	int64_t query_get_hash(const kmer canon,kmer minimizer);
 	vector<int64_t> query_sequence_hash(const string& query);
 	void construct_index(const string& input_file);
 	//~ void report_memusage(boomphf::memreport_t& report, const std::string& prefix="blight", bool add_struct=true);

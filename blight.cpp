@@ -29,55 +29,45 @@ using namespace chrono;
 
 
 static inline kmer nuc2int(char c){
-	switch(c){
-		/*
-		case 'a': return 0;
-		case 'c': return 1;
-		case 'g': return 2;
-		case 't': return 3;
-		*/
-		case 'A': return 0;
-		case 'C': return 1;
-		case 'G': return 2;
-		case 'T': return 3;
-		case 'N': return 0;
-	}
-	cout<<"Unknow nucleotide: "<<c<<"!"<<endl;
-	exit(0);
-	return 0;
+	//~ switch(c){
+		//~ /*
+		//~ case 'a': return 0;
+		//~ case 'c': return 1;
+		//~ case 'g': return 2;
+		//~ case 't': return 3;
+		//~ */
+		//~ case 'A': return 0;
+		//~ case 'C': return 1;
+		//~ case 'G': return 2;
+		//~ case 'T': return 3;
+		//~ case 'N': return 0;
+	//~ }
+	return (c/2)%4;
+	//~ cout<<"Unknow nucleotide: "<<c<<"!"<<endl;
+	//~ exit(0);
+	//~ return 0;
 }
 
 
 
 static inline kmer nuc2intrc(char c){
-	switch(c){
-		/*
-		case 'a': return 0;
-		case 'c': return 1;
-		case 'g': return 2;
-		case 't': return 3;
-		*/
-		case 'A': return 3;
-		case 'C': return 2;
-		case 'G': return 1;
-		case 'T': return 0;
-		case 'N': return 0;
-	}
-	cout<<"Unknow nucleotide: "<<c<<"!"<<endl;
-	exit(0);
-	return 0;
-}
-
-
-
-inline uint number_miss(const string str1,const string str2){
-	uint res(0);
-	for(uint i(0);i<str1.size();++i){
-		if(str1[i]!=str2[i]){
-			res++;
-		}
-	}
-	return res;
+	//~ switch(c){
+		//~ /*
+		//~ case 'a': return 0;
+		//~ case 'c': return 1;
+		//~ case 'g': return 2;
+		//~ case 't': return 3;
+		//~ */
+		//~ case 'A': return 2;
+		//~ case 'C': return 3;
+		//~ case 'G': return 1;
+		//~ case 'T': return 0;
+		//~ case 'N': return 0;
+	//~ }
+	return ((c/2)%4)^2;
+	//~ cout<<"Unknow nucleotide: "<<c<<"!"<<endl;
+	//~ exit(0);
+	//~ return 0;
 }
 
 
@@ -129,15 +119,15 @@ inline kmer str2num(const string& str){
 	kmer res(0);
 	for(uint i(0);i<str.size();i++){
 		res<<=2;
-		switch (str[i]){
-			case 'A':res+=0;break;
-			case 'C':res+=1;break;
-			case 'G':res+=2;break;
-			case 'T':res+=3;break;
-			case 'N':res+=0;break;
-			default:cout<<"bug"<<"!"<<endl;
-	exit(0);
-		}
+		res+=(str[i]/2)%4;
+		//~ switch (str[i]){
+			//~ case 'A':res+=0;break;
+			//~ case 'C':res+=1;break;
+			//~ case 'G':res+=2;break;
+			//~ case 'T':res+=3;break;
+			//~ case 'N':res+=0;break;
+			//~ default:cout<<"bug"<<"!"<<endl;
+		//~ }
 	}
 	return res;
 }
@@ -245,40 +235,71 @@ inline __uint128_t rcb(const __uint128_t& in, uint n){
 
 
 
-inline uint64_t rcb(uint64_t in, uint n) {
-	assume(n <= 32, "n=%u > 32", n);
-	// Complement, swap byte order
-	uint64_t res = __builtin_bswap64(~in);
-	// Swap nuc order in bytes
-	const uint64_t c1 = 0x0f0f0f0f0f0f0f0f;
-	const uint64_t c2 = 0x3333333333333333;
-	res = ((res & c1) << 4) | ((res & (c1 << 4)) >> 4); // swap 2-nuc order in bytes
-	res = ((res & c2) << 2) | ((res & (c2 << 2)) >> 2); // swap nuc order in 2-nuc
+//~ inline uint64_t rcb(uint64_t in, uint n) {
+	//~ assume(n <= 32, "n=%u > 32", n);
+	//~ // Complement, swap byte order
+	//~ uint64_t res = __builtin_bswap64(~in);
+	//~ // Swap nuc order in bytes
+	//~ const uint64_t c1 = 0x0f0f0f0f0f0f0f0f;
+	//~ const uint64_t c2 = 0x3333333333333333;
+	//~ res = ((res & c1) << 4) | ((res & (c1 << 4)) >> 4); // swap 2-nuc order in bytes
+	//~ res = ((res & c2) << 2) | ((res & (c2 << 2)) >> 2); // swap nuc order in 2-nuc
 
-	// Realign to the right
-	res >>= 64 - 2*n;
+	//~ // Realign to the right
+	//~ res >>= 64 - 2*n;
 
-	return res;
+	//~ return res;
+//~ }
+
+inline uint64_t rcb(uint64_t in, uint n){
+    assume(n <= 32, "n=%u > 32", n);
+    // Complement, swap byte order
+    uint64_t res = __builtin_bswap64(in ^ 0xaaaaaaaaaaaaaaaa);
+    // Swap nuc order in bytes
+    const uint64_t c1 = 0x0f0f0f0f0f0f0f0f;
+    const uint64_t c2 = 0x3333333333333333;
+    res               = ((res & c1) << 4) | ((res & (c1 << 4)) >> 4); // swap 2-nuc order in bytes
+    res               = ((res & c2) << 2) | ((res & (c2 << 2)) >> 2); // swap nuc order in 2-nuc
+
+    // Realign to the right
+    res >>= 64 - 2 * n;
+    return res;
 }
 
 
+//~ inline uint32_t rcb(uint32_t in, uint n){
+    //~ assume(n <= 16, "n=%u > 16", n);
+    //~ // Complement, swap byte order
+    //~ uint32_t res = __builtin_bswap32(in ^ 0xaaaaaaaa);
+    //~ // Swap nuc order in bytes
+    //~ const uint32_t c1 = 0x0f0f0f0f;
+	//~ const uint32_t c2 = 0x33333333;
+    //~ res               = ((res & c1) << 4) | ((res & (c1 << 4)) >> 4); // swap 2-nuc order in bytes
+    //~ res               = ((res & c2) << 2) | ((res & (c2 << 2)) >> 2); // swap nuc order in 2-nuc
 
-inline uint32_t rcb(uint32_t in, uint n) {
-	assume(n <= 16, "n=%u > 16", n);
-	// Complement, swap byte order
-	uint32_t res = __builtin_bswap32(~in);
+    //~ // Realign to the right
+    //~ res >>= 32 - 2 * n;
+    //~ return res;
+//~ }
 
-	// Swap nuc order in bytes
-	const uint32_t c1 = 0x0f0f0f0f;
-	const uint32_t c2 = 0x33333333;
-	res = ((res & c1) << 4) | ((res & (c1 << 4)) >> 4); // swap 2-nuc order in bytes
-	res = ((res & c2) << 2) | ((res & (c2 << 2)) >> 2); // swap nuc order in 2-nuc
 
-	// Realign to the right
-	res >>= 32 - 2*n;
 
-	return res;
-}
+//~ inline uint32_t rcb(uint32_t in, uint n) {
+	//~ assume(n <= 16, "n=%u > 16", n);
+	//~ // Complement, swap byte order
+	//~ uint32_t res = __builtin_bswap32(~in);
+
+	//~ // Swap nuc order in bytes
+	//~ const uint32_t c1 = 0x0f0f0f0f;
+	//~ const uint32_t c2 = 0x33333333;
+	//~ res = ((res & c1) << 4) | ((res & (c1 << 4)) >> 4); // swap 2-nuc order in bytes
+	//~ res = ((res & c2) << 2) | ((res & (c2 << 2)) >> 2); // swap nuc order in 2-nuc
+
+	//~ // Realign to the right
+	//~ res >>= 32 - 2*n;
+
+	//~ return res;
+//~ }
 
 
 
@@ -343,17 +364,23 @@ static inline kmer get_int_in_kmer(kmer seq,uint64_t pos,uint number_nuc){
 
 
 
-uint32_t kmer_Set_Light::regular_minimizer(kmer seq){
-	uint32_t mini,mmer;
+kmer canonize(kmer x, uint k){
+	return ( (__builtin_popcountll(x) & 1) ? x : rcb(x, k)) >> 1;
+}
+
+
+
+kmer kmer_Set_Light::regular_minimizer(kmer seq){
+	kmer mini,mmer;
 	mmer=seq%minimizer_number_graph;
-	mini=min(mmer,rcb(mmer,minimizer_size_graph));
-	uint64_t hash_mini = xs(mini);
+	mini=mmer=canonize(mmer,minimizer_size_graph);
+	uint64_t hash_mini = xs(mmer);
 	for(uint i(1);i<=k-minimizer_size_graph;i++){
 		seq>>=2;
 		mmer=seq%minimizer_number_graph;
-		mmer=min(mmer,rcb(mmer,minimizer_size_graph));
+		mmer=canonize(mmer,minimizer_size_graph);
 		uint64_t hash = xs(mmer);
-		if(hash_mini>hash){
+		if(hash_mini<hash){
 			mini=mmer;
 			hash_mini=hash;
 		}
@@ -420,7 +447,7 @@ void kmer_Set_Light::construct_index(const string& input_file){
 	duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
 	cout<<"Super bucket created: "<< time_span12.count() << " seconds."<<endl;
 
-	read_super_buckets("_out");
+	read_super_buckets("_blout");
 
 	high_resolution_clock::time_point t13 = high_resolution_clock::now();
 	duration<double> time_span13 = duration_cast<duration<double>>(t13 - t12);
@@ -441,10 +468,10 @@ void kmer_Set_Light::create_super_buckets_regular(const string& input_file,bool 
 	vector<ostream*> out_files;
 	for(uint i(0);i<number_superbuckets;++i){
 		if(clean){
-			auto out =new zstr::ofstream("_out"+to_string(i));
+			auto out =new zstr::ofstream("_blout"+to_string(i));
 			out_files.push_back(out);
 		}else{
-			auto out =new zstr::ofstream("_out"+to_string(i),ofstream::app);
+			auto out =new zstr::ofstream("_blout"+to_string(i),ofstream::app);
 			out_files.push_back(out);
 		}
 
@@ -520,7 +547,7 @@ void kmer_Set_Light::create_super_buckets_regular(const string& input_file,bool 
 	uint64_t i(0),total_pos_size(0);
 	uint max_bucket_mphf(0);
 	uint64_t hash_base(0),old_hash_base(0), nb_skmer_before(0), last_skmer_number(0);
-	for(uint BC(0);BC<minimizer_number;++BC){
+	for(uint BC(0);BC<minimizer_number.value();++BC){
 		all_buckets[BC].start=i;
 		all_buckets[BC].current_pos=i;
 		i+=all_buckets[BC].nuc_minimizer;
@@ -569,11 +596,11 @@ void kmer_Set_Light::str2bool(const string& str,uint mini){
 				break;
 			case 'G':
 				bucketSeq[(all_buckets[mini].current_pos+i)*2]=(true);
-				bucketSeq[(all_buckets[mini].current_pos+i)*2+1]=(false);
+				bucketSeq[(all_buckets[mini].current_pos+i)*2+1]=(true);
 				break;
 			case 'T':
 				bucketSeq[(all_buckets[mini].current_pos+i)*2]=(true);
-				bucketSeq[(all_buckets[mini].current_pos+i)*2+1]=(true);
+				bucketSeq[(all_buckets[mini].current_pos+i)*2+1]=(false);
 				break;
 			default:
 				cout<<"nope"<<endl;
@@ -619,7 +646,7 @@ void kmer_Set_Light::read_super_buckets(const string& input_file){
 			create_mphf_disk(BC,BC+bucket_per_superBuckets);
 			fill_positions(BC,BC+bucket_per_superBuckets);
 			BC+=bucket_per_superBuckets;
-			cout<<"-"<<flush;
+			//~ cout<<"-"<<flush;
 		}
 	}
 	delete[] Valid_kmer;
@@ -645,10 +672,6 @@ void kmer_Set_Light::read_super_buckets(const string& input_file){
 	cout<<"TOTAL Bits per kmer (without bbhash): "<<bit_per_kmer<<endl;
 	cout<<"TOTAL Bits per kmer (with bbhash): "<<bit_per_kmer+4<<endl;
 	cout<<"TOTAL Size estimated (MBytes): "<<(bit_per_kmer+4)*number_kmer/(8*1024*1024)<<endl;
-
-	//~ boomphf::memreport_t report;
-	//~ report_memusage(report);
-	//~ boomphf::print_memreport(report);
 }
 
 
@@ -666,13 +689,13 @@ inline kmer kmer_Set_Light::get_kmer(uint64_t mini,uint64_t pos){
 
 
 
-vector<bool> kmer_Set_Light::get_seq(uint32_t mini,uint64_t pos,uint32_t n){
+vector<bool> kmer_Set_Light::get_seq(kmer mini,uint64_t pos,uint32_t n){
 	return vector<bool>(bucketSeq.begin()+(all_buckets[mini].start+pos)*2,bucketSeq.begin()+(all_buckets[mini].start+pos+n)*2);
 }
 
 
 
-inline kmer kmer_Set_Light::update_kmer(uint64_t pos,uint32_t mini,kmer input){
+inline kmer kmer_Set_Light::update_kmer(uint64_t pos,kmer mini,kmer input){
 	return update_kmer_local(all_buckets[mini].start+pos, bucketSeq, input);
 }
 
@@ -783,8 +806,6 @@ void kmer_Set_Light::create_mphf_mem(uint begin_BC,uint end_BC){
 			if((BC+1)%number_bucket_per_mphf==0 and not anchors.empty()){
 				largest_MPHF=max(largest_MPHF,anchors.size());
 				all_mphf[BC/number_bucket_per_mphf].kmer_MPHF= new boomphf::mphf<kmer,hasher_t>(anchors.size(),anchors,gammaFactor);
-				//~ auto data_iterator = boomphf::range(static_cast<const kmer*>(&(anchors[0])), static_cast<const kmer*>(&(anchors[0])+anchors.size()));
-				//~ all_mphf[BC/number_bucket_per_mphf].kmer_MPHF= new boomphf::mphf<kmer,hasher_t>(anchors.size(),data_iterator,coreNumber,gammaFactor,false);
 				anchors.clear();
 				largest_bucket_anchor=0;
 				largest_bucket_nuc=(0);
@@ -800,10 +821,10 @@ void kmer_Set_Light::create_mphf_disk(uint begin_BC,uint end_BC){
 		{
 		uint largest_bucket_anchor(0);
 		uint largest_bucket_nuc(0);
-		uint64_t mphfSize(0);
 		#pragma omp for schedule(dynamic, number_bucket_per_mphf.value())
 		for(uint BC=(begin_BC);BC<end_BC;++BC){
-			string name("kmers"+to_string(BC));
+			uint64_t mphfSize(0);
+			string name("_blkmers"+to_string(BC));
 			if(all_buckets[BC].nuc_minimizer!=0){
 				ofstream out(name,ofstream::binary);
 				largest_bucket_nuc=max(largest_bucket_nuc,all_buckets[BC].nuc_minimizer);
@@ -834,13 +855,9 @@ void kmer_Set_Light::create_mphf_disk(uint begin_BC,uint end_BC){
 			}
 			if((BC+1)%number_bucket_per_mphf==0 and mphfSize!=0){
 				largest_MPHF=max(largest_MPHF,mphfSize);
-				//~ out.close();
-				//~ cout<<"le bug"<<endl;
 				auto data_iterator = file_binary(name.c_str());
-				//~ cout<<"le bug2"<<mphfSize<<endl;
 				all_mphf[BC/number_bucket_per_mphf].kmer_MPHF= new boomphf::mphf<kmer,hasher_t>(mphfSize,data_iterator,gammaFactor);
 				remove(name.c_str());
-				//~ cout<<"no bug"<<endl;
 				largest_bucket_anchor=0;
 				largest_bucket_nuc=(0);
 				mphfSize=0;
@@ -919,7 +936,7 @@ void kmer_Set_Light::fill_positions(uint begin_BC,uint end_BC){
 
 
 
-int64_t kmer_Set_Light::correct_pos(uint32_t mini, uint64_t p){
+int64_t kmer_Set_Light::correct_pos(kmer mini, uint64_t p){
 	if(Valid_kmer[mini%bucket_per_superBuckets].size()<p+k){
 		return p;
 	}
@@ -934,7 +951,7 @@ int64_t kmer_Set_Light::correct_pos(uint32_t mini, uint64_t p){
 
 
 bool kmer_Set_Light::query_kmer_bool(kmer canon){
-	uint32_t min(regular_minimizer(canon));
+	kmer min(regular_minimizer(canon));
 	return single_query(min,canon);
 }
 
@@ -946,7 +963,7 @@ int64_t kmer_Set_Light::query_kmer_hash(kmer canon){
 
 
 int64_t kmer_Set_Light::query_kmer_minitig(kmer canon){
-		return query_get_rank_minitig(canon,regular_minimizer(canon));
+	return query_get_rank_minitig(canon,regular_minimizer(canon));
 }
 
 
@@ -1023,22 +1040,22 @@ uint kmer_Set_Light::multiple_query_serial(const uint minimizer, const vector<km
 
 
 
-bool kmer_Set_Light::multiple_minimizer_query_bool(uint minimizer, kmer kastor,uint prefix_length,uint suffix_length){
+bool kmer_Set_Light::multiple_minimizer_query_bool(kmer minimizer, kmer kastor,uint prefix_length,uint suffix_length){
 	if(suffix_length>0){
-		const Pow2<uint32_t> max_completion(2*suffix_length);
-		minimizer*=max_completion;
+		const Pow2<kmer> max_completion(2*suffix_length);
+		minimizer*=max_completion.value();
 		for(uint i(0);i<max_completion;++i){
-			uint32_t poential_min(min(minimizer|i,rcb(minimizer|i,m1)));
+			kmer poential_min(min(minimizer|i,rcb(minimizer|i,m1)));
 			if(single_query(poential_min,kastor)){
 				return true;
 			}
 		}
 	}
 	if(prefix_length>0){
-		const Pow2<uint32_t> max_completion(2*(prefix_length));
-		const Pow2<uint32_t> mask(2*(m1-prefix_length));
+		const Pow2<kmer> max_completion(2*(prefix_length));
+		const Pow2<kmer> mask(2*(m1-prefix_length));
 		for(uint i(0);i<max_completion;++i){
-			uint32_t poential_min(min(minimizer|i*mask,rcb(minimizer|i*mask,m1)));
+			kmer poential_min(min(minimizer|i*mask,rcb(minimizer|i*mask,m1)));
 			if(single_query(poential_min,kastor)){
 				return true;
 			}
@@ -1048,23 +1065,23 @@ bool kmer_Set_Light::multiple_minimizer_query_bool(uint minimizer, kmer kastor,u
 }
 
 
-int64_t kmer_Set_Light::multiple_minimizer_query_hash(uint minimizer, kmer kastor,uint prefix_length,uint suffix_length){
+int64_t kmer_Set_Light::multiple_minimizer_query_hash(kmer minimizer, kmer kastor,uint prefix_length,uint suffix_length){
 	if(suffix_length>0){
-		uint32_t max_completion(1);
+		kmer max_completion(1);
 		max_completion<<=(2*suffix_length);
 		minimizer<<=(2*suffix_length);
 		for(uint i(0);i<max_completion;++i){
-			uint32_t poential_min(min(minimizer+i,rcb(minimizer+i,m1)));
+			kmer poential_min(min(minimizer+i,rcb(minimizer+i,m1)));
 			return query_get_hash(kastor,poential_min);
 		}
 	}
 	if(prefix_length>0){
-		uint32_t max_completion(1);
-		uint32_t mask(1);
+		kmer max_completion(1);
+		kmer mask(1);
 		max_completion<<=(2*(prefix_length));
 		mask<<=(2*(m1-prefix_length));
 		for(uint i(0);i<max_completion;++i){
-			uint32_t poential_min(min(minimizer+i*mask,rcb(minimizer+i*mask,m1)));
+			kmer poential_min(min(minimizer+i*mask,rcb(minimizer+i*mask,m1)));
 			return query_get_hash(kastor,poential_min);
 		}
 	}
@@ -1073,7 +1090,7 @@ int64_t kmer_Set_Light::multiple_minimizer_query_hash(uint minimizer, kmer kasto
 
 
 
-bool kmer_Set_Light::single_query(const uint minimizer, kmer kastor){
+bool kmer_Set_Light::single_query(const kmer minimizer, kmer kastor){
 	return (query_get_pos_unitig(kastor,minimizer)>=0);
 }
 
@@ -1091,7 +1108,7 @@ static inline uint next_different_value(const vector<uint>& minimizerV,uint star
 
 
 
-uint kmer_Set_Light::multiple_query_optimized(uint32_t minimizer, const vector<kmer>& kmerV){
+uint kmer_Set_Light::multiple_query_optimized(kmer minimizer, const vector<kmer>& kmerV){
 	uint res(0);
 	for(uint i(0);i<kmerV.size();++i){
 		uint64_t pos=query_get_pos_unitig(kmerV[i],minimizer);
@@ -1113,11 +1130,12 @@ uint kmer_Set_Light::multiple_query_optimized(uint32_t minimizer, const vector<k
 
 
 
-int32_t kmer_Set_Light::query_get_pos_unitig(const kmer canon,uint minimizer){
+int32_t kmer_Set_Light::query_get_pos_unitig(const kmer canon,kmer minimizer){
 	#pragma omp atomic
 	number_query++;
 	if(unlikely(all_mphf[minimizer/number_bucket_per_mphf].empty))
 		return -1;
+
 
 	uint64_t hash=(all_mphf[minimizer/number_bucket_per_mphf].kmer_MPHF->lookup(canon));
 	if(unlikely(hash == ULLONG_MAX))
@@ -1158,7 +1176,7 @@ int32_t kmer_Set_Light::query_get_pos_unitig(const kmer canon,uint minimizer){
 
 
 
-int64_t kmer_Set_Light::query_get_hash(const kmer canon,uint minimizer){
+int64_t kmer_Set_Light::query_get_hash(const kmer canon,kmer minimizer){
 	#pragma omp atomic
 	number_query++;
 	if(unlikely(all_mphf[minimizer/number_bucket_per_mphf].empty))
