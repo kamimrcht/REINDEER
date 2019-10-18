@@ -16,7 +16,7 @@ ifeq ($(DEBUG_SYMS), 1)
 endif
 
 CFLAGS+=-std=c++11 -pipe -lz -fopenmp ${WARNS}
-INC=blight.h bbhash.h common.h
+INC=blight.h bbhash2.h common.h
 EXEC=bench_blight split
 
 

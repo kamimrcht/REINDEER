@@ -142,7 +142,7 @@ public:
 	//~ uint hell_bucket;
 	double bit_per_kmer = 0;
 	uint largest_bucket_nuc_all = 0;
-	const uint gammaFactor=2;
+	const uint gammaFactor=3;
 	const bool light_mode=true;
 
 	kmer_Set_Light(uint k_val,uint m1_val, uint m2_val, uint m3_val, uint coreNumber_val, uint bit_to_save,uint ex)
@@ -174,6 +174,7 @@ public:
 			all_mphf[i].bit_to_encode=0;
 			all_mphf[i].start=0;
 			all_mphf[i].empty=true;
+
 		}
 	}
 
@@ -183,13 +184,15 @@ public:
 			delete (position_super_kmers_RS[i]);
 		}
 		delete[] all_buckets;
-		for(uint i(0);i<mphf_number;++i){
-			delete all_mphf[i].kmer_MPHF;
+		for(uint i(0);i<mphf_number.value();++i){
+			if( not all_mphf[i].empty){
+				delete all_mphf[i].kmer_MPHF;
+			}
 		}
 		delete[] all_mphf;
 		struct stat buffer;
 		string filerm;
-		for(uint i(0);i<number_superbuckets;++i){
+		for(uint i(0);i<number_superbuckets.value();++i){
 			filerm=("_out"+to_string(i));
 			if((stat (filerm.c_str(), &buffer) == 0)){
 				remove(filerm.c_str());
@@ -201,7 +204,8 @@ public:
 	bool exists(const kmer& query);
 	void create_super_buckets(const string& input_file);
 	void read_super_buckets(const string& input_file);
-	void create_mphf(uint32_t beg,uint32_t end);
+	void create_mphf_mem(uint32_t beg,uint32_t end);
+	void create_mphf_disk(uint32_t beg,uint32_t end);
 	void updateK(kmer& min, char nuc);
 	void updateRCK(kmer& min, char nuc);
 	void updateM(kmer& min, char nuc);
@@ -237,16 +241,133 @@ public:
 	extended_minimizer get_extended_minimizer_from_min(kmer seq, uint32_t mini, uint position_minimizer);
 	void print_extended(extended_minimizer);
 	uint32_t regular_minimizer(kmer seq);
-	void create_super_buckets_regular(const string&);
+	void create_super_buckets_regular(const string&, bool clean=true);
 	int64_t query_kmer_hash(kmer canon);
 	int64_t query_get_hash(const kmer canon,uint32_t minimizer);
 	vector<int64_t> query_sequence_hash(const string& query);
 	void construct_index(const string& input_file);
-	void report_memusage(boomphf::memreport_t& report, const std::string& prefix="blight", bool add_struct=true);
+	//~ void report_memusage(boomphf::memreport_t& report, const std::string& prefix="blight", bool add_struct=true);
 	vector<int64_t> query_sequence_minitig(const string& query);
 	int64_t query_get_rank_minitig(const kmer canon,uint minimizer);
 	int64_t query_kmer_minitig(kmer canon);
 
+};
+
+
+
+// iterator from disk file of u_int64_t with buffered read,   todo template
+class bfile_iterator : public std::iterator<std::forward_iterator_tag, u_int64_t>{
+	public:
+
+	bfile_iterator()
+	: _is(nullptr)
+	, _pos(0) ,_inbuff (0), _cptread(0)
+	{
+		_buffsize = 10000;
+		_buffer = (u_int64_t *) malloc(_buffsize*sizeof(u_int64_t));
+	}
+
+	bfile_iterator(const bfile_iterator& cr)
+	{
+		_buffsize = cr._buffsize;
+		_pos = cr._pos;
+		_is = cr._is;
+		_buffer = (u_int64_t *) malloc(_buffsize*sizeof(u_int64_t));
+		 memcpy(_buffer,cr._buffer,_buffsize*sizeof(u_int64_t) );
+		_inbuff = cr._inbuff;
+		_cptread = cr._cptread;
+		_elem = cr._elem;
+	}
+
+	bfile_iterator(FILE* is): _is(is) , _pos(0) ,_inbuff (0), _cptread(0)
+	{
+		_buffsize = 10000;
+		_buffer = (u_int64_t *) malloc(_buffsize*sizeof(u_int64_t));
+		int reso = fseek(_is,0,SEEK_SET);
+		advance();
+	}
+
+	~bfile_iterator()
+	{
+		if(_buffer!=NULL)
+			free(_buffer);
+	}
+
+
+	u_int64_t const& operator*()  {  return _elem;  }
+
+	bfile_iterator& operator++()
+	{
+		advance();
+		return *this;
+	}
+
+	friend bool operator==(bfile_iterator const& lhs, bfile_iterator const& rhs)
+	{
+		if (!lhs._is || !rhs._is)  {  if (!lhs._is && !rhs._is) {  return true; } else {  return false;  } }
+		assert(lhs._is == rhs._is);
+		return rhs._pos == lhs._pos;
+	}
+
+	friend bool operator!=(bfile_iterator const& lhs, bfile_iterator const& rhs)  {  return !(lhs == rhs);  }
+	private:
+	void advance()
+	{
+		_pos++;
+
+		if(_cptread >= _inbuff)
+		{
+			int res = fread(_buffer,sizeof(u_int64_t),_buffsize,_is);
+			_inbuff = res; _cptread = 0;
+
+			if(res == 0)
+			{
+				_is = nullptr;
+				_pos = 0;
+				return;
+			}
+		}
+
+		_elem = _buffer[_cptread];
+		_cptread ++;
+	}
+	u_int64_t _elem;
+	FILE * _is;
+	unsigned long _pos;
+
+	u_int64_t * _buffer; // for buffered read
+	int _inbuff, _cptread;
+	int _buffsize;
+};
+
+
+class file_binary{
+	public:
+
+	file_binary(const char* filename)
+	{
+		_is = fopen(filename, "rb");
+		if (!_is) {
+			throw std::invalid_argument("Error opening " + std::string(filename));
+		}
+	}
+
+	~file_binary()
+	{
+		fclose(_is);
+	}
+
+	bfile_iterator begin() const
+	{
+		return bfile_iterator(_is);
+	}
+
+	bfile_iterator end() const {return bfile_iterator(); }
+
+	size_t        size () const  {  return 0;  }//todo ?
+
+	private:
+	FILE * _is;
 };
 
 

@@ -685,7 +685,7 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 
 			bool did_collide = false; // True if we have at least one collision
 			size_t key_idx = 0;
-			for(auto it = std::begin(range) ; it != std::end(range) ; it++, key_idx++) {
+			for(auto it = std::begin(range) ; it != std::end(range) ; ++it, key_idx++) {
 				// After level 2 we can skip keys that were found at stable positions in level 1
 				if(level >= 2 && state.accommodated.get(key_idx)) {
 					// This branch is not useless, it allows to inform the branch predictor
@@ -712,7 +712,7 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 		cold_fun void processFallbackLevel(const Range& range, buildState& state, uint64_t next_rank)
 		{
 			size_t key_idx = 0;
-			for(auto it = std::begin(range) ; it != std::end(range) ; it++, key_idx++) {
+			for(auto it = std::begin(range) ; it != std::end(range) ; ++it, key_idx++) {
 				if(state.accommodated.get(key_idx)) {
 					// This branch is not useless, it allows to inform the branch predictor
 					continue;

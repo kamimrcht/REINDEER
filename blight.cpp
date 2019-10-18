@@ -25,6 +25,9 @@ using namespace chrono;
 
 
 
+
+
+
 static inline kmer nuc2int(char c){
 	switch(c){
 		/*
@@ -428,7 +431,7 @@ void kmer_Set_Light::construct_index(const string& input_file){
 
 
 
-void kmer_Set_Light::create_super_buckets_regular(const string& input_file){
+void kmer_Set_Light::create_super_buckets_regular(const string& input_file,bool clean){
 	uint64_t total_nuc_number(0);
 	auto inUnitigs=new zstr::ifstream(input_file);
 	if( not inUnitigs->good()){
@@ -437,8 +440,14 @@ void kmer_Set_Light::create_super_buckets_regular(const string& input_file){
 	}
 	vector<ostream*> out_files;
 	for(uint i(0);i<number_superbuckets;++i){
-		auto out =new zstr::ofstream("_out"+to_string(i),ofstream::app);
-		out_files.push_back(out);
+		if(clean){
+			auto out =new zstr::ofstream("_out"+to_string(i));
+			out_files.push_back(out);
+		}else{
+			auto out =new zstr::ofstream("_out"+to_string(i),ofstream::app);
+			out_files.push_back(out);
+		}
+
 	}
 	omp_lock_t lock[number_superbuckets.value()];
 	for (uint i=0; i<number_superbuckets; i++){
@@ -606,7 +615,8 @@ void kmer_Set_Light::read_super_buckets(const string& input_file){
 				}
 			}
 			remove((input_file+to_string(SBC)).c_str());
-			create_mphf(BC,BC+bucket_per_superBuckets);
+			//~ create_mphf_mem(BC,BC+bucket_per_superBuckets);
+			create_mphf_disk(BC,BC+bucket_per_superBuckets);
 			fill_positions(BC,BC+bucket_per_superBuckets);
 			BC+=bucket_per_superBuckets;
 			cout<<"-"<<flush;
@@ -737,7 +747,7 @@ inline string kmer_Set_Light::kmer2str(kmer num){
 
 
 
-void kmer_Set_Light::create_mphf(uint begin_BC,uint end_BC){
+void kmer_Set_Light::create_mphf_mem(uint begin_BC,uint end_BC){
 	#pragma omp parallel  num_threads(coreNumber)
 		{
 		vector<kmer> anchors;
@@ -773,11 +783,70 @@ void kmer_Set_Light::create_mphf(uint begin_BC,uint end_BC){
 			if((BC+1)%number_bucket_per_mphf==0 and not anchors.empty()){
 				largest_MPHF=max(largest_MPHF,anchors.size());
 				all_mphf[BC/number_bucket_per_mphf].kmer_MPHF= new boomphf::mphf<kmer,hasher_t>(anchors.size(),anchors,gammaFactor);
+				//~ auto data_iterator = boomphf::range(static_cast<const kmer*>(&(anchors[0])), static_cast<const kmer*>(&(anchors[0])+anchors.size()));
+				//~ all_mphf[BC/number_bucket_per_mphf].kmer_MPHF= new boomphf::mphf<kmer,hasher_t>(anchors.size(),data_iterator,coreNumber,gammaFactor,false);
 				anchors.clear();
 				largest_bucket_anchor=0;
 				largest_bucket_nuc=(0);
 			}
 		}
+	}
+}
+
+
+
+void kmer_Set_Light::create_mphf_disk(uint begin_BC,uint end_BC){
+	#pragma omp parallel  num_threads(coreNumber)
+		{
+		uint largest_bucket_anchor(0);
+		uint largest_bucket_nuc(0);
+		uint64_t mphfSize(0);
+		#pragma omp for schedule(dynamic, number_bucket_per_mphf.value())
+		for(uint BC=(begin_BC);BC<end_BC;++BC){
+			string name("kmers"+to_string(BC));
+			if(all_buckets[BC].nuc_minimizer!=0){
+				ofstream out(name,ofstream::binary);
+				largest_bucket_nuc=max(largest_bucket_nuc,all_buckets[BC].nuc_minimizer);
+				largest_bucket_nuc_all=max(largest_bucket_nuc_all,all_buckets[BC].nuc_minimizer);
+				uint bucketSize(1);
+				kmer seq(get_kmer(BC,0)),rcSeq(rcb(seq,k)),canon(min_k(seq,rcSeq));
+				out.write(reinterpret_cast<char*>(&canon),sizeof(canon));
+				mphfSize++;
+				for(uint j(0);(j+k)<all_buckets[BC].nuc_minimizer;j++){
+					if(not Valid_kmer[BC%bucket_per_superBuckets][j+1]){
+						j+=k-1;
+						if((j+k)<all_buckets[BC].nuc_minimizer){
+							seq=(get_kmer(BC,j+1)),rcSeq=(rcb(seq,k)),canon=(min_k(seq,rcSeq));
+							out.write(reinterpret_cast<char*>(&canon),sizeof(canon));
+							bucketSize++;
+							mphfSize++;
+						}
+					}else{
+						seq=update_kmer(j+k,BC,seq);
+						rcSeq=(rcb(seq,k));
+						canon=(min_k(seq, rcSeq));
+						out.write(reinterpret_cast<char*>(&canon),sizeof(canon));
+						bucketSize++;
+						mphfSize++;
+					}
+				}
+				largest_bucket_anchor=max(largest_bucket_anchor,bucketSize);
+			}
+			if((BC+1)%number_bucket_per_mphf==0 and mphfSize!=0){
+				largest_MPHF=max(largest_MPHF,mphfSize);
+				//~ out.close();
+				//~ cout<<"le bug"<<endl;
+				auto data_iterator = file_binary(name.c_str());
+				//~ cout<<"le bug2"<<mphfSize<<endl;
+				all_mphf[BC/number_bucket_per_mphf].kmer_MPHF= new boomphf::mphf<kmer,hasher_t>(mphfSize,data_iterator,gammaFactor);
+				remove(name.c_str());
+				//~ cout<<"no bug"<<endl;
+				largest_bucket_anchor=0;
+				largest_bucket_nuc=(0);
+				mphfSize=0;
+			}
+		}
+
 	}
 }
 
@@ -810,6 +879,7 @@ void kmer_Set_Light::fill_positions(uint begin_BC,uint end_BC){
 		uint32_t super_kmer_id(0);
 		if(all_buckets[BC].nuc_minimizer>0){
 			position_super_kmers[BC].optimize();
+			position_super_kmers[BC].optimize_gap_size();
 			position_super_kmers_RS[BC]=new bm::bvector<>::rs_index_type();
 			position_super_kmers[BC].build_rs_index(position_super_kmers_RS[BC]);
 			bm::bvector<>::enumerator en = position_super_kmers[BC].first();
@@ -1217,19 +1287,19 @@ void kmer_Set_Light::file_query(const string& query_file){
 
 
 
-void kmer_Set_Light::report_memusage(boomphf::memreport_t& report, const std::string& prefix, bool add_struct) {
-	if(add_struct)
-		report[prefix+"::sizeof(struct)"] += sizeof(kmer_Set_Light);
-	report[prefix+"::positions"] += positions.size() / CHAR_BIT;
-	report[prefix+"::bucketSeq"] += bucketSeq.size() / CHAR_BIT;
+//~ void kmer_Set_Light::report_memusage(boomphf::memreport_t& report, const std::string& prefix, bool add_struct) {
+	//~ if(add_struct)
+		//~ report[prefix+"::sizeof(struct)"] += sizeof(kmer_Set_Light);
+	//~ report[prefix+"::positions"] += positions.size() / CHAR_BIT;
+	//~ report[prefix+"::bucketSeq"] += bucketSeq.size() / CHAR_BIT;
 
-	report[prefix+"::sizeof(bucket_minimizer)*minimizer_number"] += sizeof(bucket_minimizer) * minimizer_number;
-	report[prefix+"::sizeof(info_mphf)*mphf_number"] += sizeof(info_mphf) * mphf_number;
-	for(uint i(0);i<mphf_number;++i){
-		if(all_mphf[i].kmer_MPHF)
-			all_mphf[i].kmer_MPHF->report_memusage(report, prefix+"::kmer_MPHF");
-	}
-}
+	//~ report[prefix+"::sizeof(bucket_minimizer)*minimizer_number"] += sizeof(bucket_minimizer) * minimizer_number;
+	//~ report[prefix+"::sizeof(info_mphf)*mphf_number"] += sizeof(info_mphf) * mphf_number;
+	//~ for(uint i(0);i<mphf_number;++i){
+		//~ if(all_mphf[i].kmer_MPHF)
+			//~ all_mphf[i].kmer_MPHF->report_memusage(report, prefix+"::kmer_MPHF");
+	//~ }
+//~ }
 
 
 
