@@ -10,7 +10,10 @@
 #include <chrono>
 #include <omp.h>
 #include <tmmintrin.h>
-
+#include <math.h>
+#include <algorithm>
+#include <sys/stat.h>
+#include <unistd.h>
 #include "bbhash.h"
 #include "blight.h"
 #include "zstr.hpp"
@@ -24,6 +27,14 @@ using namespace chrono;
 
 
 
+uint64_t asm_log2(const uint64_t x) {
+  uint64_t y;
+  asm ( "\tbsr %1, %0\n"
+      : "=r"(y)
+      : "r" (x)
+  );
+  return y;
+}
 
 
 
@@ -392,23 +403,64 @@ kmer canonize(kmer x, uint k){
 }
 
 
+void print_bin(uint64_t n){
+	uint64_t mask=1;
+	mask<<=63;
+	for(uint i(0);i<64;++i){
+		cout<<n/mask;
+		if(n/mask==1){n-=mask;}
+		mask>>=1;
+	}
+	cout<<"\n";
+}
+
+
+kmer kmer_Set_Light::mantis(uint64_t n){
+	//~ cout<<n<<endl;
+	//~ cout<<asm_log2(n)<<endl;
+	//~ cin.get();
+	//~ return asm_log2(n);
+	return n;
+	if(n==0){return (0);}
+	int64_t prefix((asm_log2(n)));
+	int64_t exp=prefix;
+	//~ print_bin(exp);
+	int offset=prefix-(minimizer_number.bits()-6);
+	offset=max(offset,0);
+	uint64_t suffix (n-((uint64_t)1<<prefix));
+	suffix>>=offset;
+	uint64_t res=suffix;
+	res+=((exp)<<((minimizer_number.bits()-6)));
+	//~ print_bin(n);
+	//~ print_bin(res);
+	//~ cin.get();
+	return res;
+}
+
+
 
 kmer kmer_Set_Light::regular_minimizer(kmer seq){
+	//~ cout<<"go"<<endl;
 	kmer mini,mmer;
 	mmer=seq%minimizer_number_graph;
 	mini=mmer=canonize(mmer,minimizer_size_graph);
-	uint64_t hash_mini = xs(mmer);
+	uint64_t hash_mini = mantis(xs(mmer));
+	//~ cout<<hash_mini<<"lol"<<endl;
 	for(uint i(1);i<=k-minimizer_size_graph;i++){
 		seq>>=2;
 		mmer=seq%minimizer_number_graph;
 		mmer=canonize(mmer,minimizer_size_graph);
-		uint64_t hash = xs(mmer);
-		if(hash_mini<hash){
+		uint64_t hash = mantis(xs(mmer));
+		if(hash_mini>hash){
+			//~ cout<<hash_mini<<endl;
 			mini=mmer;
 			hash_mini=hash;
 		}
 	}
-	return mini;
+	//~ cout<<mini<<endl;
+	//~ cout<<"end"<<endl;
+	//~ return hash_mini;
+	return mini%minimizer_number;
 }
 
 
@@ -515,7 +567,7 @@ void kmer_Set_Light::create_super_buckets_regular(const string& input_file,bool 
 			}
 			//FOREACH UNITIG
 			if(not ref.empty() and not useless.empty()){
-				old_minimizer=minimizer=minimizer_number_graph.value();
+				old_minimizer=minimizer=minimizer_number.value();
 				uint last_position(0);
 				//FOREACH KMER
 				kmer seq(str2num(ref.substr(0,k)));
@@ -881,7 +933,7 @@ void kmer_Set_Light::create_mphf_disk(uint begin_BC,uint end_BC){
 			}
 			 #pragma omp critical(coute)
 			{
-				cout<<mphfSize<<"|"<<flush;
+				//~ cout<<mphfSize<<	"|"<<flush;
 			}
 			if((BC+1)%number_bucket_per_mphf==0 and mphfSize!=0){
 				largest_MPHF=max(largest_MPHF,mphfSize);

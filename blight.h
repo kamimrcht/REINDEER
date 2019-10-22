@@ -146,11 +146,11 @@ public:
 
 	kmer_Set_Light(uint k_val,uint m1_val, uint m2_val, uint m3_val, uint coreNumber_val, uint bit_to_save,uint ex)
 		: k(k_val)
-		, m1(m1_val%2==0 ? m1_val-1 : m1_val)
+		, m1(m1_val%2==0 ? m1_val : m1_val)
 		, m2((m2_val%2==0) or m2_val>m1 ? m1 : m2_val)
 		, m3(m3_val)
 		, extension_minimizer(ex)
-		, minimizer_size_graph(m1-2*extension_minimizer)
+		, minimizer_size_graph(12)
 		, coreNumber(coreNumber_val)
 		, bit_saved_sub(bit_to_save)
 
@@ -158,10 +158,10 @@ public:
 		, offsetUpdateMinimizer(2*m1)
 		, mphf_number(2*m2)
 		, number_superbuckets(2*m3)
-		, minimizer_number(2*m1-1)
+		, minimizer_number(2*m1)
 		, minimizer_number_graph(2*minimizer_size_graph)
 		, number_bucket_per_mphf(2*(m1-m2))
-		, bucket_per_superBuckets(2*(m1-m3)-1)
+		, bucket_per_superBuckets(2*(m1-m3))
 		, positions_to_check(bit_to_save)
 	{
 		all_buckets=new bucket_minimizer[minimizer_number.value()]();
@@ -249,6 +249,7 @@ public:
 	vector<int64_t> query_sequence_minitig(const string& query);
 	int64_t query_get_rank_minitig(const kmer canon,uint minimizer);
 	int64_t query_kmer_minitig(kmer canon);
+	kmer mantis(uint64_t n);
 
 };
 
