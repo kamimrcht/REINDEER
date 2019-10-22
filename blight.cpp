@@ -168,8 +168,43 @@ inline uint64_t unrevhash ( uint64_t x ) {
 
 
 
+static inline uint32_t knuth_hash (uint32_t x){
+	return x*2654435761;
+}
+
+
+
+kmer xors(kmer y){
+	y^=(y<<13); y^=(y>>17);y=(y^=(y<<15)); return y;
+}
+
+
+
+kmer hash64shift(kmer key)
+{
+  key = (~key) + (key << 21); // key = (key << 21) - key - 1;
+  key = key ^ (key >> 24);
+  key = (key + (key << 3)) + (key << 8); // key * 265
+  key = key ^ (key >> 14);
+  key = (key + (key << 2)) + (key << 4); // key * 21
+  key = key ^ (key >> 28);
+  key = key + (key << 31);
+  return key;
+}
+
+
+
+static inline size_t hash2(int i1)
+{
+	size_t ret = i1;
+	ret *= 2654435761U;
+	return ret ^ 69;
+}
+
+
+
 template<typename T>
-inline T xs(const T& x) { return revhash(x); }
+inline T xs(const T& x) { return hash64shift(x); }
 
 
 
@@ -341,18 +376,7 @@ inline void kmer_Set_Light::updateRCM(kmer& min, char nuc){
 
 
 
-static inline uint32_t knuth_hash (uint32_t x){
-	return x*2654435761;
-}
 
-
-
-static inline size_t hash2(int i1)
-{
-	size_t ret = i1;
-	ret *= 2654435761U;
-	return ret ^ 69;
-}
 
 
 
@@ -645,7 +669,7 @@ void kmer_Set_Light::read_super_buckets(const string& input_file){
 			create_mphf_disk(BC,BC+bucket_per_superBuckets);
 			fill_positions(BC,BC+bucket_per_superBuckets);
 			BC+=bucket_per_superBuckets;
-			cout<<"-"<<flush;
+			//~ cout<<"-"<<flush;
 		}
 	}
 	//~ delete[] Valid_kmer;
@@ -854,6 +878,10 @@ void kmer_Set_Light::create_mphf_disk(uint begin_BC,uint end_BC){
 					}
 				}
 				largest_bucket_anchor=max(largest_bucket_anchor,bucketSize);
+			}
+			 #pragma omp critical(coute)
+			{
+				cout<<mphfSize<<"|"<<flush;
 			}
 			if((BC+1)%number_bucket_per_mphf==0 and mphfSize!=0){
 				largest_MPHF=max(largest_MPHF,mphfSize);

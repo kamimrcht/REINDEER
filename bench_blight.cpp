@@ -40,7 +40,7 @@ int main(int argc, char ** argv){
 	uint k(31);
 	uint m1(9);
 	uint m2(0);
-	uint m3(3);
+	uint m3(4);
 	uint c(1);
 	uint bit(0);
 	uint ex(0);
