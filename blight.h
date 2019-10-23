@@ -150,7 +150,7 @@ public:
 		, m2((m2_val%2==0) or m2_val>m1 ? m1 : m2_val)
 		, m3(m3_val)
 		, extension_minimizer(ex)
-		, minimizer_size_graph(12)
+		, minimizer_size_graph(11)
 		, coreNumber(coreNumber_val)
 		, bit_saved_sub(bit_to_save)
 
@@ -165,7 +165,7 @@ public:
 		, positions_to_check(bit_to_save)
 	{
 		all_buckets=new bucket_minimizer[minimizer_number.value()]();
-		position_super_kmers.resize(minimizer_number.value());
+		position_super_kmers.resize(minimizer_number.value(),bm::bvector<>(bm::BM_GAP));
 		position_super_kmers_RS.resize(minimizer_number.value());
 		all_mphf=new info_mphf[mphf_number.value()];
 		for(uint i(0);i<mphf_number;++i){
