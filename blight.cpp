@@ -933,7 +933,7 @@ void kmer_Set_Light::create_mphf_disk(uint begin_BC,uint end_BC){
 			}
 			 #pragma omp critical(coute)
 			{
-				cout<<mphfSize<<	"|"<<flush;
+				//~ cout<<mphfSize<<	"|"<<flush;
 			}
 			if((BC+1)%number_bucket_per_mphf==0 and mphfSize!=0){
 				largest_MPHF=max(largest_MPHF,mphfSize);
