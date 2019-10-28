@@ -75,9 +75,6 @@ int main(int argc, char ** argv){
 				break;
 		}
 	}
-	if(m2==0){
-		m2=m1;
-	}
 	if(query=="" and input!=""){
 		query=input;
 	}

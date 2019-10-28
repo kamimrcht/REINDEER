@@ -123,8 +123,8 @@ public:
 
 	vector<bool> bucketSeq;
 	vector<bool> positions;
-	vector<bm::bvector<>> position_super_kmers;
-	vector<bm::bvector<>::rs_index_type*> position_super_kmers_RS;
+	bm::bvector<> position_super_kmers= bm::bvector<>(bm::BM_GAP);
+	bm::bvector<>::rs_index_type* position_super_kmers_RS;
 
 	bucket_minimizer* all_buckets;
 	uint32_t* abundance_minimizer_temp;
@@ -135,7 +135,7 @@ public:
 	uint64_t number_super_kmer = 0;
 	uint64_t largest_MPHF = 0;
 	uint64_t positions_total_size = 0;
-	uint64_t number_query=0;
+	atomic<uint64_t> number_query;
 
 	uint64_t total_nb_minitigs = 0;
 	//~ uint hell_bucket;
@@ -146,11 +146,11 @@ public:
 
 	kmer_Set_Light(uint k_val,uint m1_val, uint m2_val, uint m3_val, uint coreNumber_val, uint bit_to_save,uint ex)
 		: k(k_val)
-		, m1(m1_val%2==0 ? m1_val : m1_val)
-		, m2((m2_val%2==0) or m2_val>m1 ? m1 : m2_val)
+		, m1(m1_val)
+		, m2(m1_val)
 		, m3(m3_val)
 		, extension_minimizer(ex)
-		, minimizer_size_graph(11)
+		, minimizer_size_graph(m2_val < m1 ? max(m1+2,(uint)11) : m2_val)
 		, coreNumber(coreNumber_val)
 		, bit_saved_sub(bit_to_save)
 
@@ -165,8 +165,8 @@ public:
 		, positions_to_check(bit_to_save)
 	{
 		all_buckets=new bucket_minimizer[minimizer_number.value()]();
-		position_super_kmers.resize(minimizer_number.value(),bm::bvector<>(bm::BM_GAP));
-		position_super_kmers_RS.resize(minimizer_number.value());
+		//~ position_super_kmers.resize(minimizer_number.value(),bm::bvector<>(bm::BM_GAP));
+		//~ position_super_kmers_RS.resize(minimizer_number.value());
 		all_mphf=new info_mphf[mphf_number.value()];
 		for(uint i(0);i<mphf_number;++i){
 			all_mphf[i].mphf_size=0;
@@ -175,13 +175,14 @@ public:
 			all_mphf[i].empty=true;
 
 		}
+		number_query=0;
 	}
 
 	~kmer_Set_Light () {
 		//~ delete[] position_super_kmers_RS;
-		for(uint i(0);i<position_super_kmers_RS.size();++i){
-			delete (position_super_kmers_RS[i]);
-		}
+		//~ for(uint i(0);i<position_super_kmers_RS.size();++i){
+			//~ delete (position_super_kmers_RS[i]);
+		//~ }
 		delete[] all_buckets;
 		for(uint i(0);i<mphf_number.value();++i){
 			if( not all_mphf[i].empty){
@@ -224,13 +225,13 @@ public:
 	uint multiple_query_serial(const uint minimizerV, const vector<kmer>& kmerV);
 	void file_query(const string& query_file);
 	uint32_t bool_to_int(uint n_bits_to_encode,uint64_t pos,uint64_t start);
-	uint multiple_query_optimized(uint64_t minimizerV, const vector<kmer>& kmerV);
+	uint multiple_query_optimized(kmer minimizerV, const vector<kmer>& kmerV);
 	void int_to_bool(uint n_bits_to_encode,uint64_t X, uint64_t pos,uint64_t start);
 	kmer update_kmer_local(uint64_t pos,const vector<bool>& V,kmer input);
 	vector<bool> get_seq(kmer mini,uint64_t pos,uint32_t n);
 	kmer minimizer_graph(kmer seq);
 	pair<uint32_t,uint32_t> minimizer_and_more(kmer seq, uint& prefix_fragile, uint& suffix_fragile);
-	bool single_query(const uint64_t minimizer, kmer kastor);
+	bool single_query(const kmer minimizer, kmer kastor);
 	bool multiple_minimizer_query_bool(const kmer minimizer,  kmer kastor,uint prefix_length,uint suffix_length);
 	int64_t multiple_minimizer_query_hash(const kmer minimizer,  kmer kastor,uint prefix_length,uint suffix_length);
 	bool query_kmer_bool(kmer canon);
