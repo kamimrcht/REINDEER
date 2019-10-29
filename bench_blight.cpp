@@ -43,7 +43,6 @@ int main(int argc, char ** argv){
 	uint m3(4);
 	uint c(1);
 	uint bit(0);
-	uint ex(0);
 	while ((ch = getopt (argc, argv, "g:q:k:m:n:s:t:b:e:")) != -1){
 		switch(ch){
 			case 'q':
@@ -66,9 +65,6 @@ int main(int argc, char ** argv){
 				break;
 			case 't':
 				c=stoi(optarg);
-				break;
-			case 'e':
-				ex=stoi(optarg);
 				break;
 			case 'b':
 				bit=stoi(optarg);
@@ -97,10 +93,14 @@ int main(int argc, char ** argv){
 	}
 	{
 		cout<<"I use -g "+input+" -q "+query+" -k "+to_string(k)+" -m  "+to_string(m1)+" -n  "+to_string(m2)+" -s  "+to_string(m3)+" -t "+to_string(c)+" -b "+to_string(bit)<<endl;
-		kmer_Set_Light ksl(k,m1,m2,m3,c,bit,ex);
+		kmer_Set_Light ksl(k,m1,m2,m3,c,bit);
 		ksl.construct_index(input);
 
 		ksl.file_query(query);
+		ksl.dump_disk("index.txt");
+		kmer_Set_Light ksl2("index.txt");
+		ksl2.file_query(query);
+
 
 		cout<<"I am glad you are here with me. Here at the end of all things."<<endl;
 	}

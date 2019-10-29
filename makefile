@@ -7,7 +7,7 @@ ifeq ($(DEBUG), 1)
 	DEBUG_SYMS=1
 else
 	CFLAGS+=-DNDEBUG -O3 -flto -march=native -mtune=native
-	WARNS=-Wfatal-errors
+	WARNS=
 endif
 
 DEBUG_SYMS ?= 1

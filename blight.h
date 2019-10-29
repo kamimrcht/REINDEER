@@ -16,6 +16,8 @@
 #include "common.h"
 #include "bbhash.h"
 #include "bm.h"
+#include "encoding.h"
+#include "bmserial.h"
 
 
 
@@ -65,15 +67,6 @@ struct info_mphf{
 
 
 
-struct extended_minimizer{
-	uint prefix_fragile;
-	uint suffix_fragile;
-	uint fragile;
-	uint32_t mini;
-	uint32_t original;
-	uint32_t extended_mini;
-};
-
 // Represents the cardinality of a pow2 sized set. Allows div/mod arithmetic operations on indexes.
 template<typename T>
 struct Pow2 {
@@ -85,7 +78,10 @@ struct Pow2 {
 	T value() const { return T(1) << _bits; }
 	explicit operator T() const { return value(); }
 	T max() const { return value() - T(1); }
+	Pow2& operator=(const Pow2&) = default;
 
+	Pow2():_bits(0){}
+	Pow2(const Pow2&) = default;
 
 	friend T operator*(const T& x, const Pow2& y) { return x << y._bits; }
 	friend T& operator*=(T& x, const Pow2& y) { return x <<= y._bits; }
@@ -107,19 +103,19 @@ private:
 
 class kmer_Set_Light{
 public:
-	const uint k, m1, m2, m3, extension_minimizer, minimizer_size_graph;
-	const uint coreNumber;
-	const uint bit_saved_sub;
+	 uint k, m1, m2, m3, minimizer_size_graph;
+	 uint coreNumber;
+	 uint bit_saved_sub;
 
-	const Pow2<kmer> offsetUpdateAnchor;
-	const Pow2<kmer> offsetUpdateMinimizer;
-	const Pow2<uint> mphf_number;
-	const Pow2<uint> number_superbuckets;
-	const Pow2<uint> minimizer_number;
-	const Pow2<uint> minimizer_number_graph;
-	const Pow2<uint> number_bucket_per_mphf;
-	const Pow2<uint> bucket_per_superBuckets;
-	const Pow2<uint> positions_to_check;
+	 Pow2<kmer> offsetUpdateAnchor;
+	 Pow2<kmer> offsetUpdateMinimizer;
+	 Pow2<uint> mphf_number;
+	 Pow2<uint> number_superbuckets;
+	 Pow2<uint> minimizer_number;
+	 Pow2<uint> minimizer_number_graph;
+	 Pow2<uint> number_bucket_per_mphf;
+	 Pow2<uint> bucket_per_superBuckets;
+	 Pow2<uint> positions_to_check;
 
 	vector<bool> bucketSeq;
 	vector<bool> positions;
@@ -141,15 +137,12 @@ public:
 	//~ uint hell_bucket;
 	double bit_per_kmer = 0;
 	uint largest_bucket_nuc_all = 0;
-	const uint gammaFactor=2;
-	const bool light_mode=true;
-
-	kmer_Set_Light(uint k_val,uint m1_val, uint m2_val, uint m3_val, uint coreNumber_val, uint bit_to_save,uint ex)
+	 uint gammaFactor=2;
+	kmer_Set_Light(uint k_val,uint m1_val, uint m2_val, uint m3_val, uint coreNumber_val, uint bit_to_save)
 		: k(k_val)
 		, m1(m1_val)
 		, m2(m1_val)
 		, m3(m3_val)
-		, extension_minimizer(ex)
 		, minimizer_size_graph(m2_val < m1 ? max(m1+2,(uint)11) : m2_val)
 		, coreNumber(coreNumber_val)
 		, bit_saved_sub(bit_to_save)
@@ -165,8 +158,6 @@ public:
 		, positions_to_check(bit_to_save)
 	{
 		all_buckets=new bucket_minimizer[minimizer_number.value()]();
-		//~ position_super_kmers.resize(minimizer_number.value(),bm::bvector<>(bm::BM_GAP));
-		//~ position_super_kmers_RS.resize(minimizer_number.value());
 		all_mphf=new info_mphf[mphf_number.value()];
 		for(uint i(0);i<mphf_number;++i){
 			all_mphf[i].mphf_size=0;
@@ -177,6 +168,8 @@ public:
 		}
 		number_query=0;
 	}
+
+	kmer_Set_Light(const string& index_file);
 
 	~kmer_Set_Light () {
 		//~ delete[] position_super_kmers_RS;
@@ -237,9 +230,6 @@ public:
 	bool query_kmer_bool(kmer canon);
 	pair<uint32_t,uint32_t> query_sequence_bool(const string& query);
 	string kmer2str(kmer num);
-	extended_minimizer minimizer_and_more(kmer seq);
-	extended_minimizer get_extended_minimizer_from_min(kmer seq, kmer mini, uint position_minimizer);
-	void print_extended(extended_minimizer);
 	kmer regular_minimizer(kmer seq);
 	void create_super_buckets_regular(const string&, bool clean=true);
 	int64_t query_kmer_hash(kmer canon);
@@ -251,6 +241,7 @@ public:
 	int64_t query_get_rank_minitig(const kmer canon,uint minimizer);
 	int64_t query_kmer_minitig(kmer canon);
 	kmer mantis(uint64_t n);
+	void dump_disk(const string& output_file);
 
 };
 

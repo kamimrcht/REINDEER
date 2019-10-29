@@ -42,7 +42,6 @@ int main(int argc, char ** argv){
 	uint m3(3);
 	uint c(1);
 	uint bit(0);
-	uint ex(0);
 	while ((ch = getopt (argc, argv, "g:q:k:m:n:s:t:b:e:")) != -1){
 		switch(ch){
 			case 'g':
@@ -60,9 +59,6 @@ int main(int argc, char ** argv){
 			case 't':
 				c=stoi(optarg);
 				break;
-			case 'e':
-				ex=stoi(optarg);
-				break;
 		}
 	}
 
@@ -79,7 +75,7 @@ int main(int argc, char ** argv){
 	}
 	{
 		cout<<"I use -g "+input+to_string(k)+" -m  "+to_string(m1)+" -s  "+to_string(m3)+" -t "+to_string(c)<<endl;
-		kmer_Set_Light ksl(k,m1,m1,m3,c,bit,ex);
+		kmer_Set_Light ksl(k,m1,m1,m3,c,bit);
 		ksl.create_super_buckets_regular(input,false);
 	}
 	return 0;

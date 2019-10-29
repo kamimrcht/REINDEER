@@ -393,7 +393,7 @@ kmer kmer_Set_Light::regular_minimizer(kmer seq){
 			hash_mini=hash;
 		}
 	}
-	return revhash(mini)%minimizer_number;
+	return revhash((uint64_t)mini)%minimizer_number;
 	//~ return mini>>(minimizer_number_graph.bits()-minimizer_number.bits());
 }
 
@@ -670,9 +670,6 @@ void kmer_Set_Light::read_super_buckets(const string& input_file){
 	cout<<"Largest Bucket: "<<intToString(largest_bucket_nuc_all)<<endl;
 
 	cout<<"Size of the partitionned graph (MBytes): "<<intToString(bucketSeq.size()/(8*1024*1024))<<endl;
-	if(not light_mode){
-		cout<<"Space used for separators (MBytes): "<<intToString(total_size/(8*1024*1024))<<endl;
-	}
 	cout<<"Total Positions size (MBytes): "<<intToString(positions.size()/(8*1024*1024))<<endl;
 	cout<<"Size of the partitionned graph (bit per kmer): "<<((double)(bucketSeq.size())/(number_kmer))<<endl;
 	bit_per_kmer+=((double)(bucketSeq.size())/(number_kmer));
@@ -1125,25 +1122,30 @@ uint kmer_Set_Light::multiple_query_optimized(kmer minimizer, const vector<kmer>
 
 
 int32_t kmer_Set_Light::query_get_pos_unitig(const kmer canon,kmer minimizer){
+	//~ cout<<"GO"<<endl;
 	if(unlikely(all_mphf[minimizer/number_bucket_per_mphf].empty)){
 		//~ cout<<minimizer/number_bucket_per_mphf<<endl;
 		//~ cout<<"FAIL1"<<endl;cin.get();
 		return -1;
 	}
+	//~ print_kmer(canon,k);
 
 
 	uint64_t hash=(all_mphf[minimizer/number_bucket_per_mphf].kmer_MPHF->lookup(canon));
 	if(unlikely(hash == ULLONG_MAX)){
+				//~ cout<<minimizer/number_bucket_per_mphf<<endl;
+		//~ cout<<"FAIL2"<<endl;cin.get();
 		return -1;
 	}
 
 	int n_bits_to_encode(all_mphf[minimizer/number_bucket_per_mphf].bit_to_encode);
 	uint64_t read_position(bool_to_int( n_bits_to_encode, hash, all_mphf[minimizer/number_bucket_per_mphf].start)*positions_to_check.value());
+	//~ cout<<"RP"<<read_position<<endl;
 	uint64_t rank(all_buckets[minimizer].skmer_number+read_position);
 	bm::id_t pos;
-
+	//~ cout<<rank<<endl;
 	bool found = position_super_kmers.select(rank+1, pos, *(position_super_kmers_RS));
-
+	//~ cout<<"pos"<<pos<<endl;
 	for(uint check_super_kmer(0);check_super_kmer<positions_to_check.value();++check_super_kmer){
 		bm::id_t next_position(position_super_kmers.get_next(pos));
 		bm::id_t stop_position;
@@ -1153,13 +1155,16 @@ int32_t kmer_Set_Light::query_get_pos_unitig(const kmer canon,kmer minimizer){
 		}else{
 			stop_position =next_position+(rank+check_super_kmer)*(k-1)+1;
 		}
+		//~ cout<<check_super_kmer<<endl;
 		pos+=(rank+check_super_kmer)*(k-1);
+		//~ cout<<pos<<endl;
 		if(likely(((uint64_t)pos+k-1)<bucketSeq.size())){
 			kmer seqR=get_kmer(0,pos);
 			kmer rcSeqR, canonR;
 			for(uint64_t j=(pos);j<stop_position;++j){
 				rcSeqR=(rcb(seqR,k));
 				canonR=(min_k(seqR, rcSeqR));
+				//~ print_kmer(canonR,k);
 				if(canon==canonR){
 					return j;
 				}
@@ -1168,7 +1173,8 @@ int32_t kmer_Set_Light::query_get_pos_unitig(const kmer canon,kmer minimizer){
 		}
 		pos=next_position;
 	}
-	cin.get();
+	//~ cout<<"FAIL3"<<endl;
+	//~ cin.get();
 	return -1;
 }
 
@@ -1294,6 +1300,218 @@ void kmer_Set_Light::file_query(const string& query_file){
 	duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
 	cout << "The whole QUERY took me " << time_span.count() << " seconds."<< endl;
 	delete in;
+}
+
+
+void dump_vector_bool(const vector<bool> V, ostream* out ){
+	int cmp = 0;
+	uint8_t output=0;
+	vector<uint8_t> buf;
+	for(uint i(0);i<V.size();++i){
+		output=output | ((V[i] ? 1 : 0) << cmp);
+		cmp++;
+		if(cmp==8){
+			buf.push_back(output);
+			if(buf.size()==4000){
+				out->write((char*)buf.data(),buf.size());
+				buf.clear();
+			}
+			cmp = 0;
+			output = 0;
+		}
+	}
+	buf.push_back(output);
+    out->write((char*)buf.data(),buf.size());
+}
+
+
+void read_vector_bool(vector<bool>& V, ifstream* out, uint n_bits ){
+	uint size_buffer(4000);
+	uint n_bytes(n_bits/8+(n_bits%8==0 ? 0 :1));
+	uint position(0);
+	vector<uint8_t> buf(size_buffer,0);
+	while(position+size_buffer<n_bytes){
+		out->read((char*)buf.data(),size_buffer);
+		for(uint i(0);i<buf.size();++i){
+			V.push_back(buf[i] & 1);
+			V.push_back(buf[i] & 2);
+			V.push_back(buf[i] & 4);
+			V.push_back(buf[i] & 8);
+			V.push_back(buf[i] & 16);
+			V.push_back(buf[i] & 32);
+			V.push_back(buf[i] & 64);
+			V.push_back(buf[i] & 128);
+		}
+		position+=size_buffer;
+	}
+	buf.resize(n_bytes-position,0);
+	out->read((char*)buf.data(),n_bytes-position);
+	//~ cout<<n_bytes-position<<endl;
+	for(uint i(0);i<buf.size();++i){
+		V.push_back(buf[i] & 1);
+		V.push_back(buf[i] & 2);
+		V.push_back(buf[i] & 4);
+		V.push_back(buf[i] & 8);
+		V.push_back(buf[i] & 16);
+		V.push_back(buf[i] & 32);
+		V.push_back(buf[i] & 64);
+		V.push_back(buf[i] & 128);
+	}
+}
+
+
+void kmer_Set_Light::dump_disk(const string& output_file){
+	filebuf fb;
+	fb.open (output_file, ios::out | ios::binary);
+	ostream out(&fb);
+
+
+
+
+
+	out.write(reinterpret_cast<const char*>(&k),sizeof(k));
+	out.write(reinterpret_cast<const char*>(&m1),sizeof(m1));
+	out.write(reinterpret_cast<const char*>(&m3),sizeof(m3));
+	out.write(reinterpret_cast<const char*>(&minimizer_size_graph),sizeof(minimizer_size_graph));
+	out.write(reinterpret_cast<const char*>(&bit_saved_sub),sizeof(bit_saved_sub));
+	uint64_t positions_size(positions.size()), bucketSeq_size(bucketSeq.size());
+	out.write(reinterpret_cast<const char*>(&positions_size),sizeof(positions_size));
+	out.write(reinterpret_cast<const char*>(&bucketSeq_size),sizeof(bucketSeq_size));
+	//~ cout<<k<<" "<<m1<<" "<<m3<<" "<<bucketSeq_size<<" "<<positions_size<<endl;
+	//~ cout<<"dump regular int"<<endl;
+
+
+	for(uint i(0);i<mphf_number;++i){
+		out.write(reinterpret_cast<const char*>(&all_mphf[i].mphf_size),sizeof(all_mphf[i].mphf_size));
+		out.write(reinterpret_cast<const char*>(&all_mphf[i].empty),sizeof(all_mphf[i].empty));
+		out.write(reinterpret_cast<const char*>(&all_mphf[i].start),sizeof(all_mphf[i].start));
+		out.write(reinterpret_cast<const char*>(&all_mphf[i].bit_to_encode),sizeof(all_mphf[i].bit_to_encode));
+		if(not all_mphf[i].empty!=0){
+			all_mphf[i].kmer_MPHF->save(out);
+		}
+	}
+	//~ cout<<"dump MPHF "<<endl;
+
+		for(uint i(0);i<minimizer_number;++i){
+		out.write(reinterpret_cast<const char*>(&all_buckets[i].skmer_number),sizeof(all_buckets[i].skmer_number));
+		out.write(reinterpret_cast<const char*>(&all_buckets[i].nuc_minimizer),sizeof(all_buckets[i].nuc_minimizer));
+		out.write(reinterpret_cast<const char*>(&all_buckets[i].current_pos),sizeof(all_buckets[i].current_pos));
+		out.write(reinterpret_cast<const char*>(&all_buckets[i].start),sizeof(all_buckets[i].start));
+	}
+
+
+	bm::serializer<bm::bvector<> > bvs;
+	bvs.byte_order_serialization(false);
+	bvs.gap_length_serialization(false);
+	bm::serializer<bm::bvector<> >::buffer sbuf;
+	{
+		unsigned char* buf = 0;
+		bvs.serialize(position_super_kmers, sbuf);
+		buf = sbuf.data();
+		uint64_t sz = sbuf.size();
+		auto point2 =&buf[0];
+		out.write(reinterpret_cast<const char*>(&sz),sizeof(sz));
+		out.write((char*)point2,sz);
+		//~ cout<<sz<<endl;
+		//~ cout<<"SERIALIZE "<<endl;
+
+	}
+
+	//~ cout<<bucketSeq.size()<<endl;
+	//~ for(uint i(0);i<100;++i){
+		//~ cout<<bucketSeq[i];
+	//~ }
+	dump_vector_bool(bucketSeq,&out);
+	//~ cout<<"dump boolV "<<endl;
+	//~ cout<<positions.size()<<endl;
+	dump_vector_bool(positions,&out);
+	//~ cout<<"dump boolV "<<endl;
+
+
+
+	fb.close();
+	//~ cout<<"dump ALL "<<endl;
+}
+
+
+kmer_Set_Light::kmer_Set_Light(const string& index_file){
+	ifstream out(index_file);
+
+	out.read(reinterpret_cast< char*>(&k),sizeof(k));
+	out.read(reinterpret_cast< char*>(&m1),sizeof(m1));
+	m2=m1;
+	coreNumber=20;
+	uint64_t  bucketSeq_size, positions_size;
+	out.read(reinterpret_cast< char*>(&m3),sizeof(m3));
+	out.read(reinterpret_cast< char*>(&minimizer_size_graph),sizeof(minimizer_size_graph));
+	out.read(reinterpret_cast< char*>(&bit_saved_sub),sizeof(bit_saved_sub));
+	out.read(reinterpret_cast< char*>(&positions_size),sizeof(positions_size));
+	out.read(reinterpret_cast< char*>(&bucketSeq_size),sizeof(bucketSeq_size));
+	offsetUpdateAnchor=(2*k);
+	offsetUpdateMinimizer=(2*m1);
+	mphf_number=(2*m2);
+	number_superbuckets=(2*m3);
+	minimizer_number=(2*m1);
+	minimizer_number_graph=(2*minimizer_size_graph);
+	number_bucket_per_mphf=(2*(m1-m2));
+	bucket_per_superBuckets=(2*(m1-m3));
+	positions_to_check=(bit_saved_sub);
+	gammaFactor=2;
+	//~ cout<<k<<" "<<m1<<" "<<m3<<" "<<bucketSeq_size<<" "<<positions_size<<endl;
+	//~ cout<<"read regular int"<<endl;
+
+
+	all_buckets=new bucket_minimizer[minimizer_number.value()]();
+	all_mphf=new info_mphf[mphf_number.value()];
+	for(uint i(0);i<mphf_number;++i){
+		out.read(reinterpret_cast< char*>(&all_mphf[i].mphf_size),sizeof(all_mphf[i].mphf_size));
+		out.read(reinterpret_cast< char*>(&all_mphf[i].empty),sizeof(all_mphf[i].empty));
+		out.read(reinterpret_cast< char*>(&all_mphf[i].start),sizeof(all_mphf[i].start));
+		out.read(reinterpret_cast< char*>(&all_mphf[i].bit_to_encode),sizeof(all_mphf[i].bit_to_encode));
+		if(not all_mphf[i].empty!=0){
+			all_mphf[i].kmer_MPHF=new boomphf::mphf<kmer,hasher_t>;
+			all_mphf[i].kmer_MPHF->load(out);
+		}
+	}
+	//~ cout<<"read MPHF"<<endl;
+
+		for(uint i(0);i<minimizer_number;++i){
+		out.read(reinterpret_cast< char*>(&all_buckets[i].skmer_number),sizeof(all_buckets[i].skmer_number));
+		out.read(reinterpret_cast< char*>(&all_buckets[i].nuc_minimizer),sizeof(all_buckets[i].nuc_minimizer));
+		out.read(reinterpret_cast< char*>(&all_buckets[i].current_pos),sizeof(all_buckets[i].current_pos));
+		out.read(reinterpret_cast< char*>(&all_buckets[i].start),sizeof(all_buckets[i].start));
+	}
+		//~ cout<<"read bucket stat"<<endl;
+
+
+	uint64_t sz;
+	out.read(reinterpret_cast< char*>(&sz),sizeof(sz));
+	//~ cout<<sz<<endl;
+	uint8_t* buff= new uint8_t[sz];
+	out.read((char*)buff,sz);
+
+	bm::deserialize(position_super_kmers, buff);
+	position_super_kmers_RS=new bm::bvector<>::rs_index_type();
+	position_super_kmers.build_rs_index(position_super_kmers_RS);
+
+	//~ cout<<" DESERIALIZED!"<<endl;
+
+
+	read_vector_bool(bucketSeq,&out,bucketSeq_size);
+	//~ cout<<bucketSeq.size()<<endl;
+	//~ for(uint i(0);i<100;++i){
+		//~ cout<<bucketSeq[i];
+	//~ }
+	//~ cout<<"read Bool V"<<endl;
+	read_vector_bool(positions,&out,positions_size);
+	//~ cout<<positions.size()<<endl;
+	//~ cout<<"read Bool V"<<endl;
+
+
+
+
+
+	delete buff;
 }
 
 
