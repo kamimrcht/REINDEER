@@ -99,7 +99,8 @@ int main(int argc, char ** argv){
 		ksl.file_query(query);
 		ksl.dump_disk("index.txt");
 		kmer_Set_Light ksl2("index.txt");
-		ksl2.file_query(query);
+		for(uint i(0);i<1;++i)
+			ksl2.file_query(query);
 
 
 		cout<<"I am glad you are here with me. Here at the end of all things."<<endl;

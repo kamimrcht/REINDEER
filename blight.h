@@ -101,26 +101,29 @@ private:
 	uint_fast8_t _bits;
 };
 
+
+
 class kmer_Set_Light{
 public:
-	 uint k, m1, m2, m3, minimizer_size_graph;
-	 uint coreNumber;
-	 uint bit_saved_sub;
+	uint k, m1, m2, m3, minimizer_size_graph;
+	uint coreNumber;
+	uint bit_saved_sub;
 
-	 Pow2<kmer> offsetUpdateAnchor;
-	 Pow2<kmer> offsetUpdateMinimizer;
-	 Pow2<uint> mphf_number;
-	 Pow2<uint> number_superbuckets;
-	 Pow2<uint> minimizer_number;
-	 Pow2<uint> minimizer_number_graph;
-	 Pow2<uint> number_bucket_per_mphf;
-	 Pow2<uint> bucket_per_superBuckets;
-	 Pow2<uint> positions_to_check;
+	Pow2<kmer> offsetUpdateAnchor;
+	Pow2<kmer> offsetUpdateMinimizer;
+	Pow2<uint> mphf_number;
+	Pow2<uint> number_superbuckets;
+	Pow2<uint> minimizer_number;
+	Pow2<uint> minimizer_number_graph;
+	Pow2<uint> number_bucket_per_mphf;
+	Pow2<uint> bucket_per_superBuckets;
+	Pow2<uint> positions_to_check;
 
 	vector<bool> bucketSeq;
 	vector<bool> positions;
 	bm::bvector<> position_super_kmers= bm::bvector<>(bm::BM_GAP);
 	bm::bvector<>::rs_index_type* position_super_kmers_RS;
+	mutex positions_mutex[4096];
 
 	bucket_minimizer* all_buckets;
 	uint32_t* abundance_minimizer_temp;
@@ -248,7 +251,7 @@ public:
 
 
 // iterator from disk file of u_int64_t with buffered read,   todo template
-class bfile_iterator : public std::iterator<std::forward_iterator_tag, u_int64_t>{
+class bfile_iterator : public std::iterator<std::forward_iterator_tag, kmer>{
 	public:
 
 	bfile_iterator()
@@ -256,7 +259,7 @@ class bfile_iterator : public std::iterator<std::forward_iterator_tag, u_int64_t
 	, _pos(0) ,_inbuff (0), _cptread(0)
 	{
 		_buffsize = 10000;
-		_buffer = (u_int64_t *) malloc(_buffsize*sizeof(u_int64_t));
+		_buffer = (kmer *) malloc(_buffsize*sizeof(kmer));
 	}
 
 	bfile_iterator(const bfile_iterator& cr)
@@ -264,8 +267,8 @@ class bfile_iterator : public std::iterator<std::forward_iterator_tag, u_int64_t
 		_buffsize = cr._buffsize;
 		_pos = cr._pos;
 		_is = cr._is;
-		_buffer = (u_int64_t *) malloc(_buffsize*sizeof(u_int64_t));
-		 memcpy(_buffer,cr._buffer,_buffsize*sizeof(u_int64_t) );
+		_buffer = (kmer *) malloc(_buffsize*sizeof(kmer));
+		 memcpy(_buffer,cr._buffer,_buffsize*sizeof(kmer) );
 		_inbuff = cr._inbuff;
 		_cptread = cr._cptread;
 		_elem = cr._elem;
@@ -274,7 +277,7 @@ class bfile_iterator : public std::iterator<std::forward_iterator_tag, u_int64_t
 	bfile_iterator(FILE* is): _is(is) , _pos(0) ,_inbuff (0), _cptread(0)
 	{
 		_buffsize = 10000;
-		_buffer = (u_int64_t *) malloc(_buffsize*sizeof(u_int64_t));
+		_buffer = (kmer *) malloc(_buffsize*sizeof(kmer));
 		int reso = fseek(_is,0,SEEK_SET);
 		advance();
 	}
@@ -286,7 +289,7 @@ class bfile_iterator : public std::iterator<std::forward_iterator_tag, u_int64_t
 	}
 
 
-	u_int64_t const& operator*()  {  return _elem;  }
+	kmer const& operator*()  {  return _elem;  }
 
 	bfile_iterator& operator++()
 	{
@@ -309,7 +312,7 @@ class bfile_iterator : public std::iterator<std::forward_iterator_tag, u_int64_t
 
 		if(_cptread >= _inbuff)
 		{
-			int res = fread(_buffer,sizeof(u_int64_t),_buffsize,_is);
+			int res = fread(_buffer,sizeof(kmer),_buffsize,_is);
 			_inbuff = res; _cptread = 0;
 
 			if(res == 0)
@@ -323,11 +326,11 @@ class bfile_iterator : public std::iterator<std::forward_iterator_tag, u_int64_t
 		_elem = _buffer[_cptread];
 		_cptread ++;
 	}
-	u_int64_t _elem;
+	kmer _elem;
 	FILE * _is;
 	unsigned long _pos;
 
-	u_int64_t * _buffer; // for buffered read
+	kmer * _buffer; // for buffered read
 	int _inbuff, _cptread;
 	int _buffsize;
 };
