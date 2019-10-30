@@ -214,7 +214,7 @@ int main(int argc, char **argv)
 		//~ cout << "[WARNING] You should first remove current " << output << " directory or provide an output directory name using --output" << endl;
 		//~ return 0;
 		}
-		reindeer_query(k, output, output_query,  record_counts,  record_reads,  threshold,  bgreat_paths_fof,  query, threads, exact);
+		reindeer_query(k, color_load_file, output_query,  record_counts,  record_reads,  threshold,  bgreat_paths_fof,  query, threads, exact);
 		// todo interactive mode
 	}
     return 0;
