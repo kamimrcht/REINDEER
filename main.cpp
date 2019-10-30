@@ -40,6 +40,7 @@ string query,fof, color_dump_file("reindeer_matrix"), color_load_file(""), bgrea
 uint k(31), threads(1);
 bool record_counts(false);
 bool record_reads(false);
+bool exact(false);
 bool bcalm(false), do_Index(false), do_Query(false);
 uint threshold(40);
 
@@ -59,6 +60,7 @@ void PrintHelp()
             "* Options\n"
             "-k                      :     k-mer size (default 31)\n"
             "--count                 :     retain abundances instead of presence/absence\n"
+            "--exact                 :     retain exact mean abundances and presence/absence (increased disk use)\n"
             "--bcalm                 :     launch bcalm on each single read dataset\n\n"
             "-g                      :     provide union DBG of all datasets\n\n"
             "* Output options\n"
@@ -71,7 +73,9 @@ void PrintHelp()
 			"--query                 :     Query mode\n"
 			"-l                      :     Reindeer index directory\n"
             "* Options\n"
-            "--abundance             :     query abundances (index must have been built with --abundance)\n"
+            "--abundance             :     query abundances (to use if the index was built with --abundance)\n"
+            "--exact                 :     to use if the index was built with --exact\n"
+
             "-q <FASTA>              :     FASTA query file with query sequences\n\n\n"
             "-o <file>               :     directory to write output files\n"
 
@@ -90,6 +94,7 @@ void ProcessArgs(int argc, char** argv)
             {"index", no_argument, nullptr, 'i'},
             {"help", no_argument, nullptr, 'h'},
             {"count", no_argument, nullptr, 'c'},
+            {"exact", no_argument, nullptr, 'e'},
             {"bcalm", no_argument, nullptr, 'b'},
             {"query", no_argument, nullptr, 'Q'},
             {nullptr, no_argument, nullptr, 0}
@@ -127,6 +132,9 @@ void ProcessArgs(int argc, char** argv)
 				break;
 			case 'c':
 				record_counts=true;
+				break;
+			case 'e':
+				exact=true;
 				break;
 			case 'S':
 				threshold=stoi(optarg);
@@ -191,7 +199,7 @@ int main(int argc, char **argv)
 		string cl("");
 		bcalm_cleanup();
 		cout << "Indexing k-mers...\n\n" << endl;
-		reindeer_index(k, graph, fof, color_dump_file, record_counts,record_reads, output, cl, threads);
+		reindeer_index(k, graph, fof, color_dump_file, record_counts,record_reads, output, cl, threads, exact);
 	} else {
 		//~ if (graph.empty()){
 			//~ cout << "Computing Union De Bruijn graph using Bcalm2...\n\n" << endl;
@@ -206,7 +214,7 @@ int main(int argc, char **argv)
 		//~ cout << "[WARNING] You should first remove current " << output << " directory or provide an output directory name using --output" << endl;
 		//~ return 0;
 		}
-		reindeer_query(k, output, output_query,  record_counts,  record_reads,  threshold,  bgreat_paths_fof,  query, threads);
+		reindeer_query(k, output, output_query,  record_counts,  record_reads,  threshold,  bgreat_paths_fof,  query, threads, exact);
 		// todo interactive mode
 	}
     return 0;

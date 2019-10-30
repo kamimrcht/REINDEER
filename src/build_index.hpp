@@ -8,7 +8,7 @@
 using namespace std;
 
 
-void doColoring(string& color_load_file, string& color_dump_file, string& fof, kmer_Set_Light& ksl, vector<vector<uint8_t>>& color_me_amaze, vector<vector<uint16_t>>& color_me_amaze_counts, vector<vector<uint32_t>>& color_me_amaze_reads, bool record_counts, bool record_reads, uint k, uint64_t& color_number, uint nb_threads){
+void doColoring(string& color_load_file, string& color_dump_file, string& fof, kmer_Set_Light& ksl, vector<vector<uint8_t>>& color_me_amaze, vector<vector<uint16_t>>& color_me_amaze_counts, vector<vector<uint32_t>>& color_me_amaze_reads, bool record_counts, bool record_reads, uint k, uint64_t& color_number, uint nb_threads, bool exact){
 	if (color_load_file.empty()){ // use colors from the file of file
 		vector <string> file_names;
 		if(exists_test(fof)){
@@ -55,8 +55,14 @@ void doColoring(string& color_load_file, string& color_dump_file, string& fof, k
 						if(line.empty()){continue;}
 						if(line[0]=='A' or line[0]=='C' or line[0]=='G' or line[0]=='T'){
 							if (line.size() >= k){
+								vector<int64_t> minitig_ids;
 							// I GOT THE IDENTIFIER OF EACH KMER
-								auto minitig_ids=ksl.query_sequence_minitig(line);
+								if (exact)
+								{
+									minitig_ids=ksl.query_sequence_hash(line);
+								} else {
+									minitig_ids=ksl.query_sequence_minitig(line);
+								}
 								for(uint64_t i(0);i<minitig_ids.size();++i){
 									if (not record_counts){
 										if (not record_reads) // just remember presence/absence
@@ -138,12 +144,12 @@ void doColoring(string& color_load_file, string& color_dump_file, string& fof, k
 
 
 
-void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, uint ex, string& input, string& color_load_file, string& color_dump_file, string& fof, vector<vector<uint8_t>>& color_me_amaze, vector<vector<uint16_t>>& color_me_amaze_counts, vector<vector<uint32_t>>& color_me_amaze_reads, bool record_counts, bool record_reads, uint64_t& color_number, kmer_Set_Light& ksl, uint nb_threads)
+void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, uint ex, string& input, string& color_load_file, string& color_dump_file, string& fof, vector<vector<uint8_t>>& color_me_amaze, vector<vector<uint16_t>>& color_me_amaze_counts, vector<vector<uint32_t>>& color_me_amaze_reads, bool record_counts, bool record_reads, uint64_t& color_number, kmer_Set_Light& ksl, uint nb_threads, bool exact)
 {
 	ksl.construct_index(input);
 	// PARSE THE FILE OF FILE
 	// ALLOCATE THE COLOR VECTOR
-	doColoring(color_load_file, color_dump_file, fof, ksl, color_me_amaze, color_me_amaze_counts, color_me_amaze_reads, record_counts, record_reads, k, color_number, nb_threads);
+	doColoring(color_load_file, color_dump_file, fof, ksl, color_me_amaze, color_me_amaze_counts, color_me_amaze_reads, record_counts, record_reads, k, color_number, nb_threads, exact);
 }
 
 
