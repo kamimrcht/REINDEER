@@ -43,8 +43,12 @@ int main(int argc, char ** argv){
 	uint m3(4);
 	uint c(1);
 	uint bit(0);
-	while ((ch = getopt (argc, argv, "g:q:k:m:n:s:t:b:e:")) != -1){
+	bool full(false);
+	while ((ch = getopt (argc, argv, "ag:q:k:m:n:s:t:b:e:")) != -1){
 		switch(ch){
+			case 'a':
+				full=true;
+				break;
 			case 'q':
 				query=optarg;
 				break;
@@ -91,17 +95,22 @@ int main(int argc, char ** argv){
 		<<"-b bit saved to encode positions (6). Will reduce the memory usage of b bit per kmer but query have to check 2^b kmers"<<endl;
 		return 0;
 	}
+
 	{
 		cout<<"I use -g "+input+" -q "+query+" -k "+to_string(k)+" -m  "+to_string(m1)+" -n  "+to_string(m2)+" -s  "+to_string(m3)+" -t "+to_string(c)+" -b "+to_string(bit)<<endl;
 		kmer_Set_Light ksl(k,m1,m2,m3,c,bit);
 		ksl.construct_index(input);
 
-		ksl.file_query(query);
+		cout<<"NEW TESTS"<<endl;
+
+		ksl.file_query_all_test(query,full);
+
+		cout<<"DUMP"<<endl;
+
 		ksl.dump_disk("index.txt");
 		kmer_Set_Light ksl2("index.txt");
 		for(uint i(0);i<1;++i)
-			ksl2.file_query(query);
-
+			ksl2.file_query_all_test(query,full);
 
 		cout<<"I am glad you are here with me. Here at the end of all things."<<endl;
 	}
