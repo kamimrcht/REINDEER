@@ -19,6 +19,7 @@
 #include "bbhash.h"
 #include "bm64.h"
 #include "encoding.h"
+#include "zstr.hpp"
 #include "bmserial.h"
 
 
@@ -241,7 +242,7 @@ public:
 	pair<uint64_t,uint64_t> query_sequence_bool(const string& query);
 	string kmer2str(kmer num);
 	kmer regular_minimizer(kmer seq);
-	void create_super_buckets_regular(const string&, bool clean=true);
+	void create_super_buckets_regular(const string&,int dbg_id=0);
 	int64_t query_kmer_hash(kmer canon);
 	int64_t query_get_hash(const kmer canon,kmer minimizer);
 	vector<int64_t> query_sequence_hash(const string& query);
@@ -254,6 +255,11 @@ public:
 	vector<kmer> kmer_to_superkmer(const kmer canon,kmer minimizer, int64_t& rank, int64_t& hash);
 	int64_t hash_to_rank(const int64_t hash,kmer minimizer);
 	int64_t kmer_to_hash(const kmer canon,kmer minimizer);
+	void get_monocolor_minitigs(const  vector<string>& minitigs, const vector<int64_t>& color,zstr::ofstream* out, const string& mini, uint64_t number_color);
+	void merge_super_buckets(const string& input_file, uint64_t number_color);
+	string compaction(const string& seq1,const string& seq2,bool);
+	void construct_index_fof(const string& input_file);
+	void reset();
 
 
 	void dump_disk(const string& output_file);

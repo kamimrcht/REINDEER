@@ -76,7 +76,7 @@ int main(int argc, char ** argv){
 	{
 		cout<<"I use -g "+input+to_string(k)+" -m  "+to_string(m1)+" -s  "+to_string(m3)+" -t "+to_string(c)<<endl;
 		kmer_Set_Light ksl(k,m1,m1,m3,c,bit);
-		ksl.create_super_buckets_regular(input,false);
+		ksl.create_super_buckets_regular(input,1);
 	}
 	return 0;
 }

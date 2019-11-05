@@ -13,7 +13,7 @@ endif
 
 CFLAGS+=-std=c++11 -pipe -lz -fopenmp ${WARNS}
 INC=blight.h bbhash.h common.h
-EXEC=bench_blight split merge
+EXEC=bench_blight
 
 
 all: $(EXEC)

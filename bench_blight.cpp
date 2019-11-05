@@ -36,24 +36,30 @@ using namespace chrono;
 
 int main(int argc, char ** argv){
 	char ch;
-	string input,query;
+	string input,inputfof,query;
 	uint k(31);
 	uint m1(9);
 	uint m2(0);
 	uint m3(4);
 	uint c(1);
 	uint bit(0);
-	bool full(false);
-	while ((ch = getopt (argc, argv, "ag:q:k:m:n:s:t:b:e:")) != -1){
+	bool full(false),dump(false);
+	while ((ch = getopt (argc, argv, "dag:q:k:m:n:s:t:b:e:f:")) != -1){
 		switch(ch){
 			case 'a':
 				full=true;
+				break;
+			case 'd':
+				dump=true;
 				break;
 			case 'q':
 				query=optarg;
 				break;
 			case 'g':
 				input=optarg;
+				break;
+			case 'f':
+				inputfof=optarg;
 				break;
 			case 'k':
 				k=stoi(optarg);
@@ -75,14 +81,16 @@ int main(int argc, char ** argv){
 				break;
 		}
 	}
+
+
 	if(query=="" and input!=""){
 		query=input;
 	}
 	if(input=="" and query!=""){
 		input=query;
 	}
-
-	if(query=="" or input=="" or k==0){
+	cout<<inputfof<<endl;
+	if((input=="" and inputfof=="") or k==0){
 		cout
 		<<"Mandatory arguments"<<endl
 		<<"-g graph file"<<endl
@@ -97,20 +105,28 @@ int main(int argc, char ** argv){
 	}
 
 	{
-		cout<<"I use -g "+input+" -q "+query+" -k "+to_string(k)+" -m  "+to_string(m1)+" -n  "+to_string(m2)+" -s  "+to_string(m3)+" -t "+to_string(c)+" -b "+to_string(bit)<<endl;
+		cout<<"I use -k "+to_string(k)+" -m  "+to_string(m1)+" -n  "+to_string(m2)+" -s  "+to_string(m3)+" -t "+to_string(c)+" -b "+to_string(bit)<<endl;
 		kmer_Set_Light ksl(k,m1,m2,m3,c,bit);
-		ksl.construct_index(input);
+		if(inputfof!=""){
+			cout<<"Build index from list of file "<<inputfof<<endl;
+			ksl.construct_index_fof(inputfof);
+		}else{
+			cout<<"Build index from file "<<input<<endl;
+			ksl.construct_index(input);
+		}
 
 		cout<<"NEW TESTS"<<endl;
 
 		ksl.file_query_all_test(query,full);
 
-		cout<<"DUMP"<<endl;
+		if(dump){
+			cout<<"DUMP"<<endl;
 
-		ksl.dump_disk("index.txt");
-		kmer_Set_Light ksl2("index.txt");
-		for(uint i(0);i<1;++i)
-			ksl2.file_query_all_test(query,full);
+			ksl.dump_disk("index.txt");
+			kmer_Set_Light ksl2("index.txt");
+			for(uint i(0);i<1;++i)
+				ksl2.file_query_all_test(query,full);
+		}
 
 		cout<<"I am glad you are here with me. Here at the end of all things."<<endl;
 	}
