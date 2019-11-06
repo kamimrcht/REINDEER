@@ -492,9 +492,10 @@ void kmer_Set_Light::construct_index_fof(const string& input_file){
 		}
 	}
 	cout<<"Partition created"<<endl;
-	for(uint i_superbuckets(0);i_superbuckets<number_superbuckets;++i_superbuckets){
+
+	#pragma omp parallel for num_threads(coreNumber)
+	for(uint i_superbuckets=0; i_superbuckets<number_superbuckets.value(); ++i_superbuckets){
 		//SORT SUPERBUCKETS
-		//~ cout<<"go SORT"<<endl;
 		string cmd("sort _blout"+to_string(i_superbuckets)+" --output _blsout"+to_string(i_superbuckets));
 
 		uint res(system(cmd.c_str()));
@@ -714,8 +715,8 @@ string kmer_Set_Light::compaction(const string& seq1,const string& seq2, bool re
 	if(recur){
 		return compaction(revComp(seq1),seq2,false	);
 	}else{
-		cout<<seq1<<" "<<seq2<<" "<<revComp(seq1)<<" "<<revComp(seq2)<<endl;
-		cout<<"fail"<<endl;cin.get();
+		//~ cout<<seq1<<" "<<seq2<<" "<<revComp(seq1)<<" "<<revComp(seq2)<<endl;
+		//~ cout<<"STRANGER THINGS"<<endl;//TODO SOME COMPACTION ARE MISSED CAN WE DO BETTER
 	}
 	return "";
 }
@@ -765,7 +766,7 @@ void kmer_Set_Light::get_monocolor_minitigs(const  vector<string>& minitigs, con
 			}
 		}
 	}
-	string monocolor;
+	string monocolor,compact;
 	//~ cout<<"go max minitig"<<endl;
 	uint kmer_number_check(0);
 	//FOREACH KMER COMPUTE MAXIMAL MONOCOLOR MINITIG
@@ -783,7 +784,9 @@ void kmer_Set_Light::get_monocolor_minitigs(const  vector<string>& minitigs, con
 				if(next_kmer[canon]==-1){break;}
 				if(kmer_color[next_kmer[canon]]!=it.second){break;}
 				kmer_color[next_kmer[canon]].clear();
-				monocolor=compaction(monocolor,kmer2str(next_kmer[canon]));
+				compact=compaction(monocolor,kmer2str(next_kmer[canon]));
+				if(compact.empty()){break;}
+				monocolor=compact;
 				//~ cout<<"compaction "<<monocolor<<endl;
 				//~ cin.get();
 				canon=next_kmer[canon];
@@ -796,12 +799,18 @@ void kmer_Set_Light::get_monocolor_minitigs(const  vector<string>& minitigs, con
 				if(previous_kmer[canon]==-1){break;}
 				if(kmer_color[previous_kmer[canon]]!=it.second){break;}
 				kmer_color[previous_kmer[canon]].clear();
-				monocolor=compaction(monocolor,kmer2str(previous_kmer[canon]));
+				compact=compaction(monocolor,kmer2str(previous_kmer[canon]));
+				if(compact.empty()){break;}
+				monocolor=compact;
 				//~ cout<<"compaction "<<monocolor<<endl;
 				//~ cin.get();
 				canon=previous_kmer[canon];
 			}
-			*out<<">"+mini+":"<<bool2str(dumpcolor)<<"\n"<<monocolor<<"\n";
+
+			#pragma omp critical (monocolorFile)
+			{
+				*out<<">"+mini+":"<<bool2str(dumpcolor)<<"\n"<<monocolor<<"\n";
+			}
 		}
 	}
 }
