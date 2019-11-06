@@ -487,21 +487,23 @@ void kmer_Set_Light::construct_index_fof(const string& input_file){
 		file.clear();
 		getline(infof,file);
 		if(exists_test(file)){
-			//~ cout<<"go STACK"<<endl;
 			create_super_buckets_regular(file,i_file++);
 		}
 	}
 	cout<<"Partition created"<<endl;
+	{
+		zstr::ofstream out("_blmonocolor.fa.gz",ios::app);
 
-	#pragma omp parallel for num_threads(coreNumber)
-	for(uint i_superbuckets=0; i_superbuckets<number_superbuckets.value(); ++i_superbuckets){
-		//SORT SUPERBUCKETS
-		string cmd("sort _blout"+to_string(i_superbuckets)+" --output _blsout"+to_string(i_superbuckets));
+		#pragma omp parallel for num_threads(coreNumber)
+		for(uint i_superbuckets=0; i_superbuckets<number_superbuckets.value(); ++i_superbuckets){
+			//SORT SUPERBUCKETS
+			string cmd("sort _blout"+to_string(i_superbuckets)+" --output _blsout"+to_string(i_superbuckets));
+			uint res(system(cmd.c_str()));
+			if(res!=0){cout<<"Problem with sort command"<<endl;exit(0);}
+			merge_super_buckets("_blsout"+to_string(i_superbuckets),i_file-1,&out);
+			remove(("_blsout"+to_string(i_superbuckets)).c_str());
 
-		uint res(system(cmd.c_str()));
-		if(res!=0){cout<<"Problem with sort command"<<endl;exit(0);}
-		merge_super_buckets("_blsout"+to_string(i_superbuckets),i_file-1);
-		remove(("_blsout"+to_string(i_superbuckets)).c_str());
+		}
 	}
 	reset();
 	cout<<"Monocolor minitig computed, now regular indexing start"<<endl;
@@ -522,11 +524,25 @@ void kmer_Set_Light::construct_index_fof(const string& input_file){
 
 
 
+uint16_t parseCoverage(const string& str){
+	size_t pos(str.find("km:f:"));
+	if(pos==string::npos){
+		pos=(str.find("KM:f:"));
+	}
+	if(pos==string::npos){
+		return 1;
+	}
+	uint i(1);
+	while(str[i+pos+5]!=' '){
+		++i;
+	}
+	return (uint16_t)stof(str.substr(pos+5,i));
+}
+
 
 
 void kmer_Set_Light::create_super_buckets_regular(const string& input_file,int dbg_id){
 	uint64_t total_nuc_number(0);
-	//~ cout<<"go"<<input_file<<" "<<dbg_id<<endl;
 	auto inUnitigs=new zstr::ifstream(input_file);
 	if( not inUnitigs->good()){
 		cout<<"Problem with files opening"<<endl;
@@ -577,7 +593,7 @@ void kmer_Set_Light::create_super_buckets_regular(const string& input_file,int d
 						if(dbg_id==0){
 							*(out_files[((old_minimizer))/bucket_per_superBuckets])<<">"+to_string(old_minimizer)+"\n"<<ref.substr(last_position,i-last_position+k)<<"\n";
 						}else{
-							*(out_files[((old_minimizer))/bucket_per_superBuckets])<<""+to_string(old_minimizer)+":"<<to_string(dbg_id)<<":"<<ref.substr(last_position,i-last_position+k)<<"\n";
+							*(out_files[((old_minimizer))/bucket_per_superBuckets])<<""+to_string(old_minimizer)+":"<<to_string(dbg_id)<<":"<<ref.substr(last_position,i-last_position+k)<<":"<<parseCoverage(useless)<<"\n";
 						}
 						omp_unset_lock(&(lock[((old_minimizer))/bucket_per_superBuckets]));
 						#pragma omp atomic
@@ -598,7 +614,7 @@ void kmer_Set_Light::create_super_buckets_regular(const string& input_file,int d
 					if(dbg_id==0){
 						*(out_files[((old_minimizer))/bucket_per_superBuckets])<<">"+to_string(old_minimizer)+"\n"<<ref.substr(last_position)<<"\n";
 					}else{
-						*(out_files[((old_minimizer))/bucket_per_superBuckets])<<""+to_string(old_minimizer)+":"<<to_string(dbg_id)<<":"<<ref.substr(last_position)<<"\n";
+						*(out_files[((old_minimizer))/bucket_per_superBuckets])<<""+to_string(old_minimizer)+":"<<to_string(dbg_id)<<":"<<ref.substr(last_position)<<":"<<parseCoverage(useless)<<"\n";
 					}
 					omp_unset_lock(&(lock[((old_minimizer))/bucket_per_superBuckets]));
 					#pragma omp atomic
@@ -705,6 +721,17 @@ string bool2str(vector<bool> V){
 }
 
 
+
+string color_coverage2str(const vector<uint16_t>& V){
+	string result;
+	for(uint64_t i(0);i<V.size();++i){
+		result+=":"+to_string(V[i]);
+	}
+	return result;
+}
+
+
+
 string kmer_Set_Light::compaction(const string& seq1,const string& seq2, bool recur=true){
 	uint s1(seq1.size()),s2(seq2.size());
 	if(s1==0 or s2==0){return "";}
@@ -723,22 +750,20 @@ string kmer_Set_Light::compaction(const string& seq1,const string& seq2, bool re
 
 
 
-void kmer_Set_Light::get_monocolor_minitigs(const  vector<string>& minitigs, const vector<int64_t>& color,zstr::ofstream* out, const string& mini,uint64_t number_color){
-	//~ cout<<"go monocolor unitigs "<<mini<<endl;
+void kmer_Set_Light::get_monocolor_minitigs(const  vector<string>& minitigs, const vector<int64_t>& color, const  vector<uint16_t>& coverage, zstr::ofstream* out, const string& mini,uint64_t number_color){
 	unordered_map<kmer,kmer> next_kmer;
 	unordered_map<kmer,kmer> previous_kmer;
-	unordered_map<kmer,vector<bool>> kmer_color;
-	vector<bool> bit_vector(number_color,false);
+	unordered_map<kmer,vector<uint16_t>> kmer_color;
+	vector<uint16_t> bit_vector(number_color,0);
 	//ASSOCIATE INFO TO KMERS
 	for(uint64_t i_mini(0);i_mini<minitigs.size();++i_mini){
-		//~ cout<<minitigs[i_mini]<<endl;
 		kmer seq(str2num(minitigs[i_mini].substr(0,k))),rcSeq(rcb(seq,k)),canon(min_k(seq,rcSeq)),prev(-1);
 		canon=(min_k(seq, rcSeq));
 		if(kmer_color.count(canon)==0){
 			kmer_color[canon]=bit_vector;
 		}
 		//~ print_kmer(canon);
-		kmer_color[canon][color[i_mini]-1]=true;
+		kmer_color[canon][color[i_mini]-1]=coverage[i_mini];
 
 		for(uint i(0);i+k<minitigs[i_mini].size();++i){
 			prev=canon;
@@ -749,7 +774,7 @@ void kmer_Set_Light::get_monocolor_minitigs(const  vector<string>& minitigs, con
 			if(kmer_color.count(canon)==0){
 				kmer_color[canon]=bit_vector;
 			}
-			kmer_color[canon][color[i_mini]-1]=true;
+			kmer_color[canon][color[i_mini]-1]=coverage[i_mini];
 			if(next_kmer.count(prev)==0){
 				next_kmer[prev]=canon;
 			}else{
@@ -779,7 +804,6 @@ void kmer_Set_Light::get_monocolor_minitigs(const  vector<string>& minitigs, con
 			//~ cout<<"go "<<monocolor<<endl;
 			//GO FORWARD
 			while(true){
-				//~ cout<<"go fw"<<endl;
 				if(next_kmer.count(canon)==0){break;}
 				if(next_kmer[canon]==-1){break;}
 				if(kmer_color[next_kmer[canon]]!=it.second){break;}
@@ -787,14 +811,11 @@ void kmer_Set_Light::get_monocolor_minitigs(const  vector<string>& minitigs, con
 				compact=compaction(monocolor,kmer2str(next_kmer[canon]));
 				if(compact.empty()){break;}
 				monocolor=compact;
-				//~ cout<<"compaction "<<monocolor<<endl;
-				//~ cin.get();
 				canon=next_kmer[canon];
 			}
 			//GO BACKWARD
 			canon=it.first;
 			while(true){
-				//~ cout<<"go rv"<<endl;
 				if(previous_kmer.count(canon)==0){break;}
 				if(previous_kmer[canon]==-1){break;}
 				if(kmer_color[previous_kmer[canon]]!=it.second){break;}
@@ -802,14 +823,11 @@ void kmer_Set_Light::get_monocolor_minitigs(const  vector<string>& minitigs, con
 				compact=compaction(monocolor,kmer2str(previous_kmer[canon]));
 				if(compact.empty()){break;}
 				monocolor=compact;
-				//~ cout<<"compaction "<<monocolor<<endl;
-				//~ cin.get();
 				canon=previous_kmer[canon];
 			}
-
 			#pragma omp critical (monocolorFile)
 			{
-				*out<<">"+mini+":"<<bool2str(dumpcolor)<<"\n"<<monocolor<<"\n";
+				*out<<">"+mini<<color_coverage2str(dumpcolor)<<"\n"<<monocolor<<"\n";
 			}
 		}
 	}
@@ -817,31 +835,31 @@ void kmer_Set_Light::get_monocolor_minitigs(const  vector<string>& minitigs, con
 
 
 
-void kmer_Set_Light::merge_super_buckets(const string& input_file, uint64_t number_color){
-	//~ cout<<"go merge"<<input_file<<endl;
+void kmer_Set_Light::merge_super_buckets(const string& input_file, uint64_t number_color, zstr::ofstream* out){
 	string line;
 	vector<string> splitted;
 	vector<string> minitigs;
 	vector<int64_t> color;
+	vector<uint16_t> coverage;
 	zstr::ifstream in(input_file);
 	int64_t minimizer=-1;
-	zstr::ofstream out("_blmonocolor.fa.gz",ios::app);
 	while(not in.eof() and in.good()){
 		getline(in,line);
-		//~ cout<<line<<endl;
 		if(not line.empty()){
 			splitted=split(line,':');
 			if(stoi(splitted[0])>minimizer and not minitigs.empty()){
-				get_monocolor_minitigs(minitigs,color,&out,to_string(minimizer),number_color);
+				get_monocolor_minitigs(minitigs,color,coverage,out,to_string(minimizer),number_color);
 				minitigs.clear();
 				color.clear();
+				coverage.clear();
 			}
 			minimizer=stoi(splitted[0]);
-			minitigs.push_back(splitted[2]);
 			color.push_back(stoi(splitted[1]));
+			minitigs.push_back(splitted[2]);
+			coverage.push_back(stoi(splitted[3]));
 		}
 	}
-	get_monocolor_minitigs(minitigs,color,&out,to_string(minimizer),number_color);
+	get_monocolor_minitigs(minitigs,color,coverage,out,to_string(minimizer),number_color);
 }
 
 

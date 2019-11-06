@@ -115,17 +115,21 @@ int main(int argc, char ** argv){
 			ksl.construct_index(input);
 		}
 
-		cout<<"NEW TESTS"<<endl;
 
-		ksl.file_query_all_test(query,full);
+		if(not query.empty()){
+			cout<<"NEW TESTS"<<endl;
+			ksl.file_query_all_test(query,full);
+		}
 
 		if(dump){
 			cout<<"DUMP"<<endl;
 
 			ksl.dump_disk("index.txt");
 			kmer_Set_Light ksl2("index.txt");
-			for(uint i(0);i<1;++i)
-				ksl2.file_query_all_test(query,full);
+			if(not query.empty()){
+				for(uint i(0);i<1;++i)
+					ksl2.file_query_all_test(query,full);
+			}
 		}
 
 		cout<<"I am glad you are here with me. Here at the end of all things."<<endl;

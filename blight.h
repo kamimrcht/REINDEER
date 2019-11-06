@@ -255,8 +255,8 @@ public:
 	vector<kmer> kmer_to_superkmer(const kmer canon,kmer minimizer, int64_t& rank, int64_t& hash);
 	int64_t hash_to_rank(const int64_t hash,kmer minimizer);
 	int64_t kmer_to_hash(const kmer canon,kmer minimizer);
-	void get_monocolor_minitigs(const  vector<string>& minitigs, const vector<int64_t>& color,zstr::ofstream* out, const string& mini, uint64_t number_color);
-	void merge_super_buckets(const string& input_file, uint64_t number_color);
+	void get_monocolor_minitigs(const  vector<string>& minitigs, const vector<int64_t>& color,const vector<uint16_t>& coverage, zstr::ofstream* out, const string& mini,uint64_t number_color);
+	void merge_super_buckets(const string& input_file, uint64_t number_color,zstr::ofstream* out);
 	string compaction(const string& seq1,const string& seq2,bool);
 	void construct_index_fof(const string& input_file);
 	void reset();
