@@ -28,7 +28,7 @@ inline bool exists_test(const string& name) {
 	return ( access( name.c_str(), F_OK ) != -1 );
 }
 
-vector<string> split(const string &s, char delim){
+vector<string> split_utils(const string &s, char delim){
 	stringstream ss(s);
 	string item;
 	vector<string> elems;
@@ -39,7 +39,7 @@ vector<string> split(const string &s, char delim){
 }
 
 ///// parse bcalm headers //////////////
-double parseCoverage(const string& str){
+double parseCoverage_utils(const string& str){
 	size_t pos(str.find("km:f:"));
 	if(pos==string::npos)
 	{
@@ -86,7 +86,7 @@ void parse_bgreat_output(string& input, vector<vector<uint64_t>>& unitigs_to_nod
 	{
 		getline(bgreat_file,line);
 		if(line.empty()){readID++; continue;}
-		unitigs_per_read = split(line,';');
+		unitigs_per_read = split_utils(line,';');
 		for (auto && u : unitigs_per_read)
 		{ 
 			uint32_t unitig(unitig_toui32(u) - 1);

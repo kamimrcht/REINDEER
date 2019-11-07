@@ -36,7 +36,7 @@ using namespace std;
 using namespace chrono;
 
 char ch;
-string query,fof, color_dump_file("reindeer_matrix"), color_load_file(""), bgreat_paths_fof(""), output_bcalm("bcalm_out"),output_union_bcalm("bcalm_union_out"),output("output_reindeer"), output_index("index_out"), graph ;
+string query,fof, color_dump_file("reindeer_matrix"), color_load_file(""), bgreat_paths_fof(""), output_bcalm("bcalm_out"),output_union_bcalm("bcalm_union_out"),output("output_reindeer"), output_index("index_out");
 uint k(31), threads(1);
 bool record_counts(false);
 bool record_reads(false);
@@ -62,7 +62,7 @@ void PrintHelp()
             "--count                 :     retain abundances instead of presence/absence\n"
             "--exact                 :     retain exact mean abundances and presence/absence (increased disk use)\n"
             "--bcalm                 :     launch bcalm on each single read dataset\n\n"
-            "-g                      :     provide union DBG of all datasets\n\n"
+            //~ "-g                      :     provide union DBG of all datasets\n\n"
             "* Output options\n"
             "-o <file>               :     directory to write output files\n"
             "-w <file>               :     choose a filename to write index on disk\n"
@@ -115,9 +115,9 @@ void ProcessArgs(int argc, char** argv)
 			case 'f':
 				fof=optarg;
 				break;
-			case 'g':
-				graph=optarg;
-				break;
+			//~ case 'g':
+				//~ graph=optarg;
+				//~ break;
 			case 'Q':
 				do_Query=true;
 				break;
@@ -177,42 +177,40 @@ int main(int argc, char **argv)
 		PrintHelp();
 		return 0;
 	}
-	if (bcalm)
-	{
-		cout << "Computing De Bruijn graphs on each dataset using Bcalm2...\n\n" << endl;
-		fof = bcalm_launcher_single(fof,  k,  threads, output, output_bcalm); // from here fof is a fof of unitig files
-	} else {
-		fof = getRealPaths(fof, output);
-	}
+	
 	if (do_Index) //indexing only
 	{
+		if (bcalm)
+		{
+			cout << "Computing De Bruijn graphs on each dataset using Bcalm2...\n\n" << endl;
+			fof = bcalm_launcher_single(fof,  k,  threads, output, output_bcalm); // from here fof is a fof of unitig files
+		} else {
+			fof = getRealPaths(fof, output);
+		}
 		if ( fof.empty() or k == 0 )
 		{
 			PrintHelp();
 			return 0;
 		}
 
-		if (graph.empty()){//todo try when fof is directly passed
-			cout << "Computing Union De Bruijn graph using Bcalm2...\n\n" << endl;
-			graph = bcalm_launcher_union(fof,  k,  threads, output, output_union_bcalm);
-		}
+		//~ if (graph.empty()){//todo try when fof is directly passed
+			//~ cout << "Computing Union De Bruijn graph using Bcalm2...\n\n" << endl;
+			//~ graph = bcalm_launcher_union(fof,  k,  threads, output, output_union_bcalm);
+		//~ }
 		string cl("");
 		bcalm_cleanup();
+		
+		string cmd("cp " + fof + " " + output + "/graphs.lst");
+		systRet=system(cmd.c_str());
 		cout << "Indexing k-mers...\n\n" << endl;
-		reindeer_index(k, graph, fof, color_dump_file, record_counts,record_reads, output, cl, threads, exact);
+		//~ reindeer_index(k, graph, fof, color_dump_file, record_counts,record_reads, output, cl, threads, exact);
+		reindeer_index(k, fof, color_dump_file, record_counts,record_reads, output, cl, threads, exact);
 	} else {
-		//~ if (graph.empty()){
-			//~ cout << "Computing Union De Bruijn graph using Bcalm2...\n\n" << endl;
-			//~ graph = bcalm_launcher_union(fof,  k,  t, output, output_union_bcalm);
-		//~ }
+		
 		cout << "Querying..." << endl;
-		//~ reindeer_query(k, graph, fof, cd, color_load_file,  record_counts,  record_reads,  threshold,  bgreat_paths_fof,  query);
 		string output_query(output + "/query_results");
 		if (not dirExists(output_query)){
 			systRet=system(("mkdir " + output_query).c_str());
-	//~ } else {
-		//~ cout << "[WARNING] You should first remove current " << output << " directory or provide an output directory name using --output" << endl;
-		//~ return 0;
 		}
 		reindeer_query(k, color_load_file, output_query,  record_counts,  record_reads,  threshold,  bgreat_paths_fof,  query, threads, exact);
 		// todo interactive mode

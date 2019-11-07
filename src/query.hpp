@@ -66,16 +66,20 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t color_nu
 				string toWrite;
 				string line=lines[i];
 				if(line[0]=='A' or line[0]=='C' or line[0]=='G' or line[0]=='T'){
+					cout << line << endl;
+					cin.get();
 					vector<int64_t> kmers_colors;
 					vector<uint64_t> color_counts(color_number,0);
 					vector<int64_t> kmer_ids;
 					// I GOT THEIR INDICES
-					if (exact)
-					{
-						kmer_ids=ksl.query_sequence_hash(line);
-					} else {
-						kmer_ids=ksl.query_sequence_minitig(line);
-					}
+					//~ if (exact)
+					//~ {
+						//~ kmer_ids=ksl.query_sequence_hash(line);
+					//~ } else {
+						kmer_ids=ksl.get_rank_query(line);
+						cout << kmer_ids.size() << endl;
+					//~ }
+					cin.get() ;
 					vector<vector<uint64_t>> query_counts(color_number,{0});
 					for(uint64_t i(0);i<kmer_ids.size();++i){
 						// KMERS WITH NEGATIVE INDICE ARE ALIEN/STRANGER/COLORBLIND KMERS
@@ -83,16 +87,24 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t color_nu
 						// I KNOW THE COLORS OF THIS KMER !... I'M BLUE DABEDI DABEDA...
 							if (not record_counts)
 							{
+								cout << "Here " << color_number << endl;
 								for(uint64_t i_color(0);i_color<color_number;++i_color){
+									//~ cout << color_me_amaze.size() << endl;
+									cout << color_me_amaze[i_color].size() << endl;
+									for (auto&& b : color_me_amaze[i_color]){
+										cout << b ;
+									}
+									cout << endl;
 									if(color_me_amaze[i_color][kmer_ids[i]]){
 										kmers_colors.push_back(i_color);
+										cout << "Happens" << endl;
+										//~ cout <<  "colors" << kmers_colors.size() << endl;
 										if (record_reads)
 										{
 											query_unitigID_tmp[i_color].push_back(color_me_amaze_reads[i_color][kmer_ids[i]]);
 
 										}
 									}
-
 								}
 							} else {
 									for(uint64_t i_color(0);i_color<color_number;++i_color)
@@ -104,6 +116,8 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t color_nu
 										}
 									}
 							}
+						//~ } else {
+							//~ cout << "problem" << endl;
 						}
 					}
 					if (record_counts)
@@ -115,6 +129,7 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t color_nu
 					}
 					if (not  kmers_colors.empty())
 					{
+						cout << "###### " <<kmers_colors.size() << endl;
 						sort(kmers_colors.begin(), kmers_colors.end());
 						vector<pair<uint64_t, double_t>> percents;
 						int64_t val(-1);
