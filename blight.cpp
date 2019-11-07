@@ -1394,7 +1394,7 @@ void kmer_Set_Light::file_query_presence(const string& query_file){
 
 
 
-void kmer_Set_Light::file_query_hases(const string& query_file){
+void kmer_Set_Light::file_query_hases(const string& query_file, bool check){
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
 	auto in=new zstr::ifstream(query_file);
 	vector<int64_t> all_hashes;
@@ -1411,9 +1411,11 @@ void kmer_Set_Light::file_query_hases(const string& query_file){
 			}
 			if(query.size()>=k){
 				query_hashes=get_hashes_query(query);
-				#pragma omp critical(query_file)
-				{
-					all_hashes.insert( all_hashes.end(), query_hashes.begin(), query_hashes.end() );
+				if(check){
+					#pragma omp critical(query_file)
+					{
+						all_hashes.insert( all_hashes.end(), query_hashes.begin(), query_hashes.end() );
+					}
 				}
 			}
 		}
@@ -1422,11 +1424,12 @@ void kmer_Set_Light::file_query_hases(const string& query_file){
 	high_resolution_clock::time_point t2 = high_resolution_clock::now();
 	duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
 	cout << "The whole QUERY took me " << time_span.count() << " seconds."<< endl;
+	if(not check){return;}
 	sort(all_hashes.begin(),all_hashes.end());
 	bool bijective(true);
 	for(uint i(0);i<all_hashes.size();++i){
 		if(all_hashes[i]!=i){
-			//~ cout<<all_hashes[i]<<":"<<i<<"	";
+			cout<<all_hashes[i]<<":"<<i<<"	";
 			bijective=false;
 		}
 	}
@@ -1474,7 +1477,7 @@ void kmer_Set_Light::file_query_rank(const string& query_file){
 
 	for(uint i(0);i<all_hashes.size();++i){
 		if(all_hashes[i]!=i){
-			//~ cout<<all_hashes[i]<<":"<<i<<"	";
+			cout<<all_hashes[i]<<":"<<i<<"	";
 			surjective=false;
 		}
 	}

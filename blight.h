@@ -35,6 +35,7 @@ using namespace std;
 
 
 
+
 #define minimizer_type uint32_t
 
 
@@ -267,7 +268,7 @@ public:
 	vector<int64_t> get_rank_query(const string& seq);
 	vector<int64_t>get_hashes_query(const string& seq);
 	void file_query_presence(const string& query_file);
-	void file_query_hases(const string& query_file);
+	void file_query_hases(const string& query_file, bool check=true);
 	void file_query_rank(const string& query_file);
 	void file_query_all_test(const string& query_file,bool);
 

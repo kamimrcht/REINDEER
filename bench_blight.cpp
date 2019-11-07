@@ -43,9 +43,12 @@ int main(int argc, char ** argv){
 	uint m3(4);
 	uint c(1);
 	uint bit(0);
-	bool full(false),dump(false);
-	while ((ch = getopt (argc, argv, "dag:q:k:m:n:s:t:b:e:f:")) != -1){
+	bool full(false),dump(false),hash(false);
+	while ((ch = getopt (argc, argv, "hdag:q:k:m:n:s:t:b:e:f:")) != -1){
 		switch(ch){
+			case 'h':
+				hash=true;
+				break;
 			case 'a':
 				full=true;
 				break;
@@ -83,24 +86,22 @@ int main(int argc, char ** argv){
 	}
 
 
-	if(query=="" and input!=""){
-		query=input;
-	}
 	if(input=="" and query!=""){
 		input=query;
 	}
-	cout<<inputfof<<endl;
 	if((input=="" and inputfof=="") or k==0){
 		cout
-		<<"Mandatory arguments"<<endl
-		<<"-g graph file"<<endl
-		<<"-q query file"<<endl
-		<<"-k k value used for graph (31) "<<endl<<endl
-		<<"-m minimizer size (10)"<<endl
-		<<"-n to create 4^n mphf (m). More mean slower construction but better index, must be <=m"<<endl
-		<<"-s to use 4^s files (3). More reduce memory usage and use more files, must be <=n"<<endl
-		<<"-t core used (1)"<<endl
-		<<"-b bit saved to encode positions (6). Will reduce the memory usage of b bit per kmer but query have to check 2^b kmers"<<endl;
+		<<"Core arguments:"<<endl
+		<<"	-g graph file"<<endl
+		<<"	-q query file"<<endl
+		<<"	-k k value used for graph (31) "<<endl
+		<<"By default only presence benchmark is performed \nUse -h for hash benchmark or -a for a complete test and verification"<<endl
+		<<"Performances arguments:"<<endl
+		<<"	-m minimizer size (10)"<<endl
+		<<"	-n to create 4^n mphf (m). More mean slower construction but better index, must be <=m"<<endl
+		<<"	-s to use 4^s files (4). More reduce memory usage and use more files, must be <=n"<<endl
+		<<"	-t core used (1)"<<endl
+		<<"	-b bit saved to encode positions (0). Will reduce the memory usage of b bit per kmer but query have to check 2^b kmers"<<endl;
 		return 0;
 	}
 
@@ -118,12 +119,15 @@ int main(int argc, char ** argv){
 
 		if(not query.empty()){
 			cout<<"NEW TESTS"<<endl;
-			ksl.file_query_all_test(query,full);
+			if(hash){
+				ksl.file_query_hases(query,false);
+			}else{
+				ksl.file_query_all_test(query,full);
+			}
 		}
 
 		if(dump){
 			cout<<"DUMP"<<endl;
-
 			ksl.dump_disk("index.txt");
 			kmer_Set_Light ksl2("index.txt");
 			if(not query.empty()){
