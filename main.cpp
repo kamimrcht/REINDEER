@@ -214,6 +214,11 @@ int main(int argc, char **argv)
 		cout << "Indexing k-mers...\n\n" << endl;
 		//~ reindeer_index(k, graph, fof, color_dump_file, record_counts,record_reads, output, cl, threads, exact);
 		reindeer_index(k, fof, color_dump_file, record_counts,record_reads, output, cl, threads, exact);
+		if (PE)
+		{
+			string cmd("rm " + output + "/PE*" );
+			systRet = system(cmd.c_str());
+		}
 	} else {
 		
 		cout << "Querying..." << endl;

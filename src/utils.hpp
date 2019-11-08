@@ -151,9 +151,9 @@ void interleave_paired_end(string& fof, string& output)
 {
 	bool tested(false), fastq(true);
 	ifstream file(fof);
+	string new_fof_name(output + "/pe_fof.lst");
 	string sample, sample2, header, output_name;
 	uint file_index(0);
-	string new_fof_name(output + "/pe_fof.lst");
 	ofstream new_fof(new_fof_name);
 	while(not file.eof())
 	{
