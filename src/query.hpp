@@ -136,8 +136,6 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t color_nu
 							percent[c]++;
 						}
 						toWrite += header.substr(0,50) ;
-						//~ if (not record_counts)
-						//~ {
 							for (uint per(0); per < percent.size(); ++per)
 							{
 								percent[per] = percent[per] *100 /(line.size() -k +1);
@@ -147,10 +145,7 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t color_nu
 									{
 										if (record_counts)
 										{
-											//~ for (uint64_t i_col(0); i_col < color_number; ++i_col)
-											//~ {
-													toWrite += "\t" + color_counts[per];
-											//~ }
+											toWrite += "\t" + color_counts[per];
 										} else {
 											toWrite += "\t" + to_string((int)(percent[per]*10)/10) ;
 										}
@@ -166,12 +161,6 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t color_nu
 									}
 								}
 							}
-						//~ } else {
-							//~ for (uint64_t i_col(0); i_col < color_number; ++i_col)
-							//~ {
-									//~ toWrite += " " + color_counts[i_col];
-							//~ }
-						//~ }
 						toWrite += "\n";
 					}
 				}

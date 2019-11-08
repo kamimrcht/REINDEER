@@ -311,8 +311,8 @@ void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, string& colo
 	// ALLOCATE THE COLOR VECTOR
 	//~ doColoring(color_load_file, color_dump_file, fof, ksl, color_me_amaze, color_me_amaze_counts, color_me_amaze_reads, record_counts, record_reads, k, color_number, nb_threads, exact);
 	do_coloring(color_load_file, color_dump_file, fof, ksl, color_me_amaze, color_me_amaze_counts, color_me_amaze_reads, record_counts, record_reads, k, color_number, nb_threads, exact, output);
-	//~ string cmd("rm _blmonocolor.fa.gz");
-	//~ int sysRet(system(cmd.c_str()));
+	string cmd("rm _blmonocolor.fa.gz");
+	int sysRet(system(cmd.c_str()));
 
 }
 

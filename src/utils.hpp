@@ -102,8 +102,86 @@ void parse_bgreat_output(string& input, vector<vector<uint64_t>>& unitigs_to_nod
 
 
 
+void new_paired_end_file(string& input, string& input2, string& output_file, bool fastq)
+{
+	string line,head,head2, sequence,junk;
+	istream* in;
+	istream* in2;
+	in=new zstr::ifstream(input);
+	in2=new zstr::ifstream(input2);
+	ofstream out(output_file);
+	vector<uint> lengths;
+	while(not in->eof()){
+		getline(*in,head);
+		getline(*in2,head2);
+		//~ int c=in.peek();
+		//~ while(c!='>' and c!=EOF){
+			getline(*in,sequence);
+			//~ sequence+=line;
+			//~ c=in.peek();
+		//~ }
+		if(fastq){
+			getline(*in,junk);
+			getline(*in,junk);
+		}
+		out << head << "\n";
+		transform(sequence.begin(), sequence.end(), sequence.begin(), ::toupper);
+		out << sequence << "\n";
+		sequence="";
+		//~ c=in2.peek();
+		//~ while(c!='>' and c!=EOF){
+			getline(*in2,sequence);
+			//~ sequence+=line;
+			//~ c=in2.peek();
+		//~ }
+		if(fastq){
+			getline(*in2,junk);
+			getline(*in2,junk);
+		}
+		out << head2 << "\n";
+		transform(sequence.begin(), sequence.end(), sequence.begin(), ::toupper);
+		out << sequence << "\n";
+		sequence="";
+	}
+	delete(in); delete(in2);
+}
 
 
+void interleave_paired_end(string& fof, string& output)
+{
+	bool tested(false), fastq(true);
+	ifstream file(fof);
+	string sample, sample2, header, output_name;
+	uint file_index(0);
+	string new_fof_name(output + "/pe_fof.lst");
+	ofstream new_fof(new_fof_name);
+	while(not file.eof())
+	{
+		getline(file, sample);
+		if (sample.empty()){break;}
+		getline(file, sample2);
+		if (sample.empty()){break;}
+		if (not tested)
+		{
+			ifstream samp(sample);
+			while(not file.eof())
+			{
+				getline(samp, header);
+				if (header.empty()){break;}
+				if (header[0] != '>')
+					fastq = false;
+				tested = true;
+				break;
+			}
+		}
+		output_name = output + "/PE_" + to_string(file_index);
+		new_paired_end_file(sample, sample2, output_name, fastq);
+		new_fof << output_name << endl;
+		++file_index;
+	}
+	fof = new_fof_name;
+
+}
 
 uint64_t harmonic_mean(vector<uint64_t>& counts)
 {

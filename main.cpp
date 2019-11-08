@@ -41,7 +41,7 @@ uint k(31), threads(1);
 bool record_counts(false);
 bool record_reads(false);
 bool exact(false);
-bool bcalm(false), do_Index(false), do_Query(false);
+bool bcalm(false), do_Index(false), do_Query(false), PE(false);
 uint threshold(40);
 
 void PrintHelp()
@@ -62,6 +62,7 @@ void PrintHelp()
             "--count                 :     retain abundances instead of presence/absence\n"
             "--exact                 :     retain exact mean abundances and presence/absence (increased disk use)\n"
             "--bcalm                 :     launch bcalm on each single read dataset\n\n"
+            "--paired-end            :     index using paired-end files\n\n"
             //~ "-g                      :     provide union DBG of all datasets\n\n"
             "* Output options\n"
             "-o <file>               :     directory to write output files\n"
@@ -97,6 +98,7 @@ void ProcessArgs(int argc, char** argv)
             {"exact", no_argument, nullptr, 'e'},
             {"bcalm", no_argument, nullptr, 'b'},
             {"query", no_argument, nullptr, 'Q'},
+            {"paired-end", no_argument, nullptr, 'P'},
             {nullptr, no_argument, nullptr, 0}
     };
 
@@ -135,6 +137,9 @@ void ProcessArgs(int argc, char** argv)
 				break;
 			case 'e':
 				exact=true;
+				break;
+			case 'P':
+				PE=true;
 				break;
 			case 'S':
 				threshold=stoi(optarg);
@@ -180,6 +185,10 @@ int main(int argc, char **argv)
 	
 	if (do_Index) //indexing only
 	{
+		if (PE)
+		{
+			interleave_paired_end(fof, output);
+		}
 		if (bcalm)
 		{
 			cout << "Computing De Bruijn graphs on each dataset using Bcalm2...\n\n" << endl;
