@@ -27,6 +27,9 @@ void write_color_matrix(const string& output_file, vector<vector<uint8_t>>& colo
 	}
 	delete out;
 }
+
+
+
 void write_color_matrix_counts(const string& output_file, vector<vector<uint16_t>>& color_matrix){
 	auto out=new zstr::ofstream(output_file);
 	uint64_t color_number(color_matrix.size());
@@ -39,10 +42,13 @@ void write_color_matrix_counts(const string& output_file, vector<vector<uint16_t
 	for (uint vec(0); vec < color_matrix.size(); ++vec)
 	{
 		auto point =&(color_matrix[vec][0]);
-		out->write((char*)point,(line_size));
+		out->write((char*)point,(line_size)*2);
 	}
+	
 	delete out;
 }
+
+
 
 void write_color_matrix_reads(const string& output_file, vector<vector<uint32_t>>& color_matrix){
 	auto out=new zstr::ofstream(output_file);
@@ -56,7 +62,7 @@ void write_color_matrix_reads(const string& output_file, vector<vector<uint32_t>
 	for (uint vec(0); vec < color_matrix.size(); ++vec)
 	{
 		auto point =&(color_matrix[vec][0]);
-		out->write((char*)point,(line_size));
+		out->write((char*)point,(line_size)*4);
 	}
 	delete out;
 }
@@ -94,6 +100,7 @@ vector<vector<uint16_t>> load_written_matrix_counts(const string& input_file){
 	uint64_t color_number;
 	uint64_t line_size;
 	auto in=new zstr::ifstream(input_file);
+	
 	in-> read(reinterpret_cast<char *>(&color_number), sizeof(uint64_t));
 	in-> read(reinterpret_cast<char *>(&line_size), sizeof(uint64_t));
 	vector<uint16_t> colorV(line_size,0);
@@ -101,7 +108,7 @@ vector<vector<uint16_t>> load_written_matrix_counts(const string& input_file){
 	//~ auto in=new zstr::ifstream(input);
 	for (uint vec(0); vec < color_matrix.size(); ++vec)
 	{
-		in->read( (char*)((color_matrix[vec].data())) , line_size);
+		in->read( (char*)((color_matrix[vec].data())) , line_size*2);
 	}
 	uint i(0);
 	delete(in);
@@ -124,7 +131,7 @@ vector<vector<uint32_t>> load_written_matrix_reads(const string& input_file){
 	//~ auto in=new zstr::ifstream(input);
 	for (uint vec(0); vec < color_matrix.size(); ++vec)
 	{
-		in->read( (char*)((color_matrix[vec].data())) , line_size);
+		in->read( (char*)((color_matrix[vec].data())) , line_size*4);
 	}
 	uint i(0);
 	delete(in);

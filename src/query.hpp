@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <chrono>
 #include <map>
+#include <unordered_set>
 #include <set>
 #include <mutex>
 #include <ctype.h>
@@ -48,6 +49,13 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t color_nu
 	vector<string> lines;
 	vector<vector<uint32_t>> query_unitigID_tmp;
 	// FOR EACH LINE OF THE QUERY FILE
+	//~ for (auto&& c : color_me_amaze_counts){
+		//~ for (auto&& u : c)
+		//~ {
+			//~ count << u << " " ; 
+		//~ }
+	//~ }
+	//~ cout << endl;
 	while(not query_file.eof()){
 		#pragma omp parallel num_threads(nb_threads)
 		{
@@ -66,70 +74,70 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t color_nu
 				string toWrite;
 				string line=lines[i];
 				if(line[0]=='A' or line[0]=='C' or line[0]=='G' or line[0]=='T'){
-					cout << line << endl;
-					cin.get();
 					vector<int64_t> kmers_colors;
-					vector<uint64_t> color_counts(color_number,0);
+					vector<string> color_counts;
 					vector<int64_t> kmer_ids;
-					// I GOT THEIR INDICES
-					//~ if (exact)
-					//~ {
-						//~ kmer_ids=ksl.query_sequence_hash(line);
-					//~ } else {
-						kmer_ids=ksl.get_rank_query(line);
-						cout << kmer_ids.size() << endl;
-					//~ }
-					cin.get() ;
+					kmer_ids=ksl.get_rank_query(line);
 					vector<vector<uint64_t>> query_counts(color_number,{0});
 					for(uint64_t i(0);i<kmer_ids.size();++i){
-						// KMERS WITH NEGATIVE INDICE ARE ALIEN/STRANGER/COLORBLIND KMERS
-						if(kmer_ids[i]>=0){
-						// I KNOW THE COLORS OF THIS KMER !... I'M BLUE DABEDI DABEDA...
+						if(kmer_ids[i]>=0)
+						{
 							if (not record_counts)
 							{
-								cout << "Here " << color_number << endl;
 								for(uint64_t i_color(0);i_color<color_number;++i_color){
-									//~ cout << color_me_amaze.size() << endl;
-									cout << color_me_amaze[i_color].size() << endl;
-									for (auto&& b : color_me_amaze[i_color]){
-										cout << b ;
-									}
-									cout << endl;
 									if(color_me_amaze[i_color][kmer_ids[i]]){
 										kmers_colors.push_back(i_color);
-										cout << "Happens" << endl;
-										//~ cout <<  "colors" << kmers_colors.size() << endl;
 										if (record_reads)
 										{
 											query_unitigID_tmp[i_color].push_back(color_me_amaze_reads[i_color][kmer_ids[i]]);
-
 										}
 									}
 								}
 							} else {
-									for(uint64_t i_color(0);i_color<color_number;++i_color)
+								for(uint64_t i_color(0);i_color<color_number;++i_color)
+								{
+									if(color_me_amaze_counts[i_color][kmer_ids[i]] > 0)
 									{
-										if(color_me_amaze_counts[i_color][kmer_ids[i]])
+										kmers_colors.push_back(i_color);
+										if (query_counts[i_color].back() == 0)
 										{
-											kmers_colors.push_back(i_color);
+											query_counts[i_color].back() = color_me_amaze_counts[i_color][kmer_ids[i]];
+										} else {
 											query_counts[i_color].push_back(color_me_amaze_counts[i_color][kmer_ids[i]]);
 										}
 									}
+								}
 							}
-						//~ } else {
-							//~ cout << "problem" << endl;
 						}
 					}
 					if (record_counts)
 					{
-						for (uint i(0); i < query_counts.size(); ++i){
-							color_counts[i] = harmonic_mean(query_counts[i]);
-
+						// compute a string that sums up the count(s) for each dataset
+						for (auto&& c: query_counts)
+						{
+							if (c.size() > 1)
+							{
+								//~ unordered_set<uint16_t> uniq_counts(c.begin(), c.end());
+								string toW("");
+								uint16_t last(0);
+								for (auto&&div_count : c)
+								{
+									if (last != div_count)
+										toW += to_string(div_count) + ":";
+									last = div_count;
+								}
+								toW.pop_back(); // remove last :
+								color_counts.push_back(toW);
+							} else {
+								color_counts.push_back(to_string(c.back()));
+							}
 						}
+						//~ for (uint i(0); i < query_counts.size(); ++i){
+							//~ color_counts[i] = harmonic_mean(query_counts[i]); // changer
+						//~ }
 					}
 					if (not  kmers_colors.empty())
 					{
-						cout << "###### " <<kmers_colors.size() << endl;
 						sort(kmers_colors.begin(), kmers_colors.end());
 						vector<pair<uint64_t, double_t>> percents;
 						int64_t val(-1);
@@ -156,14 +164,14 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t color_nu
 									}
 									else
 									{								//  appliquer aussi ici le threshold pour le cas on où query des reads
-
 										query_unitigID.push_back(query_unitigID_tmp[percents[per].first]);
 									}
 								}
 							}
 							else
 							{
-								toWrite += " dataset" + to_string(percents[per].first+1) + ":" +  to_string(color_counts[percents[per].first]);
+								//~ toWrite += " dataset" + to_string(percents[per].first+1) + ":" +  to_string(color_counts[percents[per].first]);
+								toWrite += " dataset" + to_string(percents[per].first+1) + ":" +  color_counts[percents[per].first];
 							}
 						}
 						toWrite += "\n";
