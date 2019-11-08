@@ -85,12 +85,8 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t color_nu
 							if (not record_counts)
 							{
 								for(uint64_t i_color(0);i_color<color_number;++i_color){
-									if(color_me_amaze[i_color][kmer_ids[i]]){
+									if(color_me_amaze[i_color][kmer_ids[i]] ){
 										kmers_colors.push_back(i_color);
-										if (record_reads)
-										{
-											query_unitigID_tmp[i_color].push_back(color_me_amaze_reads[i_color][kmer_ids[i]]);
-										}
 									}
 								}
 							} else {
@@ -117,7 +113,6 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t color_nu
 						{
 							if (c.size() > 1)
 							{
-								//~ unordered_set<uint16_t> uniq_counts(c.begin(), c.end());
 								string toW("");
 								uint16_t last(0);
 								for (auto&&div_count : c)
@@ -132,63 +127,51 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t color_nu
 								color_counts.push_back(to_string(c.back()));
 							}
 						}
-						//~ for (uint i(0); i < query_counts.size(); ++i){
-							//~ color_counts[i] = harmonic_mean(query_counts[i]); // changer
-						//~ }
 					}
 					if (not  kmers_colors.empty())
 					{
-						sort(kmers_colors.begin(), kmers_colors.end());
-						vector<pair<uint64_t, double_t>> percents;
-						int64_t val(-1);
-						for (uint64_t i_col(0); i_col < kmers_colors.size(); ++i_col)
+						vector<double_t> percent(color_number, 0);
+						for (auto&& c : kmers_colors)
 						{
-							if (kmers_colors[i_col] != val){
-								percents.push_back({kmers_colors[i_col],1});
-								val = kmers_colors[i_col];
-							} else {
-								percents.back().second++;
-							}
+							percent[c]++;
 						}
 						toWrite += header.substr(0,50) ;
-						if (not record_counts)
-						{
-							for (uint per(0); per < percents.size(); ++per)
+						//~ if (not record_counts)
+						//~ {
+							for (uint per(0); per < percent.size(); ++per)
 							{
-							
-								percents[per].second = percents[per].second *100 /(line.size() -k +1);
-								if (percents[per].second >= (double_t) threshold )
+								percent[per] = percent[per] *100 /(line.size() -k +1);
+								if (percent[per] >= (double_t) threshold )
 								{
 									if (not record_reads)
 									{
-										//~ toWrite += " dataset" + to_string(percents[per].first+1) + ":" + to_string((int)(percents[per].second*10)/10) + "%";
-										toWrite += "\t" + to_string((int)(percents[per].second*10)/10) ;
+										if (record_counts)
+										{
+											//~ for (uint64_t i_col(0); i_col < color_number; ++i_col)
+											//~ {
+													toWrite += "\t" + color_counts[per];
+											//~ }
+										} else {
+											toWrite += "\t" + to_string((int)(percent[per]*10)/10) ;
+										}
 									}
 									else
 									{								//  appliquer aussi ici le threshold pour le cas on où query des reads
-										query_unitigID.push_back(query_unitigID_tmp[percents[per].first]);
+										query_unitigID.push_back(query_unitigID_tmp[percent[per]]);
 									}
 								} else {
 									if (not record_reads)
 									{
-										toWrite += "\t 0";
+										toWrite += "\t0";
 									}
 								}
 							}
-						} else {
-							for (uint64_t i_col(0); i_col < kmers_colors.size(); ++i_col)
-							{
-								
-								//~ if (percents[per].second >= (double_t) threshold )
-								//~ {
-								//~ toWrite += " dataset" + to_string(percents[per].first+1) + ":" +  to_string(color_counts[percents[per].first]);
-									toWrite += " " + color_counts[i_col];
-								//~ } else {
-									//~ toWrite += "\t 0";
-								//~ }
-							
-							}
-						}
+						//~ } else {
+							//~ for (uint64_t i_col(0); i_col < color_number; ++i_col)
+							//~ {
+									//~ toWrite += " " + color_counts[i_col];
+							//~ }
+						//~ }
 						toWrite += "\n";
 					}
 				}

@@ -75,7 +75,7 @@ void PrintHelp()
             "* Options\n"
             "--abundance             :     query abundances (to use if the index was built with --abundance)\n"
             "--exact                 :     to use if the index was built with --exact\n"
-
+            "-S                      :     Threshold: at least S% of the query k-mers must be in a dataset to be reported.\n"
             "-q <FASTA>              :     FASTA query file with query sequences\n\n\n"
             "-o <file>               :     directory to write output files\n"
 
