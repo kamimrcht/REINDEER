@@ -150,28 +150,43 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t color_nu
 								percents.back().second++;
 							}
 						}
-						toWrite += header ;
-						for (uint per(0); per < percents.size(); ++per)
+						toWrite += header.substr(0,50) ;
+						if (not record_counts)
 						{
-							if (not record_counts)
+							for (uint per(0); per < percents.size(); ++per)
 							{
+							
 								percents[per].second = percents[per].second *100 /(line.size() -k +1);
 								if (percents[per].second >= (double_t) threshold )
 								{
 									if (not record_reads)
 									{
-										toWrite += " dataset" + to_string(percents[per].first+1) + ":" + to_string((int)(percents[per].second*10)/10) + "%";
+										//~ toWrite += " dataset" + to_string(percents[per].first+1) + ":" + to_string((int)(percents[per].second*10)/10) + "%";
+										toWrite += "\t" + to_string((int)(percents[per].second*10)/10) ;
 									}
 									else
 									{								//  appliquer aussi ici le threshold pour le cas on où query des reads
 										query_unitigID.push_back(query_unitigID_tmp[percents[per].first]);
 									}
+								} else {
+									if (not record_reads)
+									{
+										toWrite += "\t 0";
+									}
 								}
 							}
-							else
+						} else {
+							for (uint64_t i_col(0); i_col < kmers_colors.size(); ++i_col)
 							{
+								
+								//~ if (percents[per].second >= (double_t) threshold )
+								//~ {
 								//~ toWrite += " dataset" + to_string(percents[per].first+1) + ":" +  to_string(color_counts[percents[per].first]);
-								toWrite += " dataset" + to_string(percents[per].first+1) + ":" +  color_counts[percents[per].first];
+									toWrite += " " + color_counts[i_col];
+								//~ } else {
+									//~ toWrite += "\t 0";
+								//~ }
+							
 							}
 						}
 						toWrite += "\n";
