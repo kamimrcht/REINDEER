@@ -751,9 +751,9 @@ string kmer_Set_Light::compaction(const string& seq1,const string& seq2, bool re
 
 
 void kmer_Set_Light::get_monocolor_minitigs(const  vector<string>& minitigs, const vector<int64_t>& color, const  vector<uint16_t>& coverage, zstr::ofstream* out, const string& mini,uint64_t number_color){
-	unordered_map<kmer,kmer> next_kmer;
-	unordered_map<kmer,kmer> previous_kmer;
-	unordered_map<kmer,vector<uint16_t>> kmer_color;
+	unordered_map<kmer,kmer,KmerHasher> next_kmer;
+	unordered_map<kmer,kmer,KmerHasher> previous_kmer;
+	unordered_map<kmer,vector<uint16_t>,KmerHasher> kmer_color;
 	vector<uint16_t> bit_vector(number_color,0);
 	//ASSOCIATE INFO TO KMERS
 	for(uint64_t i_mini(0);i_mini<minitigs.size();++i_mini){
@@ -1429,7 +1429,7 @@ void kmer_Set_Light::file_query_hases(const string& query_file, bool check){
 	bool bijective(true);
 	for(uint i(0);i<all_hashes.size();++i){
 		if(all_hashes[i]!=i){
-			cout<<all_hashes[i]<<":"<<i<<"	";
+			//~ cout<<all_hashes[i]<<":"<<i<<"	";
 			bijective=false;
 		}
 	}
@@ -1477,7 +1477,7 @@ void kmer_Set_Light::file_query_rank(const string& query_file){
 
 	for(uint i(0);i<all_hashes.size();++i){
 		if(all_hashes[i]!=i){
-			cout<<all_hashes[i]<<":"<<i<<"	";
+			//~ cout<<all_hashes[i]<<":"<<i<<"	";
 			surjective=false;
 		}
 	}
@@ -1543,7 +1543,7 @@ void dump_vector_bool(const vector<bool> V, ostream* out ){
 		cmp++;
 		if(cmp==8){
 			buf.push_back(output);
-			if(buf.size()==4000){
+			if(buf.size()==8000){
 				out->write((char*)buf.data(),buf.size());
 				buf.clear();
 			}
@@ -1559,8 +1559,8 @@ void dump_vector_bool(const vector<bool> V, ostream* out ){
 
 
 
-void read_vector_bool(vector<bool>& V, ifstream* out, uint64_t n_bits ){
-	uint64_t size_buffer(4000);
+void read_vector_bool(vector<bool>& V, zstr::ifstream* out, uint64_t n_bits ){
+	uint64_t size_buffer(8000);
 	uint64_t n_bytes(n_bits/8+(n_bits%8==0 ? 0 :1));
 	uint64_t position(0);
 	vector<uint8_t> buf(size_buffer,0);
@@ -1599,7 +1599,7 @@ void kmer_Set_Light::dump_disk(const string& output_file){
 	filebuf fb;
 	remove(output_file.c_str());
 	fb.open (output_file, ios::out | ios::binary | ios::trunc);
-	ostream out(&fb);
+	zstr::ostream out(&fb);
 
 
 	bm::serializer<bm::bvector<> > bvs;
@@ -1647,7 +1647,7 @@ void kmer_Set_Light::dump_disk(const string& output_file){
 		out.write(reinterpret_cast<const char*>(&all_buckets[i].current_pos),sizeof(all_buckets[i].current_pos));
 		out.write(reinterpret_cast<const char*>(&all_buckets[i].start),sizeof(all_buckets[i].start));
 	}
-
+	out<<flush;
 	fb.close();
 	cout<<"Index dump"<<endl;
 }
@@ -1656,7 +1656,7 @@ void kmer_Set_Light::dump_disk(const string& output_file){
 
 kmer_Set_Light::kmer_Set_Light(const string& index_file){
 
-	ifstream out(index_file);
+	zstr::ifstream out(index_file);
 
 	uint64_t sz;
 	out.read(reinterpret_cast< char*>(&sz),sizeof(sz));
@@ -1702,10 +1702,8 @@ kmer_Set_Light::kmer_Set_Light(const string& index_file){
 		}
 	}
 
-
 	read_vector_bool(bucketSeq,&out,bucketSeq_size);
 	read_vector_bool(positions,&out,positions_size);
-
 
 	for(uint64_t i(0);i<minimizer_number;++i){
 		out.read(reinterpret_cast< char*>(&all_buckets[i].skmer_number),sizeof(all_buckets[i].skmer_number));

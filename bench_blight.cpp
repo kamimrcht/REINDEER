@@ -128,8 +128,9 @@ int main(int argc, char ** argv){
 
 		if(dump){
 			cout<<"DUMP"<<endl;
-			ksl.dump_disk("index.txt");
-			kmer_Set_Light ksl2("index.txt");
+			ksl.dump_disk("index.txt.gz");
+			//~ system("gzip -d index.txt.gz");
+			kmer_Set_Light ksl2("index.txt.gz");
 			if(not query.empty()){
 				for(uint i(0);i<1;++i)
 					ksl2.file_query_all_test(query,full);

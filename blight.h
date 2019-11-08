@@ -21,8 +21,9 @@
 #include "encoding.h"
 #include "zstr.hpp"
 #include "bmserial.h"
-
-
+#define BMSSE2OPT
+#define BMSSE42OPT
+#define BMAVX2OPT
 
 using namespace std;
 
@@ -32,6 +33,13 @@ using namespace std;
 // FOR k<64
 //~ #define kmer __uint128_t
 
+
+struct KmerHasher
+{
+  size_t operator()(const kmer& k) const{
+    return((uint64_t)k);
+	}
+};
 
 
 
@@ -151,7 +159,7 @@ public:
 		, m1(m1_val)
 		, m2(m1_val)
 		, m3(m3_val)
-		, minimizer_size_graph(m2_val < m1 ? max(m1+2,(uint64_t)11) : m2_val)
+		, minimizer_size_graph(m1+2)
 		, coreNumber(coreNumber_val)
 		, bit_saved_sub(bit_to_save)
 
