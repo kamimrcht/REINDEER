@@ -24,7 +24,6 @@ string bcalm_launcher_single(string& input_fof, uint k, uint threads, string& ma
 	int systemRet;
 	string outputDir(main_output + "/" +output_bcalm);
 	systemRet=system(("mkdir -p "+ outputDir).c_str());
-	//~ if(systemRet == -1){}
 	string input, output;
 	vector<string> list_graphs;
 	get_list_graphs_fof(input_fof, list_graphs);
@@ -34,7 +33,6 @@ string bcalm_launcher_single(string& input_fof, uint k, uint threads, string& ma
 	for (uint i(0); i < list_graphs.size(); ++i)
 	{
 		input = list_graphs[i];
-		//~ output = split(split(list_graphs[i], '.')[0], '/').back();
 		output = split_utils(split_utils(list_graphs[i], '/').back(), '.')[0];
 		cmd = "./bin/bcalm -in " + input + " -kmer-size " + to_string(k) + " -abundance-min 2  -nb-cores " + to_string(threads) + " -out " + output;
 		cout << cmd << endl;
@@ -53,7 +51,6 @@ string bcalm_launcher_single(string& input_fof, uint k, uint threads, string& ma
 		ptr = realpath(symlinkpath, actualpath);
 		string full_path(ptr);
 		file_list_graphs << full_path << endl;
-		//~ cout << string(full_path) << "/" << outputDir << "/" << output + ".unitigs.fa" << endl;
 	}
 	return main_output + "/graphs.lst";
 }
@@ -92,12 +89,6 @@ string getRealPaths(string& fof, string& main_output)
 	for (uint i(0); i < list_graphs.size(); ++i)
 	{
 		input = list_graphs[i];
-		//~ names = list_graphs[i];
-		//~ f = &(input[0]);
-		//~ char* full_path = getcwd(f, names.size());
-		//~ string fp(full_path);
-		//~ cout << fp << endl;
-		//~ file_list_graphs << fp << "/" << names << endl;
 		char *symlinkpath = &input[0];
 		char actualpath [PATH_MAX+1];
 		char *ptr;

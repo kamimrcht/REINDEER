@@ -114,13 +114,9 @@ void new_paired_end_file(string& input, string& input2, string& output_file, boo
 	while(not in->eof()){
 		getline(*in,head);
 		getline(*in2,head2);
-		//~ int c=in.peek();
-		//~ while(c!='>' and c!=EOF){
-			getline(*in,sequence);
-			//~ sequence+=line;
-			//~ c=in.peek();
-		//~ }
-		if(fastq){
+		getline(*in,sequence);
+		if(fastq)
+		{
 			getline(*in,junk);
 			getline(*in,junk);
 		}
@@ -128,13 +124,9 @@ void new_paired_end_file(string& input, string& input2, string& output_file, boo
 		transform(sequence.begin(), sequence.end(), sequence.begin(), ::toupper);
 		out << sequence << "\n";
 		sequence="";
-		//~ c=in2.peek();
-		//~ while(c!='>' and c!=EOF){
-			getline(*in2,sequence);
-			//~ sequence+=line;
-			//~ c=in2.peek();
-		//~ }
-		if(fastq){
+		getline(*in2,sequence);
+		if(fastq)
+		{
 			getline(*in2,junk);
 			getline(*in2,junk);
 		}

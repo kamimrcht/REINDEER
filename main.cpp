@@ -117,9 +117,6 @@ void ProcessArgs(int argc, char** argv)
 			case 'f':
 				fof=optarg;
 				break;
-			//~ case 'g':
-				//~ graph=optarg;
-				//~ break;
 			case 'Q':
 				do_Query=true;
 				break;
@@ -173,9 +170,6 @@ int main(int argc, char **argv)
 	
 	if (not dirExists(output)){
 		systRet=system(("mkdir " + output).c_str());
-	//~ } else {
-		//~ cout << "[WARNING] You should first remove current " << output << " directory or provide an output directory name using --output" << endl;
-		//~ return 0;
 	}
 	if ( (do_Index and do_Query) or not(do_Index or do_Query) ){
 		cout << "You must choose: either indexing or querying\n" << endl;
@@ -201,18 +195,11 @@ int main(int argc, char **argv)
 			PrintHelp();
 			return 0;
 		}
-
-		//~ if (graph.empty()){//todo try when fof is directly passed
-			//~ cout << "Computing Union De Bruijn graph using Bcalm2...\n\n" << endl;
-			//~ graph = bcalm_launcher_union(fof,  k,  threads, output, output_union_bcalm);
-		//~ }
 		string cl("");
 		bcalm_cleanup();
-		
 		string cmd("cp " + fof + " " + output + "/graphs.lst");
 		systRet=system(cmd.c_str());
 		cout << "Indexing k-mers...\n\n" << endl;
-		//~ reindeer_index(k, graph, fof, color_dump_file, record_counts,record_reads, output, cl, threads, exact);
 		reindeer_index(k, fof, color_dump_file, record_counts,record_reads, output, cl, threads, exact);
 		if (PE)
 		{
@@ -227,7 +214,6 @@ int main(int argc, char **argv)
 			systRet=system(("mkdir " + output_query).c_str());
 		}
 		reindeer_query(k, color_load_file, output_query,  record_counts,  record_reads,  threshold,  bgreat_paths_fof,  query, threads, exact);
-		// todo interactive mode
 	}
     return 0;
 }

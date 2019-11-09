@@ -60,20 +60,14 @@ void reindeer_index(uint k, string& fof,  string& color_dump_file, bool record_c
 	vector<vector<uint8_t>> color_me_amaze;
 	vector<vector<uint16_t>> color_me_amaze_counts;
 	vector<vector<uint32_t>> color_me_amaze_reads;
-	//~ kmer_Set_Light ksl(k,m1,m2,m3,c,bit,ex);
 	kmer_Set_Light ksl(k,m1,m2,m3,c,bit);
 	int systemRet;
-
 	// BUILD THE INDEX
-	//~ if (not graph.empty())
-	//~ {
-		high_resolution_clock::time_point t12 = high_resolution_clock::now();
-		build_index(k, m1, m2, m3, c, bit, color_load_file, color_dump_file, fof, color_me_amaze, color_me_amaze_counts, color_me_amaze_reads, record_counts, record_reads, color_number, ksl, threads, exact, output);
-		duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
-		systemRet=system(("mv " + color_dump_file + " " + output ).c_str());
-		cout<<"Index building and Coloration done: "<< time_span12.count() << " seconds."<<endl;
-	//~ }
-	//~ int systRet = system(cmd.c_str());
+	high_resolution_clock::time_point t12 = high_resolution_clock::now();
+	build_index(k, m1, m2, m3, c, bit, color_load_file, color_dump_file, fof, color_me_amaze, color_me_amaze_counts, color_me_amaze_reads, record_counts, record_reads, color_number, ksl, threads, exact, output);
+	duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
+	systemRet=system(("mv " + color_dump_file + " " + output ).c_str());
+	cout<<"Index building and Coloration done: "<< time_span12.count() << " seconds."<<endl;
 }
 
 
@@ -98,19 +92,12 @@ void reindeer_query(uint k, string& output,string& output_query, bool record_cou
 	// QUERY //
 	string graph = getRealPath( "bcalm_union_out/union_graph.unitigs.fa", output);
 	string fof( getRealPath("graphs.lst", output));
-	//~ string graph("/home/camillemarchet/dev/test/REINDEER/output_reindeer/bcalm_union_out/union_graph.unitigs.fa");
-	//~ string fof(output + "/home/camillemarchet/dev/test/REINDEER/output_reindeer/graphs.lst");
 	string color_dump_file("");
 	string color_load_file(getRealPath("reindeer_matrix.gz", output));
-	//~ string color_load_file("/home/camillemarchet/dev/test/REINDEER/output_reindeer/reindeer_matrix");
 	uint64_t color_number(get_color_number(fof));
 	vector<vector<uint8_t>> color_me_amaze;
 	vector<vector<uint16_t>> color_me_amaze_counts;
 	vector<vector<uint32_t>> color_me_amaze_reads;
-	//~ kmer_Set_Light ksl(k,m1,m2,m3,c,bit);
-	//~ build_index(k, m1, m2, m3, c, bit, color_load_file, color_dump_file, fof, color_me_amaze, color_me_amaze_counts, color_me_amaze_reads, record_counts, record_reads, color_number, ksl, threads, exact, output);
-	//~ kmer_Set_Light ksl(output + "/reindeer_index.gz");
-	//~ ksl.file_query_all_test("test/query_test.fa",true
 	uint nb_threads(1);
 	kmer_Set_Light* ksl = load_index(k, color_load_file, color_dump_file, fof, color_me_amaze, color_me_amaze_counts, color_me_amaze_reads, record_counts, record_reads, color_number, nb_threads, exact, output);
 	cout << "\nComputing query..." << endl;

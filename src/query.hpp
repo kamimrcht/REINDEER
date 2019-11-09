@@ -39,6 +39,100 @@ using namespace chrono;
 
 
 
+void get_colors_counts(vector<int64_t>& kmer_ids, bool record_counts, uint64_t color_number, vector<int64_t>& kmers_colors, vector<vector<uint8_t>>& color_me_amaze, vector<vector<uint16_t>>& color_me_amaze_counts,vector<vector<uint32_t>>& color_me_amaze_reads, vector<vector<uint64_t>>& query_counts )
+{
+	for(uint64_t i(0);i<kmer_ids.size();++i)
+	{
+		if(kmer_ids[i]>=0)
+		{
+			if (not record_counts)
+			{
+				for(uint64_t i_color(0);i_color<color_number;++i_color)
+				{
+					if(color_me_amaze[i_color][kmer_ids[i]] )
+						kmers_colors.push_back(i_color);
+				}
+			} else {
+				for(uint64_t i_color(0);i_color<color_number;++i_color)
+				{
+					if(color_me_amaze_counts[i_color][kmer_ids[i]] > 0)
+					{
+						kmers_colors.push_back(i_color);
+						if (query_counts[i_color].back() == 0)
+						{
+							query_counts[i_color].back() = color_me_amaze_counts[i_color][kmer_ids[i]];
+						} else {
+							query_counts[i_color].push_back(color_me_amaze_counts[i_color][kmer_ids[i]]);
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+
+void write_count_output(bool record_counts, vector<vector<uint64_t>>& query_counts, vector<string>& color_counts )
+{
+	if (record_counts)
+	{
+		// compute a string that sums up the count(s) for each dataset
+		for (auto&& c: query_counts)
+		{
+			if (c.size() > 1)
+			{
+				string toW("");
+				uint16_t last(0);
+				for (auto&&div_count : c)
+				{
+					if (last != div_count)
+						toW += to_string(div_count) + ":";
+					last = div_count;
+				}
+				toW.pop_back(); // remove last :
+				color_counts.push_back(toW);
+			} else {
+				color_counts.push_back(to_string(c.back()));
+			}
+		}
+	}
+}
+
+
+void write_output(vector<int64_t>& kmers_colors, string& toWrite, bool record_reads, bool record_counts, vector<vector<uint32_t>>& query_unitigID,vector<vector<uint32_t>>& query_unitigID_tmp,  uint64_t& color_number, string& header, string& line, uint k, uint threshold, vector<string>& color_counts)
+{
+	vector<double_t> percent(color_number, 0);
+	for (auto&& c : kmers_colors)
+	{
+		percent[c]++;
+	}
+	toWrite += header.substr(0,50) ;
+	for (uint per(0); per < percent.size(); ++per)
+	{
+		percent[per] = percent[per] *100 /(line.size() -k +1);
+		if (percent[per] >= (double_t) threshold )
+		{
+			if (not record_reads)
+			{
+				if (record_counts)
+				{
+					toWrite += "\t" + color_counts[per];
+				} else {
+					toWrite += "\t" + to_string((int)(percent[per]*10)/10) ;
+				}
+			}
+			else
+			{	//  appliquer aussi ici le threshold pour le cas on où query des reads
+				query_unitigID.push_back(query_unitigID_tmp[percent[per]]);
+			}
+		} else {
+			if (not record_reads)
+				toWrite += "\t0";
+		}
+	}
+	toWrite += "\n";
+}
+
 
 void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t color_number, vector<vector<uint8_t>>& color_me_amaze, vector<vector<uint16_t>>& color_me_amaze_counts,vector<vector<uint32_t>>& color_me_amaze_reads, uint k, bool record_counts, bool record_reads, uint threshold,vector<vector<uint32_t>>& query_unitigID, uint nb_threads, bool exact){
 	ifstream query_file(input);
@@ -49,13 +143,6 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t color_nu
 	vector<string> lines;
 	vector<vector<uint32_t>> query_unitigID_tmp;
 	// FOR EACH LINE OF THE QUERY FILE
-	//~ for (auto&& c : color_me_amaze_counts){
-		//~ for (auto&& u : c)
-		//~ {
-			//~ count << u << " " ; 
-		//~ }
-	//~ }
-	//~ cout << endl;
 	while(not query_file.eof()){
 		#pragma omp parallel num_threads(nb_threads)
 		{
@@ -73,100 +160,22 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t color_nu
 			for(i=(0);i<lines.size();++i){
 				string toWrite;
 				string line=lines[i];
-				if(line[0]=='A' or line[0]=='C' or line[0]=='G' or line[0]=='T'){
+				if(line[0]=='A' or line[0]=='C' or line[0]=='G' or line[0]=='T')
+				{
 					vector<int64_t> kmers_colors;
 					vector<string> color_counts;
 					vector<int64_t> kmer_ids;
 					kmer_ids=ksl.get_rank_query(line);
 					vector<vector<uint64_t>> query_counts(color_number,{0});
-					for(uint64_t i(0);i<kmer_ids.size();++i){
-						if(kmer_ids[i]>=0)
-						{
-							if (not record_counts)
-							{
-								for(uint64_t i_color(0);i_color<color_number;++i_color){
-									if(color_me_amaze[i_color][kmer_ids[i]] ){
-										kmers_colors.push_back(i_color);
-									}
-								}
-							} else {
-								for(uint64_t i_color(0);i_color<color_number;++i_color)
-								{
-									if(color_me_amaze_counts[i_color][kmer_ids[i]] > 0)
-									{
-										kmers_colors.push_back(i_color);
-										if (query_counts[i_color].back() == 0)
-										{
-											query_counts[i_color].back() = color_me_amaze_counts[i_color][kmer_ids[i]];
-										} else {
-											query_counts[i_color].push_back(color_me_amaze_counts[i_color][kmer_ids[i]]);
-										}
-									}
-								}
-							}
-						}
-					}
+					// get datasets/counts in datasets corresponding to the sequence's kmers
+					get_colors_counts(kmer_ids,  record_counts,  color_number, kmers_colors, color_me_amaze,  color_me_amaze_counts, color_me_amaze_reads, query_counts);
 					if (record_counts)
-					{
-						// compute a string that sums up the count(s) for each dataset
-						for (auto&& c: query_counts)
-						{
-							if (c.size() > 1)
-							{
-								string toW("");
-								uint16_t last(0);
-								for (auto&&div_count : c)
-								{
-									if (last != div_count)
-										toW += to_string(div_count) + ":";
-									last = div_count;
-								}
-								toW.pop_back(); // remove last :
-								color_counts.push_back(toW);
-							} else {
-								color_counts.push_back(to_string(c.back()));
-							}
-						}
-					}
+						write_count_output(record_counts,  query_counts, color_counts );
 					if (not  kmers_colors.empty())
-					{
-						vector<double_t> percent(color_number, 0);
-						for (auto&& c : kmers_colors)
-						{
-							percent[c]++;
-						}
-						toWrite += header.substr(0,50) ;
-							for (uint per(0); per < percent.size(); ++per)
-							{
-								percent[per] = percent[per] *100 /(line.size() -k +1);
-								if (percent[per] >= (double_t) threshold )
-								{
-									if (not record_reads)
-									{
-										if (record_counts)
-										{
-											toWrite += "\t" + color_counts[per];
-										} else {
-											toWrite += "\t" + to_string((int)(percent[per]*10)/10) ;
-										}
-									}
-									else
-									{	//  appliquer aussi ici le threshold pour le cas on où query des reads
-										query_unitigID.push_back(query_unitigID_tmp[percent[per]]);
-									}
-								} else {
-									if (not record_reads)
-									{
-										toWrite += "\t0";
-									}
-								}
-							}
-						toWrite += "\n";
-					}
-				}
-				else if (line[0]=='@' or line[0]=='>')
-				{
-					header = line;
+						write_output( kmers_colors, toWrite,  record_reads,  record_counts,  query_unitigID,query_unitigID_tmp,  color_number, header, line, k, threshold, color_counts);
+				} else {
+					if (line[0]=='@' or line[0]=='>')
+						header = line;
 				}
 				#pragma omp ordered
 				if (toWrite != header +"\n")
@@ -331,6 +340,7 @@ void perform_query(kmer_Set_Light& ksl, uint64_t color_number, vector<vector<uin
 			}
 		}
 	}
+	delete(&ksl);
 }
 
 #endif
