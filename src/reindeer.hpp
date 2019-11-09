@@ -101,22 +101,20 @@ void reindeer_query(uint k, string& output,string& output_query, bool record_cou
 	//~ string graph("/home/camillemarchet/dev/test/REINDEER/output_reindeer/bcalm_union_out/union_graph.unitigs.fa");
 	//~ string fof(output + "/home/camillemarchet/dev/test/REINDEER/output_reindeer/graphs.lst");
 	string color_dump_file("");
-	string color_load_file(getRealPath("reindeer_matrix", output));
+	string color_load_file(getRealPath("reindeer_matrix.gz", output));
 	//~ string color_load_file("/home/camillemarchet/dev/test/REINDEER/output_reindeer/reindeer_matrix");
 	uint64_t color_number(get_color_number(fof));
-	kmer_Set_Light ksl(k,m1,m2,m3,c,bit);
 	vector<vector<uint8_t>> color_me_amaze;
 	vector<vector<uint16_t>> color_me_amaze_counts;
 	vector<vector<uint32_t>> color_me_amaze_reads;
-
-	build_index(k, m1, m2, m3, c, bit, color_load_file, color_dump_file, fof, color_me_amaze, color_me_amaze_counts, color_me_amaze_reads, record_counts, record_reads, color_number, ksl, threads, exact, output);
-
-	//~ color_me_amaze=vector<vector<uint8_t>>(color_number,vector<uint8_t>(ksl.total_nb_minitigs,0));
-	//~ color_me_amaze=vector<vector<uint8_t>>(color_number,vector<uint8_t>(ksl.number_super_kmer,0));
-	//~ color_me_amaze_counts=vector<vector<uint16_t>>(color_number,vector<uint16_t>(ksl.total_nb_minitigs,0));
-	//~ ksl.construct_index_fof(fof);
+	//~ kmer_Set_Light ksl(k,m1,m2,m3,c,bit);
+	//~ build_index(k, m1, m2, m3, c, bit, color_load_file, color_dump_file, fof, color_me_amaze, color_me_amaze_counts, color_me_amaze_reads, record_counts, record_reads, color_number, ksl, threads, exact, output);
+	//~ kmer_Set_Light ksl(output + "/reindeer_index.gz");
+	//~ ksl.file_query_all_test("test/query_test.fa",true
+	uint nb_threads(1);
+	kmer_Set_Light* ksl = load_index(k, color_load_file, color_dump_file, fof, color_me_amaze, color_me_amaze_counts, color_me_amaze_reads, record_counts, record_reads, color_number, nb_threads, exact, output);
 	cout << "\nComputing query..." << endl;
-	perform_query(ksl, color_number, color_me_amaze,  color_me_amaze_counts,color_me_amaze_reads, k, record_counts,  record_reads,  threshold, bgreat_paths_fof, query, output_query, threads, exact);
+	perform_query(*ksl, color_number, color_me_amaze,  color_me_amaze_counts,color_me_amaze_reads, k, record_counts,  record_reads,  threshold, bgreat_paths_fof, query, output_query, threads, exact);
 }
 
 

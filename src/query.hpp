@@ -151,7 +151,7 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t color_nu
 										}
 									}
 									else
-									{								//  appliquer aussi ici le threshold pour le cas on où query des reads
+									{	//  appliquer aussi ici le threshold pour le cas on où query des reads
 										query_unitigID.push_back(query_unitigID_tmp[percent[per]]);
 									}
 								} else {
@@ -180,6 +180,8 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t color_nu
 	query_file.close();
 	out.close();
 }
+
+
 
 void getReadsOfUnitig(string& bgreat_output_file, uint32_t unitigID, vector<uint64_t>& reads_u){
 	string input(bgreat_output_file);
