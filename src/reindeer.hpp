@@ -90,7 +90,7 @@ uint get_color_number(string& fof)
 void reindeer_query(uint k, string& output,string& output_query, bool record_counts, bool record_reads, uint threshold, string& bgreat_paths_fof, string& query, uint threads, bool exact)
 {
 	// QUERY //
-	string graph = getRealPath( "bcalm_union_out/union_graph.unitigs.fa", output);
+	//~ string graph = getRealPath( "bcalm_union_out/union_graph.unitigs.fa", output);
 	string fof( getRealPath("graphs.lst", output));
 	string color_dump_file("");
 	string color_load_file(getRealPath("reindeer_matrix.gz", output));

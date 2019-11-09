@@ -181,6 +181,7 @@ int main(int argc, char **argv)
 	{
 		if (PE)
 		{
+			cout << "Writing paired-end file...\n" << endl;
 			interleave_paired_end(fof, output);
 		}
 		if (bcalm)

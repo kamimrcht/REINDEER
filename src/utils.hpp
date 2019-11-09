@@ -119,6 +119,7 @@ void new_paired_end_file(string& input, string& input2, string& output_file, boo
 		{
 			getline(*in,junk);
 			getline(*in,junk);
+			head[0] = '>';
 		}
 		out << head << "\n";
 		transform(sequence.begin(), sequence.end(), sequence.begin(), ::toupper);
@@ -129,6 +130,7 @@ void new_paired_end_file(string& input, string& input2, string& output_file, boo
 		{
 			getline(*in2,junk);
 			getline(*in2,junk);
+			head2[0] = '>';
 		}
 		out << head2 << "\n";
 		transform(sequence.begin(), sequence.end(), sequence.begin(), ::toupper);
@@ -160,7 +162,7 @@ void interleave_paired_end(string& fof, string& output)
 			{
 				getline(samp, header);
 				if (header.empty()){break;}
-				if (header[0] != '>')
+				if (header[0] == '>')
 					fastq = false;
 				tested = true;
 				break;

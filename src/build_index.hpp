@@ -193,7 +193,9 @@ kmer_Set_Light* load_index(uint k, string& color_load_file, string& color_dump_f
 
 void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, string& color_load_file, string& color_dump_file, string& fof, vector<vector<uint8_t>>& color_me_amaze, vector<vector<uint16_t>>& color_me_amaze_counts, vector<vector<uint32_t>>& color_me_amaze_reads, bool record_counts, bool record_reads, uint64_t& color_number, kmer_Set_Light& ksl, uint nb_threads, bool exact, string& output)
 {
+	cout << fof << endl;
 	ksl.construct_index_fof(fof);
+	cout << "done" << endl;
 	do_coloring(color_load_file, color_dump_file, fof, &ksl, color_me_amaze, color_me_amaze_counts, color_me_amaze_reads, record_counts, record_reads, k, color_number, nb_threads, exact, output);
 	ksl.dump_disk(output + "/reindeer_index.gz");
 	string cmd("rm -f _blmonocolor.fa.gz");
