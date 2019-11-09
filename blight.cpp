@@ -229,6 +229,9 @@ void kmer_Set_Light::reset(){
 	}
 	for(uint64_t i(0);i<minimizer_number.value();++i){
 		//~ all_buckets[i].start=0;
+		nuc_minimizer[i]=0;
+		start_bucket[i]=0;
+		current_pos[i]=0;
 		all_buckets[i].skmer_number=0;
 	}
 }
@@ -244,6 +247,9 @@ void kmer_Set_Light::construct_index_fof(const string& input_file){
 		cout<<"s should be inferior to n"<<endl;
 		exit(0);
 	}
+	nuc_minimizer=new uint32_t[minimizer_number.value()];
+	current_pos=new uint64_t[minimizer_number.value()];
+	start_bucket=new uint64_t[minimizer_number.value()];
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
 	ifstream infof(input_file);
 	string file;
@@ -279,6 +285,9 @@ void kmer_Set_Light::construct_index_fof(const string& input_file){
 	cout<<"Super bucket created: "<< time_span12.count() << " seconds."<<endl;
 
 	read_super_buckets("_blout");
+	delete nuc_minimizer;
+	delete start_bucket;
+	delete current_pos;
 
 	high_resolution_clock::time_point t13 = high_resolution_clock::now();
 	duration<double> time_span13 = duration_cast<duration<double>>(t13 - t12);
