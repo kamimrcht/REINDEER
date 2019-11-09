@@ -43,10 +43,7 @@ struct KmerHasher
 
 
 
-
 #define minimizer_type uint32_t
-
-
 
 
 //~ typedef SingleHashFunctor128 hasher_t;
@@ -60,10 +57,9 @@ typedef boomphf::mphf<  kmer, hasher_t  > MPHF;
 
 
 struct bucket_minimizer{
-	uint64_t current_pos;
-	uint64_t start;
+	//~ uint64_t start;
 	//~ uint32_t abundance_minimizer;
-	uint32_t nuc_minimizer;
+	//~ uint32_t nuc_minimizer;
 	uint32_t skmer_number;
 };
 
@@ -138,6 +134,9 @@ public:
 	mutex positions_mutex[4096];
 
 	bucket_minimizer* all_buckets;
+	uint32_t* nuc_minimizer;
+	uint64_t* current_pos;
+	uint64_t* start_bucket;
 	uint32_t* abundance_minimizer_temp;
 	uint8_t* abundance_minimizer;
 	info_mphf* all_mphf;
@@ -183,16 +182,13 @@ public:
 
 		}
 		for(uint64_t i(0);i<minimizer_number.value();++i){
-			all_buckets[i].current_pos=0;
-			all_buckets[i].start=0;
-			all_buckets[i].nuc_minimizer=0;
+			//~ all_buckets[i].current_pos=0;
+			//~ all_buckets[i].start=0;
+			//~ all_buckets[i].nuc_minimizer=0;
 			all_buckets[i].skmer_number=0;
 		}
 		number_query=0;
-		struct rlimit rl;
-		getrlimit (RLIMIT_NOFILE, &rl);
-		rl.rlim_cur = number_superbuckets.value()+5;
-		setrlimit (RLIMIT_NOFILE, &rl);
+
 	}
 
 	kmer_Set_Light(const string& index_file);
@@ -200,6 +196,7 @@ public:
 	~kmer_Set_Light () {
 		delete position_super_kmers_RS;
 		delete[] all_buckets;
+
 		for(uint64_t i(0);i<mphf_number.value();++i){
 			if( not all_mphf[i].empty){
 				delete all_mphf[i].kmer_MPHF;
@@ -217,7 +214,6 @@ public:
 	}
 
 	bool exists(const kmer& query);
-	void create_super_buckets(const string& input_file);
 	void read_super_buckets(const string& input_file);
 	void create_mphf_mem(uint64_t beg,uint64_t end);
 	void create_mphf_disk(uint64_t beg,uint64_t end);
@@ -251,7 +247,7 @@ public:
 	pair<uint64_t,uint64_t> query_sequence_bool(const string& query);
 	string kmer2str(kmer num);
 	kmer regular_minimizer(kmer seq);
-	void create_super_buckets_regular(const string&,int dbg_id=0);
+	void create_super_buckets(const string&,int dbg_id=0);
 	int64_t query_kmer_hash(kmer canon);
 	int64_t query_get_hash(const kmer canon,kmer minimizer);
 	vector<int64_t> query_sequence_hash(const string& query);
@@ -269,8 +265,6 @@ public:
 	string compaction(const string& seq1,const string& seq2,bool);
 	void construct_index_fof(const string& input_file);
 	void reset();
-
-
 	void dump_disk(const string& output_file);
 	vector<bool> get_presence_query(const string& seq);
 	vector<int64_t> get_rank_query(const string& seq);
@@ -279,129 +273,11 @@ public:
 	void file_query_hases(const string& query_file, bool check=true);
 	void file_query_rank(const string& query_file);
 	void file_query_all_test(const string& query_file,bool);
-
-
+	__uint128_t rcb(const __uint128_t&);
+	uint64_t rcb(const uint64_t&);
+	uint64_t canonize(uint64_t x,uint64_t n);
+	kmer get_kmer(uint64_t pos);
 };
-
-
-
-// iterator from disk file of u_int64_t with buffered read,   todo template
-class bfile_iterator : public std::iterator<std::forward_iterator_tag, kmer>{
-	public:
-
-	bfile_iterator()
-	: _is(nullptr)
-	, _pos(0) ,_inbuff (0), _cptread(0)
-	{
-		_buffsize = 10000;
-		_buffer = (kmer *) malloc(_buffsize*sizeof(kmer));
-	}
-
-	bfile_iterator(const bfile_iterator& cr)
-	{
-		_buffsize = cr._buffsize;
-		_pos = cr._pos;
-		_is = cr._is;
-		_buffer = (kmer *) malloc(_buffsize*sizeof(kmer));
-		 memcpy(_buffer,cr._buffer,_buffsize*sizeof(kmer) );
-		_inbuff = cr._inbuff;
-		_cptread = cr._cptread;
-		_elem = cr._elem;
-	}
-
-	bfile_iterator(FILE* is): _is(is) , _pos(0) ,_inbuff (0), _cptread(0)
-	{
-		_buffsize = 10000;
-		_buffer = (kmer *) malloc(_buffsize*sizeof(kmer));
-		int reso = fseek(_is,0,SEEK_SET);
-		advance();
-	}
-
-	~bfile_iterator()
-	{
-		if(_buffer!=NULL)
-			free(_buffer);
-	}
-
-
-	kmer const& operator*()  {  return _elem;  }
-
-	bfile_iterator& operator++()
-	{
-		advance();
-		return *this;
-	}
-
-	friend bool operator==(bfile_iterator const& lhs, bfile_iterator const& rhs)
-	{
-		if (!lhs._is || !rhs._is)  {  if (!lhs._is && !rhs._is) {  return true; } else {  return false;  } }
-		assert(lhs._is == rhs._is);
-		return rhs._pos == lhs._pos;
-	}
-
-	friend bool operator!=(bfile_iterator const& lhs, bfile_iterator const& rhs)  {  return !(lhs == rhs);  }
-	private:
-	void advance()
-	{
-		_pos++;
-
-		if(_cptread >= _inbuff)
-		{
-			int res = fread(_buffer,sizeof(kmer),_buffsize,_is);
-			_inbuff = res; _cptread = 0;
-
-			if(res == 0)
-			{
-				_is = nullptr;
-				_pos = 0;
-				return;
-			}
-		}
-
-		_elem = _buffer[_cptread];
-		_cptread ++;
-	}
-	kmer _elem;
-	FILE * _is;
-	unsigned long _pos;
-
-	kmer * _buffer; // for buffered read
-	int _inbuff, _cptread;
-	int _buffsize;
-};
-
-
-class file_binary{
-	public:
-
-	file_binary(const char* filename)
-	{
-		_is = fopen(filename, "rb");
-		if (!_is) {
-			throw std::invalid_argument("Error opening " + std::string(filename));
-		}
-	}
-
-	~file_binary()
-	{
-		fclose(_is);
-	}
-
-	bfile_iterator begin() const
-	{
-		return bfile_iterator(_is);
-	}
-
-	bfile_iterator end() const {return bfile_iterator(); }
-
-	size_t        size () const  {  return 0;  }//todo ?
-
-	private:
-	FILE * _is;
-};
-
-
-
 
 
 
