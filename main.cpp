@@ -54,34 +54,33 @@ void PrintHelp()
 			"\n                    INDEX BUILDING\n"
 			"* Mandatory\n"
             "--index <file>          :     Indexing mode\n"
-            "-f                      :     file of file for colors\n"
+            "-f                      :     File of file for colors\n"
             "                              either you've already computed each DBG on your samples, in this case the fof is a list of unitig files\n"
             "                              OR you need Bcalm to be run tp obtain unitigs per sample, in this case use --bcalm option\n"
             "* Options\n"
             "-k                      :     k-mer size (default 31)\n"
-            "--count                 :     retain abundances instead of presence/absence\n"
+            "--count                 :     Retain abundances instead of presence/absence\n"
             //~ "--exact                 :     retain exact mean abundances and presence/absence (increased disk use)\n"
-            "--bcalm                 :     launch bcalm on each single read dataset\n\n"
-            "--paired-end            :     index using paired-end files\n\n"
+            "--bcalm                 :     Launch bcalm on each single read dataset\n\n"
+            "--paired-end            :     Index using paired-end files (provide pairs of files one after another in the fof). Works only with --bcalm.\n\n"
             //~ "-g                      :     provide union DBG of all datasets\n\n"
             "* Output options\n"
-            "-o <file>               :     directory to write output files\n"
-            "-w <file>               :     choose a filename to write index on disk\n"
+            "-o <file>               :     Directory to write output files (default: output_reindeer)\n"
+            //~ "-w <file>               :     choose a filename to write index on disk\n"
 
 
             "                    QUERY\n"
 			"* Mandatory\n"
 			"--query                 :     Query mode\n"
-			"-l                      :     Reindeer index directory\n"
+			"-l                      :     Reindeer index directory (should be output_reindeer if you've not used -o during indexing)\n"
             "* Options\n"
-            "--count             :     query abundances (to use if the index was built with --count)\n"
-            "--exact                 :     to use if the index was built with --exact\n"
-            "-S                      :     Threshold: at least S% of the query k-mers must be in a dataset to be reported.\n"
+            "--count                 :     Query abundances (index construction with --count mandatory)\n"
+            "-S                      :     Threshold: at least S% of the query k-mers must be in a dataset to be reported\n"
             "-q <FASTA>              :     FASTA query file with query sequences\n\n\n"
-            "-o <file>               :     directory to write output files\n"
+            "-o <file>               :     Directory to write output files (default: output_reindeer/query_results)\n"
 
             "                    Performances\n"
-            "-t <integer>            :     number of threads (default 1)\n\n\n"
+            "-t <integer>            :     Number of threads (default 1)\n\n\n"
 
             "--help                  :     Show help\n";
     exit(1);
@@ -144,9 +143,9 @@ void ProcessArgs(int argc, char** argv)
 			case 'l':
 				color_load_file=optarg;
 				break;
-			case 'w':
-				color_dump_file=optarg;
-				break;
+			//~ case 'w':
+				//~ color_dump_file=optarg;
+				//~ break;
 			case 'o':
 				output=optarg;
 				break;
