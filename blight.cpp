@@ -268,13 +268,11 @@ void kmer_Set_Light::construct_index_fof(const string& input_file){
 		#pragma omp parallel for num_threads(coreNumber)
 		for(uint i_superbuckets=0; i_superbuckets<number_superbuckets.value(); ++i_superbuckets){
 			//SORT SUPERBUCKETS
-			if(exists_test("_blout"+to_string(i_superbuckets))){
-				string cmd("sort _blout"+to_string(i_superbuckets)+" --output _blsout"+to_string(i_superbuckets));
-				uint res(system(cmd.c_str()));
-				if(res!=0){cout<<"Problem with sort command"<<endl;exit(0);}
-				merge_super_buckets("_blsout"+to_string(i_superbuckets),i_file-1,&out);
-				remove(("_blsout"+to_string(i_superbuckets)).c_str());
-			}
+			string cmd("sort _blout"+to_string(i_superbuckets)+" --output _blsout"+to_string(i_superbuckets));
+			uint res(system(cmd.c_str()));
+			if(res!=0){cout<<"Problem with sort command"<<endl;exit(0);}
+			merge_super_buckets("_blsout"+to_string(i_superbuckets),i_file-1,&out);
+			remove(("_blsout"+to_string(i_superbuckets)).c_str());
 		}
 	}
 	reset();
