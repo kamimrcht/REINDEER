@@ -60,7 +60,7 @@ void PrintHelp()
             "* Options\n"
             "-k                      :     k-mer size (default 31)\n"
             "--count                 :     retain abundances instead of presence/absence\n"
-            "--exact                 :     retain exact mean abundances and presence/absence (increased disk use)\n"
+            //~ "--exact                 :     retain exact mean abundances and presence/absence (increased disk use)\n"
             "--bcalm                 :     launch bcalm on each single read dataset\n\n"
             "--paired-end            :     index using paired-end files\n\n"
             //~ "-g                      :     provide union DBG of all datasets\n\n"
@@ -74,7 +74,7 @@ void PrintHelp()
 			"--query                 :     Query mode\n"
 			"-l                      :     Reindeer index directory\n"
             "* Options\n"
-            "--abundance             :     query abundances (to use if the index was built with --abundance)\n"
+            "--count             :     query abundances (to use if the index was built with --count)\n"
             "--exact                 :     to use if the index was built with --exact\n"
             "-S                      :     Threshold: at least S% of the query k-mers must be in a dataset to be reported.\n"
             "-q <FASTA>              :     FASTA query file with query sequences\n\n\n"
@@ -95,7 +95,7 @@ void ProcessArgs(int argc, char** argv)
             {"index", no_argument, nullptr, 'i'},
             {"help", no_argument, nullptr, 'h'},
             {"count", no_argument, nullptr, 'c'},
-            {"exact", no_argument, nullptr, 'e'},
+            //~ {"exact", no_argument, nullptr, 'e'},
             {"bcalm", no_argument, nullptr, 'b'},
             {"query", no_argument, nullptr, 'Q'},
             {"paired-end", no_argument, nullptr, 'P'},
@@ -132,9 +132,9 @@ void ProcessArgs(int argc, char** argv)
 			case 'c':
 				record_counts=true;
 				break;
-			case 'e':
-				exact=true;
-				break;
+			//~ case 'e':
+				//~ exact=true;
+				//~ break;
 			case 'P':
 				PE=true;
 				break;
