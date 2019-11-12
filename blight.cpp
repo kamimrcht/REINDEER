@@ -262,36 +262,47 @@ void kmer_Set_Light::construct_index_fof(const string& input_file){
 			create_super_buckets(file,i_file++);
 		}
 	}
+	high_resolution_clock::time_point t2 = high_resolution_clock::now();
 	cout<<"Partition created"<<endl;
+	duration<double> time_span12 = duration_cast<duration<double>>(t2 - t1);
+	cout<<time_span12.count() << " seconds."<<endl;
+
 	{
 		zstr::ofstream out("_blmonocolor.fa.gz",ios::app);
 		#pragma omp parallel for num_threads(coreNumber)
 		for(uint i_superbuckets=0; i_superbuckets<number_superbuckets.value(); ++i_superbuckets){
 			//SORT SUPERBUCKETS
-			string cmd("sort _blout"+to_string(i_superbuckets)+" --output _blsout"+to_string(i_superbuckets));
-			uint res(system(cmd.c_str()));
-			if(res!=0){cout<<"Problem with sort command"<<endl;exit(0);}
-			merge_super_buckets("_blsout"+to_string(i_superbuckets),i_file-1,&out);
+			//~ cout<<"decomp"<<endl;
+			//~ decompress_file("_blout"+to_string(i_superbuckets), "_ublout"+to_string(i_superbuckets));
+				//~ cout<<"sort"<<endl;
+			//~ string cmd("sort _blout"+to_string(i_superbuckets)+" --output _blsout"+to_string(i_superbuckets));
+			//~ uint res(system(cmd.c_str()));
+			//~ if(res!=0){cout<<"Problem with sort command"<<endl;exit(0);}
+			merge_super_buckets_mem("_blout"+to_string(i_superbuckets),i_file-1,&out);
 			remove(("_blsout"+to_string(i_superbuckets)).c_str());
 		}
 	}
 	reset();
+	high_resolution_clock::time_point t3 = high_resolution_clock::now();
 	cout<<"Monocolor minitig computed, now regular indexing start"<<endl;
+	duration<double> time_span32 = duration_cast<duration<double>>(t3 - t2);
+	cout<<time_span32.count() << " seconds."<<endl;
+
 	create_super_buckets("_blmonocolor.fa.gz");
 
-	high_resolution_clock::time_point t12 = high_resolution_clock::now();
-	duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
-	cout<<"Super bucket created: "<< time_span12.count() << " seconds."<<endl;
+	high_resolution_clock::time_point t4 = high_resolution_clock::now();
+	duration<double> time_span43 = duration_cast<duration<double>>(t4 - t3);
+	cout<<"Super buckets created: "<< time_span43.count() << " seconds."<<endl;
 
 	read_super_buckets("_blout");
 	delete nuc_minimizer;
 	delete start_bucket;
 	delete current_pos;
 
-	high_resolution_clock::time_point t13 = high_resolution_clock::now();
-	duration<double> time_span13 = duration_cast<duration<double>>(t13 - t12);
-	cout<<"Indexes created: "<< time_span13.count() << " seconds."<<endl;
-	duration<double> time_spant = duration_cast<duration<double>>(t13 - t1);
+	high_resolution_clock::time_point t5 = high_resolution_clock::now();
+	duration<double> time_span53 = duration_cast<duration<double>>(t5 - t3);
+	cout<<"Indexes created: "<< time_span53.count() << " seconds."<<endl;
+	duration<double> time_spant = duration_cast<duration<double>>(t5 - t1);
 	cout << "The whole indexing took me " << time_spant.count() << " seconds."<< endl;
 }
 
@@ -300,7 +311,7 @@ void kmer_Set_Light::construct_index_fof(const string& input_file){
 void kmer_Set_Light::create_super_buckets(const string& input_file,int dbg_id){
 	struct rlimit rl;
 	getrlimit (RLIMIT_NOFILE, &rl);
-	rl.rlim_cur = number_superbuckets.value()+5;
+	rl.rlim_cur = number_superbuckets.value()+10;
 	setrlimit (RLIMIT_NOFILE, &rl);
 	uint64_t total_nuc_number(0);
 	auto inUnitigs=new zstr::ifstream(input_file);
@@ -315,7 +326,7 @@ void kmer_Set_Light::create_super_buckets(const string& input_file,int dbg_id){
 			out_files.push_back(out);
 		}else{
 			//FOR SPLITTER
-			auto out =new ofstream("_blout"+to_string(i),ofstream::app);
+			auto out =new  zstr::ofstream("_blout"+to_string(i),ofstream::app);
 			out_files.push_back(out);
 		}
 
@@ -480,8 +491,8 @@ string kmer_Set_Light::compaction(const string& seq1,const string& seq2, bool re
 void kmer_Set_Light::get_monocolor_minitigs(const  vector<string>& minitigs, const vector<int64_t>& color, const  vector<uint16_t>& coverage, zstr::ofstream* out, const string& mini,uint64_t number_color){
 	unordered_map<kmer,kmer,KmerHasher> next_kmer;
 	unordered_map<kmer,kmer,KmerHasher> previous_kmer;
-	unordered_map<kmer,vector<uint16_t>,KmerHasher> kmer_color;
-	vector<uint16_t> bit_vector(number_color,0);
+	unordered_map<kmer,vector<uint32_t>,KmerHasher> kmer_color;
+	vector<uint32_t> bit_vector(number_color,0);
 	//ASSOCIATE INFO TO KMERS
 	for(uint64_t i_mini(0);i_mini<minitigs.size();++i_mini){
 		kmer seq(str2num(minitigs[i_mini].substr(0,k))),rcSeq(rcb(seq)),canon(min_k(seq,rcSeq)),prev(-1);
@@ -500,6 +511,90 @@ void kmer_Set_Light::get_monocolor_minitigs(const  vector<string>& minitigs, con
 				kmer_color[canon]=bit_vector;
 			}
 			kmer_color[canon][color[i_mini]-1]=coverage[i_mini];
+			if(next_kmer.count(prev)==0){
+				next_kmer[prev]=canon;
+			}else{
+				if(next_kmer[prev]!=canon and next_kmer[prev]!=(kmer)-1){
+					next_kmer[prev]=(kmer)-1;
+				}
+			}
+			if(previous_kmer.count(canon)==0){
+				previous_kmer[canon]=prev;
+			}else{
+				if(previous_kmer[canon]!=prev and previous_kmer[canon]!=(kmer)-1){
+					previous_kmer[canon]=(kmer)-1;
+				}
+			}
+		}
+	}
+	string monocolor,compact;
+	uint kmer_number_check(0);
+	//FOREACH KMER COMPUTE MAXIMAL MONOCOLOR MINITIG
+	for (auto& it: kmer_color) {
+		kmer_number_check++;
+		if(not it.second.empty()){
+			auto dumpcolor(it.second);
+			kmer canon=it.first;
+			monocolor=kmer2str(canon);
+			//GO FORWARD
+			while(true){
+				if(next_kmer.count(canon)==0){break;}
+				if(next_kmer[canon]==(kmer)-1){break;}
+				if(kmer_color[next_kmer[canon]]!=it.second){break;}
+				kmer_color[next_kmer[canon]].clear();
+				compact=compaction(monocolor,kmer2str(next_kmer[canon]));
+				if(compact.empty()){break;}
+				monocolor=compact;
+				canon=next_kmer[canon];
+			}
+			//GO BACKWARD
+			canon=it.first;
+			while(true){
+				if(previous_kmer.count(canon)==0){break;}
+				if(previous_kmer[canon]==(kmer)-1){break;}
+				if(kmer_color[previous_kmer[canon]]!=it.second){break;}
+				kmer_color[previous_kmer[canon]].clear();
+				compact=compaction(monocolor,kmer2str(previous_kmer[canon]));
+				if(compact.empty()){break;}
+				monocolor=compact;
+				canon=previous_kmer[canon];
+			}
+			#pragma omp critical (monocolorFile)
+			{
+				*out<<">"+mini<<color_coverage2str(dumpcolor)<<"\n"<<monocolor<<"\n";
+			}
+		}
+	}
+}
+
+
+
+void kmer_Set_Light::get_monocolor_minitigs_mem(const  vector<minitig>& minitigs , zstr::ofstream* out, const string& mini,uint64_t number_color){
+	unordered_map<kmer,kmer,KmerHasher> next_kmer;
+	unordered_map<kmer,kmer,KmerHasher> previous_kmer;
+	unordered_map<kmer,vector<uint32_t>,KmerHasher> kmer_color;
+	//TODO MERGE THE 3 TABLE
+	vector<uint32_t> bit_vector(number_color,0);
+	string sequence;
+	//ASSOCIATE INFO TO KMERS
+	for(uint64_t i_mini(0);i_mini<minitigs.size();++i_mini){
+		sequence=bool2strv(minitigs[i_mini].sequence);
+		kmer seq(str2num(sequence.substr(0,k))),rcSeq(rcb(seq)),canon(min_k(seq,rcSeq)),prev(-1);
+		canon=(min_k(seq, rcSeq));
+		if(kmer_color.count(canon)==0){
+			kmer_color[canon]=bit_vector;
+		}
+		kmer_color[canon][minitigs[i_mini].color-1]=minitigs[i_mini].coverage;
+
+		for(uint i(0);i+k<sequence.size();++i){
+			prev=canon;
+			updateK(seq,sequence[i+k]);
+			updateRCK(rcSeq,sequence[i+k]);
+			canon=(min_k(seq, rcSeq));
+			if(kmer_color.count(canon)==0){
+				kmer_color[canon]=bit_vector;
+			}
+			kmer_color[canon][minitigs[i_mini].color-1]=minitigs[i_mini].coverage;
 			if(next_kmer.count(prev)==0){
 				next_kmer[prev]=canon;
 			}else{
@@ -583,6 +678,44 @@ void kmer_Set_Light::merge_super_buckets(const string& input_file, uint64_t numb
 		}
 	}
 	get_monocolor_minitigs(minitigs,color,coverage,out,to_string(minimizer),number_color);
+}
+
+
+
+void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t number_color, zstr::ofstream* out){
+	string line;
+	vector<string> splitted;
+	vector<vector<minitig>> minimizer_to_minitigs(minimizer_number.value()/number_superbuckets.value());
+	//~ cout<<minimizer_to_minitigs.size()<<endl;
+	vector<int32_t> minimizers(minimizer_to_minitigs.size(),-1);
+	//~ cout<<"open"<<endl;
+	zstr::ifstream in(input_file);
+	//~ cout<<"go parsing"<<endl;
+	while(not in.eof() and in.good()){
+		getline(in,line);
+		if(not line.empty()){
+			splitted=split(line,':');
+			minitig mini;
+			mini.color=stoi(splitted[1]);
+			mini.sequence=str2boolv(splitted[2]);
+			if (splitted[2]!=bool2strv(str2boolv(splitted[2]))){
+				cout<<splitted[2]<<" "<<bool2strv(str2boolv(splitted[2]))<<endl;
+				cout<<"NOPE"<<endl;
+				exit(0);
+			}
+			mini.coverage=(stoi(splitted[3]));
+			minimizer_to_minitigs[stoi(splitted[0])%minimizer_to_minitigs.size()].push_back(mini);
+			minimizers[stoi(splitted[0])%minimizer_to_minitigs.size()]=(stoi(splitted[0]));
+			//~ cout<<stoi(splitted[0])%minimizer_to_minitigs.size()<<" "<<(stoi(splitted[0]))<<endl;
+		}
+	}
+	//~ cout<<"MERGE SUPER BUCKET PARSING OK"<<endl;
+	for(uint i(0);i<minimizer_to_minitigs.size();i++){
+		if(minimizers[i]!=-1){
+			//~ cout<<"go le minimizer"<<minimizers[i]<<endl;cin.get();
+			get_monocolor_minitigs_mem(minimizer_to_minitigs[i],out,to_string(minimizers[i]),number_color);
+		}
+	}
 }
 
 

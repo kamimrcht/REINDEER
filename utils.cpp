@@ -123,6 +123,46 @@ kmer nuc2intrc(char c){
 
 
 
+vector<bool> str2boolv(const string& str){
+	vector<bool> res;
+	for(uint64_t i(0);i<str.size();++i){
+		if(str[i]=='G' or str[i]=='T'){
+			res.push_back(true);
+		}else{
+			res.push_back(false);
+		}
+		if(str[i]=='C' or str[i]=='G'){
+			res.push_back(true);
+		}else{
+			res.push_back(false);
+		}
+	}
+	return res;
+}
+
+
+string bool2strv(const vector<bool>& v){
+	string res;
+	for(uint64_t i(0);i<v.size();i+=2){
+		if(v[i]){
+			if(v[i+1]){
+				res+='G';
+			}else{
+				res+='T';
+			}
+		}else{
+			if(v[i+1]){
+				res+='C';
+			}else{
+				res+='A';
+			}
+		}
+	}
+	return res;
+}
+
+
+
 kmer hash64shift(kmer key)
 {
   key = (~key) + (key << 21); // key = (key << 21) - key - 1;
@@ -137,6 +177,41 @@ kmer hash64shift(kmer key)
 
 
 
+void cat_stream( istream& is,  ostream& os)
+{
+    const  streamsize buff_size = 1 << 16;
+    char * buff = new char [buff_size];
+    while (true)
+    {
+        is.read(buff, buff_size);
+         streamsize cnt = is.gcount();
+        if (cnt == 0) break;
+        os.write(buff, cnt);
+    }
+    delete [] buff;
+} // cat_stream
+
+
+
+void decompress_file(const string& file, const string& output_file)
+{
+    //
+    // Set up sink ostream
+    //
+     unique_ptr<  ofstream > ofs_p;
+     ostream * os_p = & cout;
+    if (not output_file.empty())
+    {
+        ofs_p =  unique_ptr<  ofstream >(new strict_fstream::ofstream(output_file));
+        os_p = ofs_p.get();
+    }
+    //
+    // Process files
+    //
+
+	unique_ptr<  istream > is_p(new zstr::ifstream(file));
+	cat_stream(*is_p, *os_p);
+} // decompress_files
 
 
 
@@ -213,7 +288,7 @@ kmer hash64shift(kmer key)
 
 
 
-bool exists_test (const std::string& name) {
+bool exists_test (const  string& name) {
   struct stat buffer;
   return (stat (name.c_str(), &buffer) == 0);
 }
@@ -366,7 +441,7 @@ string bool2str(vector<bool> V){
 
 
 
-string color_coverage2str(const vector<uint16_t>& V){
+string color_coverage2str(const vector<uint32_t>& V){
 	string result;
 	for(uint64_t i(0);i<V.size();++i){
 		result+=":"+to_string(V[i]);

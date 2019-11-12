@@ -75,6 +75,16 @@ struct info_mphf{
 
 
 
+
+struct minitig{
+int32_t color;
+uint16_t coverage;
+vector<bool> sequence;
+} ;
+
+
+
+
 // Represents the cardinality of a pow2 sized set. Allows div/mod arithmetic operations on indexes.
 template<typename T>
 struct Pow2 {
@@ -182,9 +192,6 @@ public:
 
 		}
 		for(uint64_t i(0);i<minimizer_number.value();++i){
-			//~ all_buckets[i].current_pos=0;
-			//~ all_buckets[i].start=0;
-			//~ all_buckets[i].nuc_minimizer=0;
 			all_buckets[i].skmer_number=0;
 		}
 		number_query=0;
@@ -227,7 +234,6 @@ public:
 	kmer minimizer_according_xs(kmer seq);
 	void abundance_minimizer_construct(const string& input_file);
 	int64_t correct_pos(kmer mini, uint64_t p);
-	void str2bool(const string& str,uint64_t mini);
 	kmer update_kmer(uint64_t pos,kmer mini,kmer input);
 	kmer get_kmer(uint64_t pos,uint64_t mini);
 	void print_kmer(kmer num,uint64_t n=100);
@@ -277,6 +283,9 @@ public:
 	uint64_t rcb(const uint64_t&);
 	uint64_t canonize(uint64_t x,uint64_t n);
 	kmer get_kmer(uint64_t pos);
+	void merge_super_buckets_mem(const string& input_file, uint64_t number_color, zstr::ofstream* out);
+	void get_monocolor_minitigs_mem(const  vector<minitig>& minitigs , zstr::ofstream* out, const string& mini,uint64_t number_color);
+	void str2bool(const string& str,uint64_t mini);
 };
 
 

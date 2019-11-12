@@ -11,15 +11,16 @@ kmer min_k (const kmer& k1,const kmer& k2);
 kmer str2num(const string& str);
 uint64_t revhash ( uint64_t x );
 uint16_t parseCoverage(const string& str);
-string color_coverage2str(const vector<uint16_t>& V);
+string color_coverage2str(const vector<uint32_t>& V);
 vector<string> split(const string &s, char delim);
 kmer hash64shift(kmer key);
 bool exists_test (const string& name);
 __m128i mm_bitshift_right(__m128i x, unsigned count);
 uint64_t rcbc(uint64_t in, uint64_t n);
 string revComp(const string& s);
-
-
+void decompress_file(const string& file, const string& output_file);
+vector<bool> str2boolv(const string& str);
+string bool2strv(const vector<bool>& v);
 template<typename T>
 inline T xs(const T& x) { return hash64shift(x); }
 
