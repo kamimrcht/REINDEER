@@ -238,7 +238,8 @@ void kmer_Set_Light::reset(){
 
 
 
-void kmer_Set_Light::construct_index_fof(const string& input_file){
+void kmer_Set_Light::construct_index_fof(const string& input_file, bool countcolor){
+	count_color=countcolor;
 	if(m1<m2){
 		cout<<"n should be inferior to m"<<endl;
 		exit(0);
@@ -569,6 +570,27 @@ void kmer_Set_Light::get_monocolor_minitigs(const  vector<string>& minitigs, con
 
 
 
+struct kmer_context{
+	kmer canon;
+	vector<kmer> next_kmers;
+	vector<kmer> previous_kmers;
+	vector<uint16_t> count;
+};
+
+
+bool equal_nonull(const vector<uint32_t>& V1,const vector<uint32_t>& V2){
+	if(V1.empty()){return false;}
+	if(V2.empty()){return false;}
+	for(uint i(0);i<V1.size();++i){
+		if((V1[i]==0)^(V2[i]==0)){
+			cout<<V1[i]<<" "<<V2[i]<<endl;
+			return false;
+		}
+	}
+	return true;
+}
+
+
 void kmer_Set_Light::get_monocolor_minitigs_mem(const  vector<minitig>& minitigs , zstr::ofstream* out, const string& mini,uint64_t number_color){
 	unordered_map<kmer,kmer,KmerHasher> next_kmer;
 	unordered_map<kmer,kmer,KmerHasher> previous_kmer;
@@ -577,6 +599,7 @@ void kmer_Set_Light::get_monocolor_minitigs_mem(const  vector<minitig>& minitigs
 	vector<uint32_t> bit_vector(number_color,0);
 	string sequence;
 	//ASSOCIATE INFO TO KMERS
+	//SORT MINITIG PER SIZE OPTIM
 	for(uint64_t i_mini(0);i_mini<minitigs.size();++i_mini){
 		sequence=bool2strv(minitigs[i_mini].sequence);
 		kmer seq(str2num(sequence.substr(0,k))),rcSeq(rcb(seq)),canon(min_k(seq,rcSeq)),prev(-1);
@@ -598,16 +621,16 @@ void kmer_Set_Light::get_monocolor_minitigs_mem(const  vector<minitig>& minitigs
 			if(next_kmer.count(prev)==0){
 				next_kmer[prev]=canon;
 			}else{
-				if(next_kmer[prev]!=canon and next_kmer[prev]!=(kmer)-1){
-					next_kmer[prev]=(kmer)-1;
-				}
+				//~ if(next_kmer[prev]!=canon and next_kmer[prev]!=(kmer)-1 and kmer_color[next_kmer[prev]] ){
+					//~ next_kmer[prev]=(kmer)-1;
+				//~ }
 			}
 			if(previous_kmer.count(canon)==0){
 				previous_kmer[canon]=prev;
 			}else{
-				if(previous_kmer[canon]!=prev and previous_kmer[canon]!=(kmer)-1){
-					previous_kmer[canon]=(kmer)-1;
-				}
+				//~ if(previous_kmer[canon]!=prev and previous_kmer[canon]!=(kmer)-1){
+					//~ previous_kmer[canon]=(kmer)-1;
+				//~ }
 			}
 		}
 	}
@@ -624,7 +647,12 @@ void kmer_Set_Light::get_monocolor_minitigs_mem(const  vector<minitig>& minitigs
 			while(true){
 				if(next_kmer.count(canon)==0){break;}
 				if(next_kmer[canon]==(kmer)-1){break;}
-				if(kmer_color[next_kmer[canon]]!=it.second){break;}
+
+				if(count_color){
+					if(kmer_color[next_kmer[canon]]!=it.second){break;}
+				}else{
+					if(equal_nonull(kmer_color[next_kmer[canon]],it.second)){break;}
+				}
 				kmer_color[next_kmer[canon]].clear();
 				compact=compaction(monocolor,kmer2str(next_kmer[canon]));
 				if(compact.empty()){break;}
@@ -636,7 +664,11 @@ void kmer_Set_Light::get_monocolor_minitigs_mem(const  vector<minitig>& minitigs
 			while(true){
 				if(previous_kmer.count(canon)==0){break;}
 				if(previous_kmer[canon]==(kmer)-1){break;}
-				if(kmer_color[previous_kmer[canon]]!=it.second){break;}
+				if(count_color){
+					if(kmer_color[previous_kmer[canon]]!=it.second){break;}
+				}else{
+					if(equal_nonull(kmer_color[previous_kmer[canon]],it.second)){break;}
+				}
 				kmer_color[previous_kmer[canon]].clear();
 				compact=compaction(monocolor,kmer2str(previous_kmer[canon]));
 				if(compact.empty()){break;}
