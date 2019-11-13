@@ -11,7 +11,7 @@ kmer min_k (const kmer& k1,const kmer& k2);
 kmer str2num(const string& str);
 uint64_t revhash ( uint64_t x );
 uint16_t parseCoverage(const string& str);
-string color_coverage2str(const vector<uint32_t>& V);
+string color_coverage2str(const vector<uint16_t>& V);
 vector<string> split(const string &s, char delim);
 kmer hash64shift(kmer key);
 bool exists_test (const string& name);

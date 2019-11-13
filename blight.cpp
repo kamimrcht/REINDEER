@@ -27,6 +27,13 @@ using namespace chrono;
 
 
 
+uint kmer_number_check(0);
+uint kmer_number_check2(0);
+uint kmer_number_check3(0);
+uint skmer_number_check(0);
+
+
+
 inline __uint128_t kmer_Set_Light::rcb(const __uint128_t& in){
 
 	assume(k <= 64, "k=%u > 64", k);
@@ -281,8 +288,10 @@ void kmer_Set_Light::construct_index_fof(const string& input_file, bool countcol
 			//~ if(res!=0){cout<<"Problem with sort command"<<endl;exit(0);}
 			merge_super_buckets_mem("_blout"+to_string(i_superbuckets),i_file-1,&out);
 			remove(("_blsout"+to_string(i_superbuckets)).c_str());
+			cout<<"-"<<flush;
 		}
 	}
+	cout<<endl;
 	reset();
 	high_resolution_clock::time_point t3 = high_resolution_clock::now();
 	cout<<"Monocolor minitig computed, now regular indexing start"<<endl;
@@ -470,7 +479,7 @@ void kmer_Set_Light::str2bool(const string& str,uint64_t mini){
 	current_pos[mini]+=(str.size());
 }
 
-
+uint32_t misscompaction(0);
 
 string kmer_Set_Light::compaction(const string& seq1,const string& seq2, bool recur=true){
 	uint s1(seq1.size()),s2(seq2.size());
@@ -482,6 +491,7 @@ string kmer_Set_Light::compaction(const string& seq1,const string& seq2, bool re
 	if(recur){
 		return compaction(revComp(seq1),seq2,false	);
 	}else{
+		cout<<++misscompaction<<endl;cin.get();
 		//TODO SOME COMPACTION ARE MISSED CAN WE DO BETTER
 	}
 	return "";
@@ -492,8 +502,8 @@ string kmer_Set_Light::compaction(const string& seq1,const string& seq2, bool re
 void kmer_Set_Light::get_monocolor_minitigs(const  vector<string>& minitigs, const vector<int64_t>& color, const  vector<uint16_t>& coverage, zstr::ofstream* out, const string& mini,uint64_t number_color){
 	unordered_map<kmer,kmer,KmerHasher> next_kmer;
 	unordered_map<kmer,kmer,KmerHasher> previous_kmer;
-	unordered_map<kmer,vector<uint32_t>,KmerHasher> kmer_color;
-	vector<uint32_t> bit_vector(number_color,0);
+	unordered_map<kmer,vector<uint16_t>,KmerHasher> kmer_color;
+	vector<uint16_t> bit_vector(number_color,0);
 	//ASSOCIATE INFO TO KMERS
 	for(uint64_t i_mini(0);i_mini<minitigs.size();++i_mini){
 		kmer seq(str2num(minitigs[i_mini].substr(0,k))),rcSeq(rcb(seq)),canon(min_k(seq,rcSeq)),prev(-1);
@@ -570,15 +580,9 @@ void kmer_Set_Light::get_monocolor_minitigs(const  vector<string>& minitigs, con
 
 
 
-struct kmer_context{
-	kmer canon;
-	vector<kmer> next_kmers;
-	vector<kmer> previous_kmers;
-	vector<uint16_t> count;
-};
 
 
-bool equal_nonull(const vector<uint32_t>& V1,const vector<uint32_t>& V2){
+bool equal_nonull(const vector<uint16_t>& V1,const vector<uint16_t>& V2){
 	if(V1.empty()){return false;}
 	if(V2.empty()){return false;}
 	for(uint i(0);i<V1.size();++i){
@@ -592,87 +596,200 @@ bool equal_nonull(const vector<uint32_t>& V1,const vector<uint32_t>& V2){
 
 
 
+//~ void kmer_Set_Light::get_monocolor_minitigs_mem(const  vector<minitig>& minitigs , zstr::ofstream* out, const string& mini,uint64_t number_color){
+	//~ unordered_map<kmer,kmer,KmerHasher> next_kmer;
+	//~ unordered_map<kmer,kmer,KmerHasher> previous_kmer;
+	//~ unordered_map<kmer,vector<uint32_t>,KmerHasher> kmer_color;
+	//~ //TODO MERGE THE 3 TABLE
+	//~ vector<uint32_t> bit_vector(number_color,0);
+	//~ string sequence;
+	//~ //ASSOCIATE INFO TO KMERS
+	//~ //SORT MINITIG PER SIZE OPTIM
+	//~ for(uint64_t i_mini(0);i_mini<minitigs.size();++i_mini){
+		//~ sequence=bool2strv(minitigs[i_mini].sequence);
+		//~ kmer seq(str2num(sequence.substr(0,k))),rcSeq(rcb(seq)),canon(min_k(seq,rcSeq)),prev(-1);
+		//~ canon=(min_k(seq, rcSeq));
+		//~ if(kmer_color.count(canon)==0){
+			//~ kmer_color[canon]=bit_vector;
+		//~ }
+		//~ kmer_color[canon][minitigs[i_mini].color-1]=minitigs[i_mini].coverage;
+
+		//~ for(uint i(0);i+k<sequence.size();++i){
+			//~ prev=canon;
+			//~ updateK(seq,sequence[i+k]);
+			//~ updateRCK(rcSeq,sequence[i+k]);
+			//~ canon=(min_k(seq, rcSeq));
+			//~ if(kmer_color.count(canon)==0){
+				//~ kmer_color[canon]=bit_vector;
+			//~ }
+			//~ kmer_color[canon][minitigs[i_mini].color-1]=minitigs[i_mini].coverage;
+			//~ if(next_kmer.count(prev)==0){
+				//~ next_kmer[prev]=canon;
+			//~ }
+			//~ if(previous_kmer.count(canon)==0){
+				//~ previous_kmer[canon]=prev;
+			//~ }
+		//~ }
+	//~ }
+	//~ string monocolor,compact;
+
+	//~ //FOREACH KMER COMPUTE MAXIMAL MONOCOLOR MINITIG
+	//~ for (auto&& it: kmer_color){
+
+		//~ if(not it.second.empty()){
+			//~ auto dumpcolor(it.second);
+			//~ kmer canon=it.first;
+			//~ monocolor=kmer2str(canon);
+			//~ kmer_color[canon].clear();
+			//~ //GO FORWARD
+			//~ while(true){
+				//~ if(next_kmer.count(canon)==0){break;}
+				//~ kmer next(next_kmer[canon]);
+				//~ if(count_color){
+					//~ if(kmer_color[next]!=dumpcolor){break;}
+				//~ }else{
+					//~ if(not equal_nonull(kmer_color[next],dumpcolor)){break;}
+				//~ }
+				//~ compact=compaction(monocolor,kmer2str(next));
+				//~ if(compact.empty()){break;}
+				//~ kmer_color[next].clear();
+				//~ monocolor=compact;
+				//~ canon=next;
+			//~ }
+			//~ //GO BACKWARD
+			//~ canon=it.first;
+			//~ while(true){
+				//~ if(previous_kmer.count(canon)==0){break;}
+				//~ kmer prev(previous_kmer[canon]);
+				//~ if(count_color){
+					//~ if(kmer_color[prev]!=dumpcolor){break;}
+				//~ }else{
+					//~ if(not equal_nonull(kmer_color[prev],dumpcolor)){break;}
+				//~ }
+				//~ compact=compaction(monocolor,kmer2str(prev));
+				//~ if(compact.empty()){break;}
+				//~ kmer_color[prev].clear();
+				//~ monocolor=compact;
+				//~ canon=previous_kmer[canon];
+			//~ }
+
+			//~ #pragma omp critical (monocolorFile)
+			//~ {
+				//~ *out<<">"+mini<<color_coverage2str(dumpcolor)<<"\n"<<monocolor<<"\n";
+				//~ kmer_number_check+=monocolor.size()-k+1;
+				//~ skmer_number_check++;
+			//~ }
+		//~ }
+	//~ }
+//~ }
+
+
+struct kmer_context{
+	bool isdump;
+	bool nextOK;
+	bool prevOK;
+	kmer next_kmer;
+	kmer previous_kmer;
+	vector<uint16_t> count;
+};
+
+
+
 void kmer_Set_Light::get_monocolor_minitigs_mem(const  vector<minitig>& minitigs , zstr::ofstream* out, const string& mini,uint64_t number_color){
-	unordered_map<kmer,kmer,KmerHasher> next_kmer;
-	unordered_map<kmer,kmer,KmerHasher> previous_kmer;
-	unordered_map<kmer,vector<uint32_t>,KmerHasher> kmer_color;
-	//TODO MERGE THE 3 TABLE
-	vector<uint32_t> bit_vector(number_color,0);
+	unordered_map<kmer,kmer_context> kmer2context;
+	vector<uint16_t> bit_vector(number_color,0);
 	string sequence;
-	//ASSOCIATE INFO TO KMERS
-	//SORT MINITIG PER SIZE OPTIM
 	for(uint64_t i_mini(0);i_mini<minitigs.size();++i_mini){
 		sequence=bool2strv(minitigs[i_mini].sequence);
-		kmer seq(str2num(sequence.substr(0,k))),rcSeq(rcb(seq)),canon(min_k(seq,rcSeq)),prev(-1);
+		kmer seq(str2num(sequence.substr(0,k))),rcSeq(rcb(seq)),canon(min_k(seq,rcSeq)),prev;
 		canon=(min_k(seq, rcSeq));
-		if(kmer_color.count(canon)==0){
-			kmer_color[canon]=bit_vector;
+		if(kmer2context.count(canon)==0){
+			kmer2context[canon]={false,false,false,(kmer)-1,(kmer)-1,bit_vector};
 		}
-		kmer_color[canon][minitigs[i_mini].color-1]=minitigs[i_mini].coverage;
+		kmer2context[canon].count[minitigs[i_mini].color-1]=minitigs[i_mini].coverage;
 
 		for(uint i(0);i+k<sequence.size();++i){
 			prev=canon;
 			updateK(seq,sequence[i+k]);
 			updateRCK(rcSeq,sequence[i+k]);
 			canon=(min_k(seq, rcSeq));
-			if(kmer_color.count(canon)==0){
-				kmer_color[canon]=bit_vector;
+			if(kmer2context.count(canon)==0){
+				kmer2context[canon]={false,false,false,(kmer)-1,(kmer)-1,bit_vector};
 			}
-			kmer_color[canon][minitigs[i_mini].color-1]=minitigs[i_mini].coverage;
-			if(next_kmer.count(prev)==0){
-				next_kmer[prev]=canon;
+			kmer2context[canon].count[minitigs[i_mini].color-1]=minitigs[i_mini].coverage;
+			if(not kmer2context[prev].nextOK){
+				kmer2context[prev].next_kmer=canon;
+				kmer2context[prev].nextOK=true;
 			}
-			if(previous_kmer.count(canon)==0){
-				previous_kmer[canon]=prev;
+			if(kmer2context[canon].prevOK==0){
+				kmer2context[canon].previous_kmer=prev;
+				kmer2context[canon].prevOK=true;
 			}
 		}
 	}
-	string monocolor,compact;
 
-	//FOREACH KMER COMPUTE MAXIMAL MONOCOLOR MINITIG
-	for (auto&& it: kmer_color) {
-		if(not it.second.empty()){
-			auto dumpcolor(it.second);
+	string seq2dump,compact;
+	for (auto&& it: kmer2context){
+		if(not it.second.isdump){
+			it.second.isdump=true;
+			//~ kmer_number_check2++;
+			auto colorV2dump(it.second.count);
 			kmer canon=it.first;
-			monocolor=kmer2str(canon);
-			//GO FORWARD
+			seq2dump=kmer2str(canon);
+
 			while(true){
-				if(next_kmer.count(canon)==0){break;}
-				kmer next(next_kmer[canon]);
+				if( not kmer2context[canon].nextOK){break;}
+				kmer next(kmer2context[canon].next_kmer);
+				if(kmer2context[next].isdump){break;}
 				if(count_color){
-					if(kmer_color[next]!=it.second){break;}
+					if(kmer2context[canon].count!=colorV2dump){break;}
 				}else{
-					if(not equal_nonull(kmer_color[next],it.second)){break;}
+					if(not equal_nonull(kmer2context[canon].count,colorV2dump)){break;}
 				}
-				compact=compaction(monocolor,kmer2str(next));
+				compact=compaction(seq2dump,kmer2str(next));
 				if(compact.empty()){break;}
-				kmer_color[next].clear();
-				monocolor=compact;
+				kmer2context[next].isdump=true;
+				//~ kmer_number_check2++;
+				seq2dump=compact;
 				canon=next;
 			}
-			//GO BACKWARD
-			canon=it.first;
 			while(true){
-				if(previous_kmer.count(canon)==0){break;}
+				if(not kmer2context[canon].prevOK){break;}
+				kmer prev(kmer2context[canon].previous_kmer);
+				if(kmer2context[prev].isdump){break;}
 				if(count_color){
-					if(kmer_color[previous_kmer[canon]]!=it.second){break;}
+					if(kmer2context[canon].count!=colorV2dump){break;}
 				}else{
-					if(not equal_nonull(kmer_color[previous_kmer[canon]],it.second)){break;}
+					if(not equal_nonull(kmer2context[canon].count,colorV2dump)){break;}
 				}
-				compact=compaction(monocolor,kmer2str(previous_kmer[canon]));
+				compact=compaction(seq2dump,kmer2str(prev));
 				if(compact.empty()){break;}
-				kmer_color[previous_kmer[canon]].clear();
-				monocolor=compact;
-				canon=previous_kmer[canon];
+				kmer2context[prev].isdump=true;
+				//~ kmer_number_check2++;
+				seq2dump=compact;
+				canon=prev;
 			}
-			kmer_color[canon].clear();
+
 			#pragma omp critical (monocolorFile)
 			{
-				*out<<">"+mini<<color_coverage2str(dumpcolor)<<"\n"<<monocolor<<"\n";
+				*out<<">"+mini<<color_coverage2str(colorV2dump)<<"\n"<<seq2dump<<"\n";
+				//~ kmer_number_check+=seq2dump.size()-k+1;
+				//~ skmer_number_check++;
+				//~ if(kmer_number_check2!=kmer_number_check){
+					//~ cout<<"STOP"<<endl;
+					//~ cin.get();
+				//~ }
 			}
 		}
 	}
+	//~ kmer_number_check3+=kmer2context.size();
+	//~ if(kmer_number_check3!=kmer_number_check){
+		//~ cout<<"STOP3"<<endl;
+		//~ cout<<kmer_number_check3<<" "<<kmer_number_check<<endl;
+		//~ cin.get();
+	//~ }
 }
+
 
 
 
@@ -709,11 +826,8 @@ void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t 
 	string line;
 	vector<string> splitted;
 	vector<vector<minitig>> minimizer_to_minitigs(minimizer_number.value()/number_superbuckets.value());
-	//~ cout<<minimizer_to_minitigs.size()<<endl;
 	vector<int32_t> minimizers(minimizer_to_minitigs.size(),-1);
-	//~ cout<<"open"<<endl;
 	zstr::ifstream in(input_file);
-	//~ cout<<"go parsing"<<endl;
 	while(not in.eof() and in.good()){
 		getline(in,line);
 		if(not line.empty()){
@@ -721,21 +835,14 @@ void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t 
 			minitig mini;
 			mini.color=stoi(splitted[1]);
 			mini.sequence=str2boolv(splitted[2]);
-			//~ if (splitted[2]!=bool2strv(str2boolv(splitted[2]))){
-				//~ cout<<splitted[2]<<" "<<bool2strv(str2boolv(splitted[2]))<<endl;
-				//~ cout<<"NOPE"<<endl;
-				//~ exit(0);
-			//~ }
 			mini.coverage=(stoi(splitted[3]));
 			minimizer_to_minitigs[stoi(splitted[0])%minimizer_to_minitigs.size()].push_back(mini);
 			minimizers[stoi(splitted[0])%minimizer_to_minitigs.size()]=(stoi(splitted[0]));
-			//~ cout<<stoi(splitted[0])%minimizer_to_minitigs.size()<<" "<<(stoi(splitted[0]))<<endl;
 		}
 	}
-	//~ cout<<"MERGE SUPER BUCKET PARSING OK"<<endl;
-	for(uint i(0);i<minimizer_to_minitigs.size();i++){
+	#pragma omp parallel for num_threads(coreNumber)
+	for(uint i=(0);i<minimizer_to_minitigs.size();i++){
 		if(minimizers[i]!=-1){
-			//~ cout<<"go le minimizer"<<minimizers[i]<<endl;cin.get();
 			get_monocolor_minitigs_mem(minimizer_to_minitigs[i],out,to_string(minimizers[i]),number_color);
 		}
 	}
