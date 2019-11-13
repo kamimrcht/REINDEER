@@ -583,12 +583,13 @@ bool equal_nonull(const vector<uint32_t>& V1,const vector<uint32_t>& V2){
 	if(V2.empty()){return false;}
 	for(uint i(0);i<V1.size();++i){
 		if((V1[i]==0)^(V2[i]==0)){
-			cout<<V1[i]<<" "<<V2[i]<<endl;
+			//~ cout<<V1[i]<<" "<<V2[i]<<endl;
 			return false;
 		}
 	}
 	return true;
 }
+
 
 
 void kmer_Set_Light::get_monocolor_minitigs_mem(const  vector<minitig>& minitigs , zstr::ofstream* out, const string& mini,uint64_t number_color){
@@ -620,25 +621,16 @@ void kmer_Set_Light::get_monocolor_minitigs_mem(const  vector<minitig>& minitigs
 			kmer_color[canon][minitigs[i_mini].color-1]=minitigs[i_mini].coverage;
 			if(next_kmer.count(prev)==0){
 				next_kmer[prev]=canon;
-			}else{
-				//~ if(next_kmer[prev]!=canon and next_kmer[prev]!=(kmer)-1 and kmer_color[next_kmer[prev]] ){
-					//~ next_kmer[prev]=(kmer)-1;
-				//~ }
 			}
 			if(previous_kmer.count(canon)==0){
 				previous_kmer[canon]=prev;
-			}else{
-				//~ if(previous_kmer[canon]!=prev and previous_kmer[canon]!=(kmer)-1){
-					//~ previous_kmer[canon]=(kmer)-1;
-				//~ }
 			}
 		}
 	}
 	string monocolor,compact;
-	uint kmer_number_check(0);
+
 	//FOREACH KMER COMPUTE MAXIMAL MONOCOLOR MINITIG
-	for (auto& it: kmer_color) {
-		kmer_number_check++;
+	for (auto&& it: kmer_color) {
 		if(not it.second.empty()){
 			auto dumpcolor(it.second);
 			kmer canon=it.first;
@@ -646,35 +638,34 @@ void kmer_Set_Light::get_monocolor_minitigs_mem(const  vector<minitig>& minitigs
 			//GO FORWARD
 			while(true){
 				if(next_kmer.count(canon)==0){break;}
-				if(next_kmer[canon]==(kmer)-1){break;}
-
+				kmer next(next_kmer[canon]);
 				if(count_color){
-					if(kmer_color[next_kmer[canon]]!=it.second){break;}
+					if(kmer_color[next]!=it.second){break;}
 				}else{
-					if(equal_nonull(kmer_color[next_kmer[canon]],it.second)){break;}
+					if(not equal_nonull(kmer_color[next],it.second)){break;}
 				}
-				kmer_color[next_kmer[canon]].clear();
-				compact=compaction(monocolor,kmer2str(next_kmer[canon]));
+				compact=compaction(monocolor,kmer2str(next));
 				if(compact.empty()){break;}
+				kmer_color[next].clear();
 				monocolor=compact;
-				canon=next_kmer[canon];
+				canon=next;
 			}
 			//GO BACKWARD
 			canon=it.first;
 			while(true){
 				if(previous_kmer.count(canon)==0){break;}
-				if(previous_kmer[canon]==(kmer)-1){break;}
 				if(count_color){
 					if(kmer_color[previous_kmer[canon]]!=it.second){break;}
 				}else{
-					if(equal_nonull(kmer_color[previous_kmer[canon]],it.second)){break;}
+					if(not equal_nonull(kmer_color[previous_kmer[canon]],it.second)){break;}
 				}
-				kmer_color[previous_kmer[canon]].clear();
 				compact=compaction(monocolor,kmer2str(previous_kmer[canon]));
 				if(compact.empty()){break;}
+				kmer_color[previous_kmer[canon]].clear();
 				monocolor=compact;
 				canon=previous_kmer[canon];
 			}
+			kmer_color[canon].clear();
 			#pragma omp critical (monocolorFile)
 			{
 				*out<<">"+mini<<color_coverage2str(dumpcolor)<<"\n"<<monocolor<<"\n";
@@ -730,11 +721,11 @@ void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t 
 			minitig mini;
 			mini.color=stoi(splitted[1]);
 			mini.sequence=str2boolv(splitted[2]);
-			if (splitted[2]!=bool2strv(str2boolv(splitted[2]))){
-				cout<<splitted[2]<<" "<<bool2strv(str2boolv(splitted[2]))<<endl;
-				cout<<"NOPE"<<endl;
-				exit(0);
-			}
+			//~ if (splitted[2]!=bool2strv(str2boolv(splitted[2]))){
+				//~ cout<<splitted[2]<<" "<<bool2strv(str2boolv(splitted[2]))<<endl;
+				//~ cout<<"NOPE"<<endl;
+				//~ exit(0);
+			//~ }
 			mini.coverage=(stoi(splitted[3]));
 			minimizer_to_minitigs[stoi(splitted[0])%minimizer_to_minitigs.size()].push_back(mini);
 			minimizers[stoi(splitted[0])%minimizer_to_minitigs.size()]=(stoi(splitted[0]));
@@ -1308,14 +1299,15 @@ void kmer_Set_Light::file_query_hases(const string& query_file, bool check){
 	bool bijective(true);
 	for(uint i(0);i<all_hashes.size();++i){
 		if(all_hashes[i]!=i){
-			//~ cout<<all_hashes[i]<<":"<<i<<"	";
+			cout<<all_hashes[i]<<":"<<i<<"	";
 			bijective=false;
+			break;
 		}
 	}
 	if(bijective){
 		cout<<"HASHES ARE BIJECTIVE WITH [0::"<<all_hashes.size()-1<<"]"<<endl;
 	}else{
-		cout<<"HASHES ARE NOT BIJECTIVE"<<endl;
+		cout<<"HASHES ARE NOT BIJECTIVE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
 	}
 	delete in;
 }
@@ -1358,12 +1350,13 @@ void kmer_Set_Light::file_query_rank(const string& query_file){
 		if(all_hashes[i]!=i){
 			//~ cout<<all_hashes[i]<<":"<<i<<"	";
 			surjective=false;
+			break;
 		}
 	}
 	if(surjective){
 		cout<<"RANKS ARE SURJECTIVE WITH [0::"<<all_hashes.size()-1<<"]"<<endl;
 	}else{
-		cout<<"RANKS ARE NOT SURJECTIVE"<<endl;
+		cout<<"RANKS ARE NOT SURJECTIVE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
 	}
 	delete in;
 }
