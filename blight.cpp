@@ -271,13 +271,13 @@ void kmer_Set_Light::construct_index_fof(const string& input_file, bool countcol
 		}
 	}
 	high_resolution_clock::time_point t2 = high_resolution_clock::now();
-	cout<<"Partition created"<<endl;
+	cout<<"Partition created	"<<read_kmer<<" kmers read "<<endl;
 	duration<double> time_span12 = duration_cast<duration<double>>(t2 - t1);
 	cout<<time_span12.count() << " seconds."<<endl;
 
 	{
 		zstr::ofstream out("_blmonocolor.fa.gz",ios::app);
-		#pragma omp parallel for num_threads(coreNumber)
+		//~ #pragma omp parallel for num_threads(coreNumber)
 		for(uint i_superbuckets=0; i_superbuckets<number_superbuckets.value(); ++i_superbuckets){
 			//SORT SUPERBUCKETS
 			//~ cout<<"decomp"<<endl;
@@ -355,6 +355,7 @@ void kmer_Set_Light::create_super_buckets(const string& input_file,int dbg_id){
 			{
 				getline(*inUnitigs,useless);
 				getline(*inUnitigs,ref);
+				read_kmer+=ref.size()-k+1;
 			}
 			//FOREACH UNITIG
 			if(not ref.empty() and not useless.empty()){
@@ -707,7 +708,6 @@ void kmer_Set_Light::get_monocolor_minitigs_mem(const  vector<minitig>& minitigs
 			kmer2context[canon]={false,false,false,(kmer)-1,(kmer)-1,bit_vector};
 		}
 		kmer2context[canon].count[minitigs[i_mini].color-1]=minitigs[i_mini].coverage;
-
 		for(uint i(0);i+k<sequence.size();++i){
 			prev=canon;
 			updateK(seq,sequence[i+k]);

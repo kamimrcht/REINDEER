@@ -157,6 +157,7 @@ public:
 	uint64_t largest_MPHF = 0;
 	uint64_t positions_total_size = 0;
 	uint64_t positions_int = 0;
+	uint64_t read_kmer = 0;
 	atomic<uint64_t> number_query;
 
 	uint64_t total_nb_minitigs = 0;
@@ -183,6 +184,7 @@ public:
 		, bucket_per_superBuckets(2*(m1-m3))
 		, positions_to_check(bit_to_save)
 	{
+
 		all_buckets=new bucket_minimizer[minimizer_number.value()]();
 		all_mphf=new info_mphf[mphf_number.value()];
 		for(uint64_t i(0);i<mphf_number;++i){
