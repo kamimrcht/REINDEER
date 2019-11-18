@@ -2,7 +2,7 @@
 #define MAT
 
 
-
+#include "../trle/trle.h"
 
 
 using namespace std;
@@ -48,6 +48,32 @@ void write_color_matrix_counts(const string& output_file, vector<vector<uint16_t
 	delete out;
 }
 
+
+vector<unsigned char*> load_compressed_vectors(const string& input_file, vector<unsigned>&vector_sizes, uint64_t& color_number, uint64_t& minitig_number)
+{
+	ifstream in(input_file);
+	if(not exists_test(input_file))
+	{
+		cout<<"File problem"<<endl;
+		exit(0);
+	}
+	int64_t rank;
+	unsigned line_size;
+	in.read(reinterpret_cast<char *>(&minitig_number), sizeof(uint64_t));
+	in.read(reinterpret_cast<char *>(&color_number), sizeof(uint64_t));
+	vector_sizes.resize(minitig_number, 0);
+	vector<unsigned char*> out(minitig_number);
+	for (uint minit(0); minit < out.size(); ++minit)
+	{
+		in.read(reinterpret_cast<char *>(&line_size), sizeof(unsigned));
+		in.read(reinterpret_cast<char *>(&rank), sizeof(int64_t));
+		vector_sizes[rank] = line_size; 
+		out[rank] = new unsigned char [line_size];
+		
+		in.read((char*)((out[rank])) , line_size);
+	}
+	return out;
+}
 
 
 void write_color_matrix_reads(const string& output_file, vector<vector<uint32_t>>& color_matrix){

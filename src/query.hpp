@@ -32,81 +32,138 @@
 #include <omp.h>
 #include "matrix_operation.hpp"
 #include "utils.hpp"
-
+#include "../trle/trle.h"
 using namespace std;
 using namespace chrono;
 
 
 
 
-void get_colors_counts(vector<int64_t>& kmer_ids, bool record_counts, uint64_t color_number, vector<int64_t>& kmers_colors, vector<vector<uint8_t>>& color_me_amaze, vector<vector<uint16_t>>& color_me_amaze_counts,vector<vector<uint32_t>>& color_me_amaze_reads, vector<vector<uint64_t>>& query_counts )
+
+unsigned char* decode_vector(unsigned char* minitig_counts, unsigned vector_size, uint64_t color_number)
 {
+	auto decoded_vector= new unsigned char[color_number*2];
+	trled(minitig_counts, vector_size, decoded_vector, color_number*2);
+	return decoded_vector;
+}
+
+vector<uint16_t> count_string_to_count_vector(unsigned char* count_char_minitig, unsigned size)
+{
+	vector<uint16_t> counts;
+	for (uint i(0); i < size -1 ; i+=2)
+	{
+		counts.push_back((uint16_t)count_char_minitig[i] + (uint16_t)count_char_minitig[i+1]*256);
+	}
+	return counts;
+}
+
+
+vector<uint16_t> get_count_minitig(unsigned char* minitig_counts, unsigned vector_size, uint64_t color_number)
+{
+	unsigned char* decoded(decode_vector(minitig_counts, vector_size,color_number));
+	vector<uint16_t> counts (count_string_to_count_vector(decoded, color_number*2));
+	return counts;
+}
+
+
+void get_colors_counts(vector<int64_t>& kmer_ids, bool record_counts, uint64_t color_number, vector<int64_t>& kmers_colors, vector<vector<uint8_t>>& color_me_amaze, vector<vector<uint16_t>>& color_me_amaze_counts,vector<vector<uint32_t>>& color_me_amaze_reads, vector<vector<uint16_t>>& query_counts, vector<unsigned char*>& compr_minitig_color, vector<unsigned>&compr_minitig_color_size)
+{
+	vector<uint16_t> counts;
 	for(uint64_t i(0);i<kmer_ids.size();++i)
 	{
 		if(kmer_ids[i]>=0)
 		{
-			if (not record_counts)
-			{
-				for(uint64_t i_color(0);i_color<color_number;++i_color)
-				{
-					if(color_me_amaze[i_color][kmer_ids[i]] )
-						kmers_colors.push_back(i_color);
-				}
-			} else {
-				for(uint64_t i_color(0);i_color<color_number;++i_color)
-				{
-					if(color_me_amaze_counts[i_color][kmer_ids[i]] > 0)
-					{
-						kmers_colors.push_back(i_color);
-						if (query_counts[i_color].back() == 0)
-						{
-							query_counts[i_color].back() = color_me_amaze_counts[i_color][kmer_ids[i]];
-						} else {
-							query_counts[i_color].push_back(color_me_amaze_counts[i_color][kmer_ids[i]]);
-						}
-					}
-				}
+			vector<uint16_t> qcounts(get_count_minitig(compr_minitig_color[kmer_ids[i]], compr_minitig_color_size[kmer_ids[i]], color_number));
+			if (not qcounts.empty()){
+				query_counts.push_back( qcounts );
 			}
 		}
+		
+		
 	}
+	
 }
 
 
-void write_count_output(bool record_counts, vector<vector<uint64_t>>& query_counts, vector<string>& color_counts )
+void write_count_output(bool record_counts, vector<vector<uint16_t>>& query_counts, vector<string>& color_counts, uint64_t color_number )
 {
-	if (record_counts)
-	{
 		// compute a string that sums up the count(s) for each dataset
+		vector<string> toW(color_number,"");
 		for (auto&& c: query_counts)
 		{
-			if (c.size() > 1)
+			for (uint color(0); color < c.size(); ++color)
 			{
-				string toW("");
-				uint16_t last(0);
-				for (auto&&div_count : c)
-				{
-					if (last != div_count)
-						toW += to_string(div_count) + ":";
-					last = div_count;
-				}
-				toW.pop_back(); // remove last :
-				color_counts.push_back(toW);
-			} else {
-				color_counts.push_back(to_string(c.back()));
+				toW[color]+=to_string(c[color]) + ":";
 			}
 		}
-	}
+		for (uint str(0); str<toW.size(); ++str)
+		{
+			if (toW[str].empty())
+			{
+				color_counts.push_back("0");
+			}
+			else 
+			{
+				toW[str].pop_back();
+				color_counts.push_back(toW[str]);
+			}
+		}
 }
 
 
-void write_output(vector<int64_t>& kmers_colors, string& toWrite, bool record_reads, bool record_counts, vector<vector<uint32_t>>& query_unitigID,vector<vector<uint32_t>>& query_unitigID_tmp,  uint64_t& color_number, string& header, string& line, uint k, uint threshold, vector<string>& color_counts)
+//~ void write_output(vector<int64_t>& kmers_colors, string& toWrite, bool record_reads, bool record_counts, vector<vector<uint32_t>>& query_unitigID,vector<vector<uint32_t>>& query_unitigID_tmp,  uint64_t& color_number, string& header, string& line, uint k, uint threshold, vector<string>& color_counts)
+void write_output(vector<int64_t>& kmers_colors, string& toWrite, bool record_reads, bool record_counts, vector<vector<uint32_t>>& query_unitigID,vector<vector<uint32_t>>& query_unitigID_tmp,  uint64_t& color_number, string& header, string& line, uint k, uint threshold, vector<vector<uint16_t>>& query_counts)
 {
-	vector<double_t> percent(color_number, 0);
-	for (auto&& c : kmers_colors)
+	vector<string> color_counts;
+	vector<string> toW(color_number,"");
+	
+	string nc;
+	vector<string> last(color_number,"0");
+
+	for (auto&& c: query_counts)
 	{
-		percent[c]++;
+		for (uint color(0); color < c.size(); ++color)
+		{
+			nc = to_string(c[color]);
+			if (last[color] != nc )
+			{
+				toW[color]+=nc + ":";
+				last[color] = nc;
+			}
+		}
+		
+	}
+	for (uint str(0); str<toW.size(); ++str)
+	{
+		if (toW[str].empty())
+		{
+			color_counts.push_back("0");
+		}
+		else 
+		{
+			toW[str].pop_back();
+			color_counts.push_back(toW[str]);
+		}
+	}
+	vector<double_t> percent(color_number, 0);
+	//~ for (auto&& c : kmers_colors)
+	//~ {
+		//~ percent[c]++;
+	//~ }
+	
+	for (auto&& vec_c : query_counts)
+	{
+		for (uint c(0); c< vec_c.size(); ++c)
+		{
+			if (vec_c[c] > 0)
+				percent[c]++;
+		}
 	}
 	toWrite += header.substr(0,50) ;
+	
+	
+	
+	
 	for (uint per(0); per < percent.size(); ++per)
 	{
 		percent[per] = percent[per] *100 /(line.size() -k +1);
@@ -127,14 +184,15 @@ void write_output(vector<int64_t>& kmers_colors, string& toWrite, bool record_re
 			}
 		} else {
 			if (not record_reads)
-				toWrite += "\t0";
+				toWrite += "\t*";
 		}
 	}
 	toWrite += "\n";
+	//~ cout << "done" << endl;
 }
 
 
-void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t color_number, vector<vector<uint8_t>>& color_me_amaze, vector<vector<uint16_t>>& color_me_amaze_counts,vector<vector<uint32_t>>& color_me_amaze_reads, uint k, bool record_counts, bool record_reads, uint threshold,vector<vector<uint32_t>>& query_unitigID, uint nb_threads, bool exact){
+void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t color_number, vector<vector<uint8_t>>& color_me_amaze, vector<vector<uint16_t>>& color_me_amaze_counts,vector<vector<uint32_t>>& color_me_amaze_reads, uint k, bool record_counts, bool record_reads, uint threshold,vector<vector<uint32_t>>& query_unitigID, uint nb_threads, bool exact, vector<unsigned char*>& compr_minitig_color, vector<unsigned >& compr_minitig_color_size){
 	ifstream query_file(input);
 	ofstream out(name);
 	// #pragma omp parallel
@@ -162,17 +220,14 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t color_nu
 				string line=lines[i];
 				if(line[0]=='A' or line[0]=='C' or line[0]=='G' or line[0]=='T')
 				{
+					//~ cout << "new line" << endl;
 					vector<int64_t> kmers_colors;
 					vector<string> color_counts;
 					vector<int64_t> kmer_ids;
 					kmer_ids=ksl.get_rank_query(line);
-					vector<vector<uint64_t>> query_counts(color_number,{0});
-					// get datasets/counts in datasets corresponding to the sequence's kmers
-					get_colors_counts(kmer_ids,  record_counts,  color_number, kmers_colors, color_me_amaze,  color_me_amaze_counts, color_me_amaze_reads, query_counts);
-					if (record_counts)
-						write_count_output(record_counts,  query_counts, color_counts );
-					if (not  kmers_colors.empty())
-						write_output( kmers_colors, toWrite,  record_reads,  record_counts,  query_unitigID,query_unitigID_tmp,  color_number, header, line, k, threshold, color_counts);
+					vector<vector<uint16_t>> query_counts;
+					get_colors_counts(kmer_ids,  record_counts,  color_number, kmers_colors, color_me_amaze,  color_me_amaze_counts, color_me_amaze_reads, query_counts, compr_minitig_color, compr_minitig_color_size);
+						write_output( kmers_colors, toWrite,  record_reads,  record_counts,  query_unitigID,query_unitigID_tmp,  color_number, header, line, k, threshold, query_counts);
 				} else {
 					if (line[0]=='@' or line[0]=='>')
 						header = line;
@@ -268,11 +323,11 @@ string get_Bgreat_File(uint graph, string& bgread_output_file)
 
 
 
-void query_by_file(uint& counter, string& entry, kmer_Set_Light& ksl, uint64_t color_number,  vector<vector<uint8_t>>& color_me_amaze, vector<vector<uint16_t>>& color_me_amaze_counts, vector<vector<uint32_t>>& color_me_amaze_reads, uint k, bool record_counts, bool record_reads, uint threshold, vector<string>& bgreat_files, string& output, uint nb_threads, bool exact)
+void query_by_file(uint& counter, string& entry, kmer_Set_Light& ksl, uint64_t color_number,  vector<vector<uint8_t>>& color_me_amaze, vector<vector<uint16_t>>& color_me_amaze_counts, vector<vector<uint32_t>>& color_me_amaze_reads, uint k, bool record_counts, bool record_reads, uint threshold, vector<string>& bgreat_files, string& output, uint nb_threads, bool exact, vector<unsigned char*>& compr_minitig_color, vector<unsigned >& compr_minitig_color_size)
 {
 	string outName(output + "/out_query_Reindeer" + to_string(counter) + ".out");
 	vector<vector<uint32_t>> query_unitigID(color_number,{0});
-	doQuery(entry, outName, ksl, color_number, color_me_amaze, color_me_amaze_counts, color_me_amaze_reads, k, record_counts, record_reads, threshold, query_unitigID, nb_threads, exact);
+	doQuery(entry, outName, ksl, color_number, color_me_amaze, color_me_amaze_counts, color_me_amaze_reads, k, record_counts, record_reads, threshold, query_unitigID, nb_threads, exact,  compr_minitig_color, compr_minitig_color_size);
 	if (record_reads)
 	{
 		queryReadsID(bgreat_files, query_unitigID, outName);
@@ -281,7 +336,7 @@ void query_by_file(uint& counter, string& entry, kmer_Set_Light& ksl, uint64_t c
 }
 
 
-void perform_query(kmer_Set_Light& ksl, uint64_t color_number, vector<vector<uint8_t>>& color_me_amaze, vector<vector<uint16_t>>& color_me_amaze_counts, vector<vector<uint32_t>>& color_me_amaze_reads, uint k, bool record_counts, bool record_reads, uint threshold, string& bgreat_paths_fof, string& query, string& output, uint nb_threads, bool exact)
+void perform_query(kmer_Set_Light& ksl, uint64_t color_number, vector<vector<uint8_t>>& color_me_amaze, vector<vector<uint16_t>>& color_me_amaze_counts, vector<vector<uint32_t>>& color_me_amaze_reads, uint k, bool record_counts, bool record_reads, uint threshold, string& bgreat_paths_fof, string& query, string& output, uint nb_threads, bool exact, vector<unsigned char*>& compr_minitig_color,  vector<unsigned>& compr_minitig_color_size)
 {
 	
 	uint counter(0),patience(0);
@@ -300,7 +355,7 @@ void perform_query(kmer_Set_Light& ksl, uint64_t color_number, vector<vector<uin
 		if(exists_test(query))
 		{
 			high_resolution_clock::time_point t121 = high_resolution_clock::now();
-			query_by_file(counter, query, ksl, color_number,  color_me_amaze,  color_me_amaze_counts, color_me_amaze_reads, k, record_counts, record_reads,  threshold, bgreat_files, output, nb_threads, exact);
+			query_by_file(counter, query, ksl, color_number,  color_me_amaze,  color_me_amaze_counts, color_me_amaze_reads, k, record_counts, record_reads,  threshold, bgreat_files, output, nb_threads, exact, compr_minitig_color, compr_minitig_color_size);
 			high_resolution_clock::time_point t13 = high_resolution_clock::now();
 			duration<double> time_span13 = duration_cast<duration<double>>(t13 - t121);
 			cout<<"Query done: "<< time_span13.count() << " seconds."<<endl;
@@ -329,7 +384,7 @@ void perform_query(kmer_Set_Light& ksl, uint64_t color_number, vector<vector<uin
 				patience=0;
 				if(exists_test(entry)){
 					high_resolution_clock::time_point t121 = high_resolution_clock::now();
-					query_by_file(counter, entry, ksl, color_number,  color_me_amaze,  color_me_amaze_counts, color_me_amaze_reads, k, record_counts, record_reads,  threshold, bgreat_files,output, nb_threads, exact);
+					query_by_file(counter, entry, ksl, color_number,  color_me_amaze,  color_me_amaze_counts, color_me_amaze_reads, k, record_counts, record_reads,  threshold, bgreat_files,output, nb_threads, exact,  compr_minitig_color, compr_minitig_color_size);
 					memset(str, 0, 255);
 					high_resolution_clock::time_point t13 = high_resolution_clock::now();
 					duration<double> time_span13 = duration_cast<duration<double>>(t13 - t121);

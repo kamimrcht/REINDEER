@@ -50,7 +50,7 @@ uint m1(10);
 uint m2(10);
 uint m3(3);
 uint c(1);
-uint bit(6);
+uint bit(0);
 uint ex(0);
 
 void reindeer_index(uint k, string& fof,  string& color_dump_file, bool record_counts, bool record_reads, string& output, string& color_load_file, uint threads, bool exact)
@@ -60,13 +60,13 @@ void reindeer_index(uint k, string& fof,  string& color_dump_file, bool record_c
 	vector<vector<uint8_t>> color_me_amaze;
 	vector<vector<uint16_t>> color_me_amaze_counts;
 	vector<vector<uint32_t>> color_me_amaze_reads;
-	kmer_Set_Light ksl(k,m1,m2,m3,c,bit);
+	kmer_Set_Light ksl(k,m1,m2,m3,threads,bit);
 	int systemRet;
 	// BUILD THE INDEX
 	high_resolution_clock::time_point t12 = high_resolution_clock::now();
 	build_index(k, m1, m2, m3, c, bit, color_load_file, color_dump_file, fof, color_me_amaze, color_me_amaze_counts, color_me_amaze_reads, record_counts, record_reads, color_number, ksl, threads, exact, output);
 	duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
-	systemRet=system(("mv " + color_dump_file + " " + output ).c_str());
+	//~ systemRet=system(("mv " + color_dump_file + " " + output ).c_str());
 	cout<<"Index building and Coloration done: "<< time_span12.count() << " seconds."<<endl;
 }
 
@@ -93,15 +93,19 @@ void reindeer_query(uint k, string& output,string& output_query, bool record_cou
 	//~ string graph = getRealPath( "bcalm_union_out/union_graph.unitigs.fa", output);
 	string fof( getRealPath("graphs.lst", output));
 	string color_dump_file("");
-	string color_load_file(getRealPath("reindeer_matrix.gz", output));
+	//~ string color_load_file(getRealPath("reindeer_matrix.gz", output));
+	string color_load_file(getRealPath("reindeer_matrix", output));
 	uint64_t color_number(get_color_number(fof));
 	vector<vector<uint8_t>> color_me_amaze;
 	vector<vector<uint16_t>> color_me_amaze_counts;
 	vector<vector<uint32_t>> color_me_amaze_reads;
 	uint nb_threads(1);
-	kmer_Set_Light* ksl = load_index(k, color_load_file, color_dump_file, fof, color_me_amaze, color_me_amaze_counts, color_me_amaze_reads, record_counts, record_reads, color_number, nb_threads, exact, output);
+	vector<unsigned char*> compr_minitig_color;
+	vector<unsigned> compr_minitig_color_sizes;
+	cout << "\nLoading index.." << endl;
+	kmer_Set_Light* ksl = load_rle_index(k, color_load_file, color_dump_file, fof, color_me_amaze, color_me_amaze_counts, color_me_amaze_reads, record_counts, record_reads, color_number, nb_threads, exact, output, compr_minitig_color, compr_minitig_color_sizes);
 	cout << "\nComputing query..." << endl;
-	perform_query(*ksl, color_number, color_me_amaze,  color_me_amaze_counts,color_me_amaze_reads, k, record_counts,  record_reads,  threshold, bgreat_paths_fof, query, output_query, threads, exact);
+	perform_query(*ksl, color_number, color_me_amaze,  color_me_amaze_counts,color_me_amaze_reads, k, record_counts,  record_reads,  threshold, bgreat_paths_fof, query, output_query, threads, exact, compr_minitig_color, compr_minitig_color_sizes);
 }
 
 
