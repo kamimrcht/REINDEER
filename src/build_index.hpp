@@ -85,19 +85,14 @@ void build_matrix(string& color_load_file, string& color_dump_file, string& fof,
 	uint32_t unitigID;
 	vector<bool> colors;
 	uint64_t nb_minitigs(0);
-
-	//~ vector <unsigned char*> compressed_colors;
-	//~ vector <unsigned> compressed_colors_size;
 	vector<uint16_t> counts;
-	//~ string counts;
 	ofstream out(output_file);
-	//+/ number of colors
-
 	// wait before the real value
 	out.write(reinterpret_cast<char*>(&nb_minitigs),sizeof(uint64_t)); // number of minitigs
 	out.write(reinterpret_cast<char*>(&color_number),sizeof(uint64_t)); // number of colors
 	unsigned line_size;
 	string header;
+	unsigned char *in;
 	while(not minitigs_file->eof())
 	{
 		
@@ -119,7 +114,7 @@ void build_matrix(string& color_load_file, string& color_dump_file, string& fof,
 						uint n(counts.size()*2);
 						uint nn(counts.size()*2 + 1024);
 						unsigned char comp[nn];
-						unsigned char *in = (unsigned char*)&counts[0];
+						in = (unsigned char*)&counts[0];
 						unsigned compr_vector_size = trlec(in, n, comp) ; //todo can I write it now on the disk
 						out.write(reinterpret_cast<char*>(&compr_vector_size),sizeof(unsigned));
 						int64_t tw(minitig_id[i]);
@@ -140,6 +135,10 @@ void build_matrix(string& color_load_file, string& color_dump_file, string& fof,
 	out.write(reinterpret_cast<char*>(&nb_minitigs),sizeof(uint64_t));
 	delete(minitigs_file);
 	out.close();
+	//~ delete [] in;
+	//~ in = 0;
+	memset(&in, 0, counts.size()*2);
+
 }
 
 
@@ -185,8 +184,6 @@ void dump_matrix(bool record_counts, bool record_reads, vector<vector<uint8_t>>&
 
 void do_coloring(string& color_load_file, string& color_dump_file, string& fof, kmer_Set_Light* ksl, vector<vector<uint8_t>>& color_me_amaze, vector<vector<uint16_t>>& color_me_amaze_counts, vector<vector<uint32_t>>& color_me_amaze_reads, bool record_counts, bool record_reads, uint k, uint64_t& color_number, uint nb_threads, bool exact, string& output, vector<unsigned char*>& compr_minitig_color,vector<unsigned>& compr_minitig_color_size)
 {
-	//~ vector <unsigned char*> compressed_colors;
-	//~ vector <unsigned> compressed_colors_size;
 	vector <string> file_names;
 	if(exists_test(fof)){
 		ifstream fofin(fof);
@@ -215,19 +212,12 @@ void do_coloring(string& color_load_file, string& color_dump_file, string& fof, 
 	}
 	if (not color_load_file.empty())//todo: faire une fonction qui load tout l'index (blight se dump aussi)
 	{
-		//~ load_matrix( record_counts, record_reads,  color_me_amaze, color_me_amaze_counts,  color_me_amaze_reads,  color_number, color_load_file);
-		//~ vector<unsigned> vector_sizes;
 		uint64_t color_number;
 		uint64_t minitig_number;
 		compr_minitig_color = load_compressed_vectors(color_load_file, compr_minitig_color_size, color_number,minitig_number);
 	} else {
 		build_matrix( color_load_file,  color_dump_file,  fof,  ksl,  color_me_amaze,  color_me_amaze_counts, color_me_amaze_reads,  record_counts, record_reads,  k, color_number, nb_threads,  exact, output, compr_minitig_color, compr_minitig_color_size, color_dump_file);
 	}
-	//~ if (not color_dump_file.empty())
-	//~ {	
-		//dump_matrix( record_counts, record_reads,  color_me_amaze, color_me_amaze_counts,  color_me_amaze_reads,  color_number, color_dump_file);
-		//~ dump_compressed_vectors(compr_minitig_color_size, compr_minitig_color, color_dump_file, color_number);
-	//~ }
 }
 
 

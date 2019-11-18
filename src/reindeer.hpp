@@ -106,6 +106,7 @@ void reindeer_query(uint k, string& output,string& output_query, bool record_cou
 	kmer_Set_Light* ksl = load_rle_index(k, color_load_file, color_dump_file, fof, color_me_amaze, color_me_amaze_counts, color_me_amaze_reads, record_counts, record_reads, color_number, nb_threads, exact, output, compr_minitig_color, compr_minitig_color_sizes);
 	cout << "\nComputing query..." << endl;
 	perform_query(*ksl, color_number, color_me_amaze,  color_me_amaze_counts,color_me_amaze_reads, k, record_counts,  record_reads,  threshold, bgreat_paths_fof, query, output_query, threads, exact, compr_minitig_color, compr_minitig_color_sizes);
+	//~ delete [] ksl;
 }
 
 
