@@ -43,7 +43,7 @@ trled.o: trle/trled.c $(INC)
 	$(CC) -o $@ -c $< $(CFLAGS2)
 
 clean:
-	rm -rf *.o
+	rm -rf trlec.o trled.o utils.o main.o blight.o
 	rm -rf $(EXEC)
 
 
