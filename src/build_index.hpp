@@ -6,7 +6,7 @@
 
 using namespace std;
 
-
+// read colors from bcalm headers
 vector<bool>  get_colors_minitigs(string& line)
 {
 	vector<bool> colors;
@@ -19,6 +19,7 @@ vector<bool>  get_colors_minitigs(string& line)
 	return colors;
 }
 
+// read counts from bcalm headers
 vector<uint16_t> get_counts_minitigs(string& line)
 {
 	vector<uint16_t> counts;
@@ -30,22 +31,10 @@ vector<uint16_t> get_counts_minitigs(string& line)
 	return counts;
 }
 
-string get_counts_minitigs_char(string& line)
-{
-	vector<string> colors_minitig = split_utils(line,':');
-	string counts;
-	for (uint c(1); c < colors_minitig.size(); ++c) // convert the bit string to a bit vector
-	{
-		counts+=(colors_minitig[c]);
-		counts+=(':');
-	}
-	return counts;
-}
 
 
 
-
-
+// build color/count matrix and dump it
 void build_matrix(string& color_load_file, string& color_dump_file, string& fof, kmer_Set_Light* ksl, bool record_counts, bool record_reads, uint k, uint64_t& color_number, uint nb_threads, bool exact, string& output, vector <unsigned char*>& compressed_colors, vector <unsigned>& compressed_colors_size, string& output_file)
 {
 	auto minitigs_file = new zstr::ifstream("_blmonocolor.fa.gz");
@@ -93,7 +82,7 @@ void build_matrix(string& color_load_file, string& color_dump_file, string& fof,
 
 
 
-
+// color using minitig file: either build and dump the color matrix during the index construction, or load it during the query
 void do_coloring(string& color_load_file, string& color_dump_file, string& fof, kmer_Set_Light* ksl, bool record_counts, bool record_reads, uint k, uint64_t& color_number, uint nb_threads, bool exact, string& output, vector<unsigned char*>& compr_minitig_color,vector<unsigned>& compr_minitig_color_size)
 {
 	vector <string> file_names;
@@ -125,7 +114,7 @@ void do_coloring(string& color_load_file, string& color_dump_file, string& fof, 
 }
 
 
-
+// load dumped index(+colors)
 kmer_Set_Light* load_rle_index(uint k, string& color_load_file, string& color_dump_file, string& fof, bool record_counts, bool record_reads, uint64_t& color_number, uint nb_threads, bool exact, string& output, vector<unsigned char*> &compr_minitig_color,  vector<unsigned>& compr_minitig_color_sizes)
 {
 	kmer_Set_Light* ksl= new kmer_Set_Light(output + "/reindeer_index.gz");
@@ -137,12 +126,16 @@ kmer_Set_Light* load_rle_index(uint k, string& color_load_file, string& color_du
 
 
 
-
+// build index from new file
 void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, string& color_load_file, string& color_dump_file, string& fof, bool record_counts, bool record_reads, uint64_t& color_number, kmer_Set_Light& ksl, uint nb_threads, bool exact, string& output)
 {
 	cout << "Minitig coloring..."<< endl;
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
-	ksl.construct_index_fof(fof, true);
+	// apply minitig merge (-> MMM) with rule regarding colors or counts
+	if (record_counts)
+		ksl.construct_index_fof(fof, true);
+	else
+		ksl.construct_index_fof(fof, false);
 	vector<unsigned char*>compr_minitig_color;
 	vector<unsigned> compr_minitig_color_size;
 	do_coloring(color_load_file, color_dump_file, fof, &ksl, record_counts, record_reads, k, color_number, nb_threads, exact, output, compr_minitig_color, compr_minitig_color_size);

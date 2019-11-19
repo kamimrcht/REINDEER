@@ -8,7 +8,7 @@
 using namespace std;
 
 
-
+// load rle encoded matrix from disk (keep compressed in ram)
 vector<unsigned char*> load_compressed_vectors(const string& input_file, vector<unsigned>&vector_sizes, uint64_t& color_number, uint64_t& minitig_number)
 {
 	ifstream in(input_file);
@@ -36,6 +36,7 @@ vector<unsigned char*> load_compressed_vectors(const string& input_file, vector<
 }
 
 
+// dump rle vector on disk
 void dump_compressed_vector(vector<uint16_t>& counts, int64_t minitig_id, ofstream& out, unsigned char *in)
 {
 	// one vector corresponding to the minitig count/colors
@@ -49,8 +50,6 @@ void dump_compressed_vector(vector<uint16_t>& counts, int64_t minitig_id, ofstre
 	int64_t tw(minitig_id);
 	out.write(reinterpret_cast<char*>(&tw),sizeof(int64_t));
 	out.write((const char*)comp,(compr_vector_size));
-
-
 }
 
 
