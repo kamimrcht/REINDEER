@@ -3,7 +3,6 @@
 
 
 
-#include "../trle/trle.h"
 
 using namespace std;
 
@@ -53,7 +52,6 @@ void build_matrix(string& color_load_file, string& color_dump_file, string& fof,
 	string minitig;
 	uint16_t count;
 	uint32_t unitigID;
-	vector<bool> colors;
 	uint64_t nb_minitigs(0);
 	vector<uint16_t> counts;
 	ofstream out(output_file);
@@ -68,37 +66,18 @@ void build_matrix(string& color_load_file, string& color_dump_file, string& fof,
 		
 		getline(*minitigs_file, minitig);
 		if(minitig.empty()){continue;}
-		string minitig_colorset(color_number, '0');
-		string minitig_countlist;
 		vector<int64_t> minitig_id;
 		if (minitig[0] == 'A' or minitig[0] == 'C' or minitig[0] == 'G' or minitig[0] == 'T')
 		{
 			++nb_minitigs;
-			minitig_id=ksl->get_rank_query(minitig); //normalement un seul id car on query tous les kmers d'un minitig
-
+			minitig_id=ksl->get_rank_query(minitig); 
 			uint64_t i(0);
-					if(minitig_id[i]>=0)
-					{
-						// one vector corresponding to the minitig count/colors
-						// convert to string for the compression
-						uint n(counts.size()*2);
-						uint nn(counts.size()*2 + 1024);
-						unsigned char comp[nn];
-						in = (unsigned char*)&counts[0];
-						unsigned compr_vector_size = trlec(in, n, comp) ; //todo can I write it now on the disk
-						out.write(reinterpret_cast<char*>(&compr_vector_size),sizeof(unsigned));
-						int64_t tw(minitig_id[i]);
-						out.write(reinterpret_cast<char*>(&tw),sizeof(int64_t));
-						out.write((const char*)comp,(compr_vector_size));
-					}
+			if(minitig_id[i]>=0) // even if minitig id is longer than 1, all ids should be the same
+				dump_compressed_vector(counts, minitig_id[i], out, in);
 		} else { //header
-			if (record_counts)
-			{
-				header = minitig;
-				counts = get_counts_minitigs(minitig); // vector of ints
-			} else {
-				colors = get_colors_minitigs(minitig);
-			}
+			header = minitig;
+			counts = get_counts_minitigs(minitig); // vector of uints, colors and counts have the same encoding
+			
 		}
 	}
 	out.seekp(0, ios::beg);
@@ -110,23 +89,6 @@ void build_matrix(string& color_load_file, string& color_dump_file, string& fof,
 }
 
 
-void dump_compressed_vectors(vector<unsigned>& minitigs_colors_size,vector<unsigned char*>& compr_minitigs_colors, const string& output_file, uint64_t color_number)
-{
-	ofstream out(output_file);
-	out.write(reinterpret_cast<char*>(&color_number),sizeof(uint64_t)); // number of colors
-	uint64_t minit_nb(compr_minitigs_colors.size());
-	out.write(reinterpret_cast<char*>(&minit_nb),sizeof(uint64_t)); // number of minitigs
-	unsigned line_size;
-	for (uint i(0); i < compr_minitigs_colors.size(); ++i)
-	{
-		line_size = minitigs_colors_size[i];
-		out.write(reinterpret_cast<char*>(&line_size),sizeof(unsigned));
-		auto point =&(compr_minitigs_colors[i][0]);
-		out.write((char*)point,(line_size));
-	
-	}
-	
-}
 
 
 
