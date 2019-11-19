@@ -182,6 +182,7 @@ int main(int argc, char **argv)
 		}
 		if ( fof.empty() or k == 0 )
 		{
+			cout << "Missing argument " << endl;
 			PrintHelp();
 			return 0;
 		}
@@ -199,13 +200,19 @@ int main(int argc, char **argv)
 		}
 		cout << "INDEX BUILDING = THE END" <<endl;
 	} else {
-		
-		cout << "Querying..." << endl;
-		string output_query(output + "/query_results");
-		if (not dirExists(output_query)){
-			systRet=system(("mkdir " + output_query).c_str());
+		if (color_load_file.empty())
+		{
+			cout << "Missing argument -l" << endl;
+			PrintHelp();
+			return 0;
+		} else {
+			cout << "Querying..." << endl;
+			string output_query(output + "/query_results");
+			if (not dirExists(output_query)){
+				systRet=system(("mkdir " + output_query).c_str());
+			}
+			reindeer_query(k, color_load_file, output_query,  record_counts,  record_reads,  threshold,  bgreat_paths_fof,  query, threads, exact);
 		}
-		reindeer_query(k, color_load_file, output_query,  record_counts,  record_reads,  threshold,  bgreat_paths_fof,  query, threads, exact);
 	}
     return 0;
 }
