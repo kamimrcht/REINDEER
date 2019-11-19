@@ -272,7 +272,7 @@ public:
 	void get_monocolor_minitigs(const  vector<string>& minitigs, const vector<int64_t>& color,const vector<uint16_t>& coverage, zstr::ofstream* out, const string& mini,uint64_t number_color);
 	void merge_super_buckets(const string& input_file, uint64_t number_color,zstr::ofstream* out);
 	string compaction(const string& seq1,const string& seq2,bool);
-	void construct_index_fof(const string& input_file, bool=false);
+	void construct_index_fof(const string& input_file, bool=true);
 	void reset();
 	void dump_disk(const string& output_file);
 	vector<bool> get_presence_query(const string& seq);

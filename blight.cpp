@@ -280,12 +280,6 @@ void kmer_Set_Light::construct_index_fof(const string& input_file, bool countcol
 		//~ #pragma omp parallel for num_threads(coreNumber)
 		for(uint i_superbuckets=0; i_superbuckets<number_superbuckets.value(); ++i_superbuckets){
 			//SORT SUPERBUCKETS
-			//~ cout<<"decomp"<<endl;
-			//~ decompress_file("_blout"+to_string(i_superbuckets), "_ublout"+to_string(i_superbuckets));
-				//~ cout<<"sort"<<endl;
-			//~ string cmd("sort _blout"+to_string(i_superbuckets)+" --output _blsout"+to_string(i_superbuckets));
-			//~ uint res(system(cmd.c_str()));
-			//~ if(res!=0){cout<<"Problem with sort command"<<endl;exit(0);}
 			merge_super_buckets_mem("_blout"+to_string(i_superbuckets),i_file-1,&out);
 			remove(("_blsout"+to_string(i_superbuckets)).c_str());
 			cout<<"-"<<flush;
@@ -597,92 +591,6 @@ bool equal_nonull(const vector<uint16_t>& V1,const vector<uint16_t>& V2){
 
 
 
-//~ void kmer_Set_Light::get_monocolor_minitigs_mem(const  vector<minitig>& minitigs , zstr::ofstream* out, const string& mini,uint64_t number_color){
-	//~ unordered_map<kmer,kmer,KmerHasher> next_kmer;
-	//~ unordered_map<kmer,kmer,KmerHasher> previous_kmer;
-	//~ unordered_map<kmer,vector<uint32_t>,KmerHasher> kmer_color;
-	//~ //TODO MERGE THE 3 TABLE
-	//~ vector<uint32_t> bit_vector(number_color,0);
-	//~ string sequence;
-	//~ //ASSOCIATE INFO TO KMERS
-	//~ //SORT MINITIG PER SIZE OPTIM
-	//~ for(uint64_t i_mini(0);i_mini<minitigs.size();++i_mini){
-		//~ sequence=bool2strv(minitigs[i_mini].sequence);
-		//~ kmer seq(str2num(sequence.substr(0,k))),rcSeq(rcb(seq)),canon(min_k(seq,rcSeq)),prev(-1);
-		//~ canon=(min_k(seq, rcSeq));
-		//~ if(kmer_color.count(canon)==0){
-			//~ kmer_color[canon]=bit_vector;
-		//~ }
-		//~ kmer_color[canon][minitigs[i_mini].color-1]=minitigs[i_mini].coverage;
-
-		//~ for(uint i(0);i+k<sequence.size();++i){
-			//~ prev=canon;
-			//~ updateK(seq,sequence[i+k]);
-			//~ updateRCK(rcSeq,sequence[i+k]);
-			//~ canon=(min_k(seq, rcSeq));
-			//~ if(kmer_color.count(canon)==0){
-				//~ kmer_color[canon]=bit_vector;
-			//~ }
-			//~ kmer_color[canon][minitigs[i_mini].color-1]=minitigs[i_mini].coverage;
-			//~ if(next_kmer.count(prev)==0){
-				//~ next_kmer[prev]=canon;
-			//~ }
-			//~ if(previous_kmer.count(canon)==0){
-				//~ previous_kmer[canon]=prev;
-			//~ }
-		//~ }
-	//~ }
-	//~ string monocolor,compact;
-
-	//~ //FOREACH KMER COMPUTE MAXIMAL MONOCOLOR MINITIG
-	//~ for (auto&& it: kmer_color){
-
-		//~ if(not it.second.empty()){
-			//~ auto dumpcolor(it.second);
-			//~ kmer canon=it.first;
-			//~ monocolor=kmer2str(canon);
-			//~ kmer_color[canon].clear();
-			//~ //GO FORWARD
-			//~ while(true){
-				//~ if(next_kmer.count(canon)==0){break;}
-				//~ kmer next(next_kmer[canon]);
-				//~ if(count_color){
-					//~ if(kmer_color[next]!=dumpcolor){break;}
-				//~ }else{
-					//~ if(not equal_nonull(kmer_color[next],dumpcolor)){break;}
-				//~ }
-				//~ compact=compaction(monocolor,kmer2str(next));
-				//~ if(compact.empty()){break;}
-				//~ kmer_color[next].clear();
-				//~ monocolor=compact;
-				//~ canon=next;
-			//~ }
-			//~ //GO BACKWARD
-			//~ canon=it.first;
-			//~ while(true){
-				//~ if(previous_kmer.count(canon)==0){break;}
-				//~ kmer prev(previous_kmer[canon]);
-				//~ if(count_color){
-					//~ if(kmer_color[prev]!=dumpcolor){break;}
-				//~ }else{
-					//~ if(not equal_nonull(kmer_color[prev],dumpcolor)){break;}
-				//~ }
-				//~ compact=compaction(monocolor,kmer2str(prev));
-				//~ if(compact.empty()){break;}
-				//~ kmer_color[prev].clear();
-				//~ monocolor=compact;
-				//~ canon=previous_kmer[canon];
-			//~ }
-
-			//~ #pragma omp critical (monocolorFile)
-			//~ {
-				//~ *out<<">"+mini<<color_coverage2str(dumpcolor)<<"\n"<<monocolor<<"\n";
-				//~ kmer_number_check+=monocolor.size()-k+1;
-				//~ skmer_number_check++;
-			//~ }
-		//~ }
-	//~ }
-//~ }
 
 
 struct kmer_context{
@@ -742,7 +650,7 @@ void kmer_Set_Light::get_monocolor_minitigs_mem(const  vector<minitig>& minitigs
 				kmer next(kmer2context[canon].next_kmer);
 				if(kmer2context[next].isdump){break;}
 				if(count_color){
-					if(kmer2context[canon].count!=colorV2dump){break;}
+					if(kmer2context[next].count!=colorV2dump){break;}
 				}else{
 					if(not equal_nonull(kmer2context[canon].count,colorV2dump)){break;}
 				}
@@ -753,12 +661,13 @@ void kmer_Set_Light::get_monocolor_minitigs_mem(const  vector<minitig>& minitigs
 				seq2dump=compact;
 				canon=next;
 			}
+			canon=it.first;
 			while(true){
 				if(not kmer2context[canon].prevOK){break;}
 				kmer prev(kmer2context[canon].previous_kmer);
 				if(kmer2context[prev].isdump){break;}
 				if(count_color){
-					if(kmer2context[canon].count!=colorV2dump){break;}
+					if(kmer2context[prev].count!=colorV2dump){break;}
 				}else{
 					if(not equal_nonull(kmer2context[canon].count,colorV2dump)){break;}
 				}
@@ -782,12 +691,6 @@ void kmer_Set_Light::get_monocolor_minitigs_mem(const  vector<minitig>& minitigs
 			}
 		}
 	}
-	//~ kmer_number_check3+=kmer2context.size();
-	//~ if(kmer_number_check3!=kmer_number_check){
-		//~ cout<<"STOP3"<<endl;
-		//~ cout<<kmer_number_check3<<" "<<kmer_number_check<<endl;
-		//~ cin.get();
-	//~ }
 }
 
 
@@ -1451,7 +1354,7 @@ void kmer_Set_Light::file_query_rank(const string& query_file){
 	cout << "The whole QUERY took me " << time_span.count() << " seconds."<< endl;
 	sort(all_hashes.begin(),all_hashes.end());
 	bool surjective(true);
-	all_hashes	.erase( unique( all_hashes.begin(), all_hashes.end() ), all_hashes.end() );
+	all_hashes.erase( unique( all_hashes.begin(), all_hashes.end() ), all_hashes.end() );
 
 	for(uint i(0);i<all_hashes.size();++i){
 		if(all_hashes[i]!=i){
@@ -1530,7 +1433,6 @@ void kmer_Set_Light::dump_disk(const string& output_file){
 	}
 	out<<flush;
 	fb.close();
-	cout<<"Index dump"<<endl;
 }
 
 
