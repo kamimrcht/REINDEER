@@ -60,13 +60,10 @@ void PrintHelp()
             "* Options\n"
             "-k                      :     k-mer size (default 31)\n"
             "--count                 :     Retain abundances instead of presence/absence\n"
-            //~ "--exact                 :     retain exact mean abundances and presence/absence (increased disk use)\n"
             "--bcalm                 :     Launch bcalm on each single read dataset\n\n"
             "--paired-end            :     Index using paired-end files (provide pairs of files one after another in the fof). Works only with --bcalm.\n\n"
-            //~ "-g                      :     provide union DBG of all datasets\n\n"
             "* Output options\n"
             "-o <file>               :     Directory to write output files (default: output_reindeer)\n"
-            //~ "-w <file>               :     choose a filename to write index on disk\n"
 
 
             "                    QUERY\n"
@@ -94,7 +91,6 @@ void ProcessArgs(int argc, char** argv)
             {"index", no_argument, nullptr, 'i'},
             {"help", no_argument, nullptr, 'h'},
             {"count", no_argument, nullptr, 'c'},
-            //~ {"exact", no_argument, nullptr, 'e'},
             {"bcalm", no_argument, nullptr, 'b'},
             {"query", no_argument, nullptr, 'Q'},
             {"paired-end", no_argument, nullptr, 'P'},
@@ -131,9 +127,6 @@ void ProcessArgs(int argc, char** argv)
 			case 'c':
 				record_counts=true;
 				break;
-			//~ case 'e':
-				//~ exact=true;
-				//~ break;
 			case 'P':
 				PE=true;
 				break;
@@ -143,9 +136,6 @@ void ProcessArgs(int argc, char** argv)
 			case 'l':
 				color_load_file=optarg;
 				break;
-			//~ case 'w':
-				//~ color_dump_file=optarg;
-				//~ break;
 			case 'o':
 				output=optarg;
 				break;
@@ -207,6 +197,7 @@ int main(int argc, char **argv)
 			string cmd("rm " + output + "/PE*" );
 			systRet = system(cmd.c_str());
 		}
+		cout << "INDEX BUILDING = THE END" <<endl;
 	} else {
 		
 		cout << "Querying..." << endl;

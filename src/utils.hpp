@@ -209,5 +209,21 @@ string getRealPath(string file, string& dir){
 	return rp + "/" + file;
 }
 
+uint get_color_number(string& fof)
+{	
+	uint color(0);
+	string line;
+	ifstream fof_file(fof);
+	while (not fof_file.eof())
+	{
+		getline(fof_file, line);
+		if (not line.empty())
+		{
+			color++;
+		}
+	}
+	return color;
+}
+
 
 #endif

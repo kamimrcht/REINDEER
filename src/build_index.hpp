@@ -33,13 +33,10 @@ vector<uint16_t> get_counts_minitigs(string& line)
 
 string get_counts_minitigs_char(string& line)
 {
-	//~ vector<uint16_t> counts;
 	vector<string> colors_minitig = split_utils(line,':');
 	string counts;
 	for (uint c(1); c < colors_minitig.size(); ++c) // convert the bit string to a bit vector
 	{
-		//~ counts.push_back(colors_minitig[c]);
-		//~ counts.push_back(':');
 		counts+=(colors_minitig[c]);
 		counts+=(':');
 	}
@@ -48,36 +45,9 @@ string get_counts_minitigs_char(string& line)
 
 
 
-void load_matrix(bool record_counts, bool record_reads, vector<vector<uint8_t>>& color_me_amaze, vector<vector<uint16_t>>& color_me_amaze_counts, vector<vector<uint32_t>>& color_me_amaze_reads, uint64_t& color_number, string& color_load_file)
-{
-	if (not record_counts)
-		{
-			if (not record_reads)
-			{
-				color_me_amaze = load_written_matrix(color_load_file);
-				color_number = color_me_amaze.size();
-			}
-			else
-			{
-				color_me_amaze_reads = load_written_matrix_reads(color_load_file);
-				color_number = color_me_amaze.size();
-			}
-	} else {
-		color_me_amaze_counts = load_written_matrix_counts(color_load_file);
-		color_number = color_me_amaze_counts.size();
-	}
-}
-
-//~ void load_rle_matrix(bool record_counts, bool record_reads, vector<vector<uint8_t>>& color_me_amaze, vector<vector<uint16_t>>& color_me_amaze_counts, vector<vector<uint32_t>>& color_me_amaze_reads, uint64_t& color_number, string& color_load_file)
-//~ {
-	//~ vector<unsigned> vector_sizes;
-	//~ uint64_t color_number;
-	//~ uint64_t minitig_number;
-	//~ load_compressed_vectors(color_load_file, vector_sizes, color_number,minitig_number);
-//~ }
 
 
-void build_matrix(string& color_load_file, string& color_dump_file, string& fof, kmer_Set_Light* ksl, vector<vector<uint8_t>>& color_me_amaze, vector<vector<uint16_t>>& color_me_amaze_counts, vector<vector<uint32_t>>& color_me_amaze_reads, bool record_counts, bool record_reads, uint k, uint64_t& color_number, uint nb_threads, bool exact, string& output, vector <unsigned char*>& compressed_colors, vector <unsigned>& compressed_colors_size, string& output_file)
+void build_matrix(string& color_load_file, string& color_dump_file, string& fof, kmer_Set_Light* ksl, bool record_counts, bool record_reads, uint k, uint64_t& color_number, uint nb_threads, bool exact, string& output, vector <unsigned char*>& compressed_colors, vector <unsigned>& compressed_colors_size, string& output_file)
 {
 	auto minitigs_file = new zstr::ifstream("_blmonocolor.fa.gz");
 	string minitig;
@@ -135,8 +105,6 @@ void build_matrix(string& color_load_file, string& color_dump_file, string& fof,
 	out.write(reinterpret_cast<char*>(&nb_minitigs),sizeof(uint64_t));
 	delete(minitigs_file);
 	out.close();
-	//~ delete [] in;
-	//~ in = 0;
 	memset(&in, 0, counts.size()*2);
 
 }
@@ -162,27 +130,9 @@ void dump_compressed_vectors(vector<unsigned>& minitigs_colors_size,vector<unsig
 
 
 
-void dump_matrix(bool record_counts, bool record_reads, vector<vector<uint8_t>>& color_me_amaze, vector<vector<uint16_t>>& color_me_amaze_counts, vector<vector<uint32_t>>& color_me_amaze_reads, uint64_t& color_number, string& color_dump_file)
-{
-	if (not record_counts)
-	{
-		if (not record_reads)
-		{
-			write_color_matrix(color_dump_file, color_me_amaze);
 
-		}
-		else
-		{
-			write_color_matrix_reads(color_dump_file, color_me_amaze_reads);
-		}
-	} 
-	else 
-	{
-		write_color_matrix_counts(color_dump_file, color_me_amaze_counts);
-	}
-}
 
-void do_coloring(string& color_load_file, string& color_dump_file, string& fof, kmer_Set_Light* ksl, vector<vector<uint8_t>>& color_me_amaze, vector<vector<uint16_t>>& color_me_amaze_counts, vector<vector<uint32_t>>& color_me_amaze_reads, bool record_counts, bool record_reads, uint k, uint64_t& color_number, uint nb_threads, bool exact, string& output, vector<unsigned char*>& compr_minitig_color,vector<unsigned>& compr_minitig_color_size)
+void do_coloring(string& color_load_file, string& color_dump_file, string& fof, kmer_Set_Light* ksl, bool record_counts, bool record_reads, uint k, uint64_t& color_number, uint nb_threads, bool exact, string& output, vector<unsigned char*>& compr_minitig_color,vector<unsigned>& compr_minitig_color_size)
 {
 	vector <string> file_names;
 	if(exists_test(fof)){
@@ -202,42 +152,22 @@ void do_coloring(string& color_load_file, string& color_dump_file, string& fof, 
 		cout<<"File of file problem"<<endl;
 	}
 	color_number = file_names.size();
-	if (not record_counts)
-	{
-		color_me_amaze=vector<vector<uint8_t>>(color_number,vector<uint8_t>(ksl->number_super_kmer,0));
-	}
-	else 
-	{
-		color_me_amaze_counts=vector<vector<uint16_t>>(color_number,vector<uint16_t>(ksl->number_super_kmer,0));
-	}
-	if (not color_load_file.empty())//todo: faire une fonction qui load tout l'index (blight se dump aussi)
+	if (not color_load_file.empty())
 	{
 		uint64_t color_number;
 		uint64_t minitig_number;
 		compr_minitig_color = load_compressed_vectors(color_load_file, compr_minitig_color_size, color_number,minitig_number);
 	} else {
-		build_matrix( color_load_file,  color_dump_file,  fof,  ksl,  color_me_amaze,  color_me_amaze_counts, color_me_amaze_reads,  record_counts, record_reads,  k, color_number, nb_threads,  exact, output, compr_minitig_color, compr_minitig_color_size, color_dump_file);
+		build_matrix( color_load_file,  color_dump_file,  fof,  ksl,  record_counts, record_reads,  k, color_number, nb_threads,  exact, output, compr_minitig_color, compr_minitig_color_size, color_dump_file);
 	}
 }
 
 
 
-//~ kmer_Set_Light* load_index(uint k, string& color_load_file, string& color_dump_file, string& fof, vector<vector<uint8_t>>& color_me_amaze, vector<vector<uint16_t>>& color_me_amaze_counts, vector<vector<uint32_t>>& color_me_amaze_reads, bool record_counts, bool record_reads, uint64_t& color_number, uint nb_threads, bool exact, string& output)
-//~ {
-	//~ kmer_Set_Light* ksl= new kmer_Set_Light(output + "/reindeer_index.gz");
-	//~ do_coloring(color_load_file, color_dump_file, fof, ksl, color_me_amaze, color_me_amaze_counts, color_me_amaze_reads, record_counts, record_reads, k, color_number, nb_threads, exact, output);
-	//~ string cmd("rm -f _blmonocolor.fa.gz");
-	//~ int sysRet(system(cmd.c_str()));
-	//~ return ksl;
-//~ }
-
-
-
-kmer_Set_Light* load_rle_index(uint k, string& color_load_file, string& color_dump_file, string& fof, vector<vector<uint8_t>>& color_me_amaze, vector<vector<uint16_t>>& color_me_amaze_counts, vector<vector<uint32_t>>& color_me_amaze_reads, bool record_counts, bool record_reads, uint64_t& color_number, uint nb_threads, bool exact, string& output, vector<unsigned char*> &compr_minitig_color,  vector<unsigned>& compr_minitig_color_sizes)
+kmer_Set_Light* load_rle_index(uint k, string& color_load_file, string& color_dump_file, string& fof, bool record_counts, bool record_reads, uint64_t& color_number, uint nb_threads, bool exact, string& output, vector<unsigned char*> &compr_minitig_color,  vector<unsigned>& compr_minitig_color_sizes)
 {
-	//~ kmer_Set_Light* ksl= new kmer_Set_Light(output + "/reindeer_index.gz");
 	kmer_Set_Light* ksl= new kmer_Set_Light(output + "/reindeer_index.gz");
-	do_coloring(color_load_file, color_dump_file, fof, ksl, color_me_amaze, color_me_amaze_counts, color_me_amaze_reads, record_counts, record_reads, k, color_number, nb_threads, exact, output, compr_minitig_color, compr_minitig_color_sizes);
+	do_coloring(color_load_file, color_dump_file, fof, ksl, record_counts, record_reads, k, color_number, nb_threads, exact, output, compr_minitig_color, compr_minitig_color_sizes);
 	string cmd("rm -f _blmonocolor.fa.gz");
 	int sysRet(system(cmd.c_str()));
 	return ksl;
@@ -246,15 +176,26 @@ kmer_Set_Light* load_rle_index(uint k, string& color_load_file, string& color_du
 
 
 
-void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, string& color_load_file, string& color_dump_file, string& fof, vector<vector<uint8_t>>& color_me_amaze, vector<vector<uint16_t>>& color_me_amaze_counts, vector<vector<uint32_t>>& color_me_amaze_reads, bool record_counts, bool record_reads, uint64_t& color_number, kmer_Set_Light& ksl, uint nb_threads, bool exact, string& output)
+void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, string& color_load_file, string& color_dump_file, string& fof, bool record_counts, bool record_reads, uint64_t& color_number, kmer_Set_Light& ksl, uint nb_threads, bool exact, string& output)
 {
+	cout << "Minitig coloring..."<< endl;
+	high_resolution_clock::time_point t1 = high_resolution_clock::now();
 	ksl.construct_index_fof(fof, true);
 	vector<unsigned char*>compr_minitig_color;
 	vector<unsigned> compr_minitig_color_size;
-	do_coloring(color_load_file, color_dump_file, fof, &ksl, color_me_amaze, color_me_amaze_counts, color_me_amaze_reads, record_counts, record_reads, k, color_number, nb_threads, exact, output, compr_minitig_color, compr_minitig_color_size);
+	do_coloring(color_load_file, color_dump_file, fof, &ksl, record_counts, record_reads, k, color_number, nb_threads, exact, output, compr_minitig_color, compr_minitig_color_size);
+	high_resolution_clock::time_point t12 = high_resolution_clock::now();
+	duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
+	cout<<"Coloration done: "<< time_span12.count() << " seconds."<<endl;
+	high_resolution_clock::time_point t2 = high_resolution_clock::now();
+	cout << "Dump index..."<< endl;
 	ksl.dump_disk(output + "/reindeer_index.gz");
+	high_resolution_clock::time_point t13 = high_resolution_clock::now();
 	string cmd("rm -f _blmonocolor.fa.gz");
 	int sysRet(system(cmd.c_str()));
+	duration<double> time_span13 = duration_cast<duration<double>>(t13 - t2);
+	cout<<"Index written on disk: "<< time_span13.count() << " seconds."<<endl;
+
 }
 
 
