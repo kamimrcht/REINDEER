@@ -8,6 +8,23 @@
 using namespace std;
 
 
+// dump rle vector on buffer
+void dump_compressed_vector_buff(vector<uint16_t>& counts, int64_t minitig_id, string& buffer, unsigned char *in)
+{
+	// one vector corresponding to the minitig count/colors
+	// convert to string for the compression
+	uint n(counts.size()*2);
+	uint nn(counts.size()*2 + 1024);
+	unsigned char comp[nn];
+	in = (unsigned char*)&counts[0];
+	unsigned compr_vector_size = trlec(in, n, comp) ; //todo can I write it now on the disk
+	//~ out.write(reinterpret_cast<char*>(&compr_vector_size),sizeof(unsigned));
+	buffer.append(reinterpret_cast<char*>(&compr_vector_size),sizeof(unsigned));
+	int64_t tw(minitig_id);
+	buffer.append(reinterpret_cast<char*>(&tw),sizeof(int64_t));
+	buffer.append((const char*)comp,(compr_vector_size));
+}
+
 // load rle encoded matrix from disk (keep compressed in ram)
 vector<unsigned char*> load_compressed_vectors(const string& input_file, vector<unsigned>&vector_sizes, uint64_t& color_number, uint64_t& minitig_number)
 {

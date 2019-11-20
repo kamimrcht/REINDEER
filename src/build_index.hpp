@@ -23,11 +23,18 @@ vector<bool>  get_colors_minitigs(string& line)
 vector<uint16_t> get_counts_minitigs(string& line)
 {
 	vector<uint16_t> counts;
-	vector<string> colors_minitig = split_utils(line,':');
-	for (uint c(1); c < colors_minitig.size(); ++c) // convert the bit string to a bit vector
+	uint pred(0);
+	for (uint c(1); c < line.size();++c) // convert the bit string to a bit vector
 	{
-		counts.push_back((uint16_t) stoi(colors_minitig[c]));
+		if(line[c]==':'){
+			if (pred!=0){
+				counts.push_back(stoi(line.substr(pred,c-pred)));
+			}
+			pred=c+1;
+		}
+
 	}
+	counts.push_back(stoi(line.substr(pred)));
 	return counts;
 }
 
@@ -38,44 +45,65 @@ vector<uint16_t> get_counts_minitigs(string& line)
 void build_matrix(string& color_load_file, string& color_dump_file, string& fof, kmer_Set_Light* ksl, bool record_counts, bool record_reads, uint k, uint64_t& color_number, uint nb_threads, bool exact, string& output, vector <unsigned char*>& compressed_colors, vector <unsigned>& compressed_colors_size, string& output_file)
 {
 	auto minitigs_file = new zstr::ifstream("_blmonocolor.fa.gz");
-	string minitig;
-	uint16_t count;
-	uint32_t unitigID;
 	uint64_t nb_minitigs(0);
-	vector<uint16_t> counts;
 	ofstream out(output_file);
-	// wait before the real value
-	out.write(reinterpret_cast<char*>(&nb_minitigs),sizeof(uint64_t)); // number of minitigs
+	mutex mm;
+	out.write(reinterpret_cast<char*>(&nb_minitigs),sizeof(uint64_t)); // number of minitigs - wait before the real value
 	out.write(reinterpret_cast<char*>(&color_number),sizeof(uint64_t)); // number of colors
-	unsigned line_size;
-	string header;
-	unsigned char *in;
-	while(not minitigs_file->eof())
+	#pragma omp parallel num_threads(nb_threads)
 	{
-		
-		getline(*minitigs_file, minitig);
-		if(minitig.empty()){continue;}
 		vector<int64_t> minitig_id;
-		if (minitig[0] == 'A' or minitig[0] == 'C' or minitig[0] == 'G' or minitig[0] == 'T')
+		vector<uint16_t> counts;
+		string header,minitig, buffer;
+		unsigned char *in;
+		while(not minitigs_file->eof())
 		{
-			++nb_minitigs;
-			minitig_id=ksl->get_rank_query(minitig.substr(0, k)); // all ranks are the same for the kmers so we need just one
-			//~ uint64_t i(0);
-			//~ if(minitig_id[i]>=0) // even if minitig id is longer than 1, all ids should be the same
-			if((not minitig_id.empty() ) and minitig_id.back() >=0) // even if minitig id is longer than 1, all ids should be the same
-				//~ dump_compressed_vector(counts, minitig_id[i], out, in);
-				dump_compressed_vector(counts, minitig_id.back(), out, in);
-		} else { //header
-			header = minitig;
-			counts = get_counts_minitigs(minitig); // vector of uints, colors and counts have the same encoding
-			
+			#pragma omp critical(infile)
+			{
+				getline(*minitigs_file, header);
+				getline(*minitigs_file, minitig);
+
+			}
+			if(minitig.empty() or header.empty()){continue;}
+			counts = get_counts_minitigs(header);
+			minitig_id.clear();
+			if (minitig[0] == 'A' or minitig[0] == 'C' or minitig[0] == 'G' or minitig[0] == 'T')
+			{
+				mm.lock();
+				++nb_minitigs;
+				mm.unlock();
+				minitig_id=ksl->get_rank_query(minitig.substr(0,k)); // all kmers have the same id so we only query one
+				if((not minitig_id.empty()) and minitig_id.back()>=0)
+				{
+					mm.lock();
+					dump_compressed_vector_buff(counts, minitig_id.back(), buffer, in);
+					mm.unlock();
+					if(buffer.size()>40000)
+					{
+						#pragma omp critical(outfile)
+						{
+							out.write(&buffer[0], buffer.size());
+						}
+						buffer.clear();
+					}
+				}
+			}
 		}
+		if(buffer.size()>0)
+		{
+			#pragma omp critical(outfile)
+			{
+				out.write(&buffer[0], buffer.size());
+			}
+			buffer.clear();
+		}
+		//~ memset(&in, 0, color_number*2);
+		delete(in);
 	}
 	out.seekp(0, ios::beg);
 	out.write(reinterpret_cast<char*>(&nb_minitigs),sizeof(uint64_t));
 	delete(minitigs_file);
 	out.close();
-	memset(&in, 0, counts.size()*2);
 
 }
 
