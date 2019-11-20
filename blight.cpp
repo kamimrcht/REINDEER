@@ -743,10 +743,9 @@ void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t 
 			minimizers[stoi(splitted[0])%minimizer_to_minitigs.size()]=(stoi(splitted[0]));
 		}
 	}
-	#pragma omp parallel for num_threads(num_threads)
+	#pragma omp parallel for num_threads(coreNumber)
 	for(uint i=(0);i<minimizer_to_minitigs.size();i++){
 		if(minimizers[i]!=-1){
-			cout<<minimizer_to_minitigs[i].size()<<endl;
 			get_monocolor_minitigs_mem(minimizer_to_minitigs[i],out,to_string(minimizers[i]),number_color);
 		}
 	}
