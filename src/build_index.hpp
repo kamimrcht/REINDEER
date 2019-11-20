@@ -59,10 +59,12 @@ void build_matrix(string& color_load_file, string& color_dump_file, string& fof,
 		if (minitig[0] == 'A' or minitig[0] == 'C' or minitig[0] == 'G' or minitig[0] == 'T')
 		{
 			++nb_minitigs;
-			minitig_id=ksl->get_rank_query(minitig); 
-			uint64_t i(0);
-			if(minitig_id[i]>=0) // even if minitig id is longer than 1, all ids should be the same
-				dump_compressed_vector(counts, minitig_id[i], out, in);
+			minitig_id=ksl->get_rank_query(minitig.substr(0, k)); // all ranks are the same for the kmers so we need just one
+			//~ uint64_t i(0);
+			//~ if(minitig_id[i]>=0) // even if minitig id is longer than 1, all ids should be the same
+			if((not minitig_id.empty() ) and minitig_id.back() >=0) // even if minitig id is longer than 1, all ids should be the same
+				//~ dump_compressed_vector(counts, minitig_id[i], out, in);
+				dump_compressed_vector(counts, minitig_id.back(), out, in);
 		} else { //header
 			header = minitig;
 			counts = get_counts_minitigs(minitig); // vector of uints, colors and counts have the same encoding
