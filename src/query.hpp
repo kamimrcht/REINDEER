@@ -98,16 +98,19 @@ void get_colors_counts(vector<int64_t>& kmer_ids, bool record_counts, uint64_t c
 // compute a string that sums up the count(s) for each dataset
 void write_count_output(bool record_counts, vector<vector<uint16_t>>& query_counts, uint64_t color_number , vector<string>& toW, vector<string>& color_counts)
 {
-	string nc;
-	vector<string> last(color_number,"0");
+	string nc("*");
+	vector<string> last(color_number,"*");
 
 	for (auto&& c: query_counts)
 	{
 		for (uint color(0); color < c.size(); ++color)
 		{
 			nc = to_string(c[color]);
+			if (nc == "0")
+					nc = "*";
 			if (last[color] != nc )
 			{
+				
 				toW[color]+=nc + ":";
 				last[color] = nc;
 			}
@@ -117,13 +120,12 @@ void write_count_output(bool record_counts, vector<vector<uint16_t>>& query_coun
 	{
 		if (toW[str].empty())
 		{
-			color_counts.push_back("0");
+			color_counts.push_back("*");
 		}
 		else 
 		{
 			toW[str].pop_back();
-			
-			while (toW[str].back() == '0' and (toW[str].size() > 1))
+			while (toW[str].back() == '*' and (toW[str].size() > 1))
 			{
 				toW[str].pop_back();
 				toW[str].pop_back();
@@ -206,7 +208,7 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t color_nu
 					kmer_ids=ksl.get_rank_query(line);
 					vector<vector<uint16_t>> query_counts;
 					get_colors_counts(kmer_ids,  record_counts,  color_number, kmers_colors,  query_counts, compr_minitig_color, compr_minitig_color_size);
-						write_output( kmers_colors, toWrite,  record_reads,  record_counts,  query_unitigID,query_unitigID_tmp,  color_number, header, line, k, threshold, query_counts);
+					write_output( kmers_colors, toWrite,  record_reads,  record_counts,  query_unitigID,query_unitigID_tmp,  color_number, header, line, k, threshold, query_counts);
 				} else {
 					if (line[0]=='@' or line[0]=='>')
 						header = line;
