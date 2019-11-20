@@ -218,9 +218,9 @@ void kmer_Set_Light::construct_index(const string& input_file){
 	cout<<"Indexes created: "<< time_span13.count() << " seconds."<<endl;
 	duration<double> time_spant = duration_cast<duration<double>>(t13 - t1);
 	cout << "The whole indexing took me " << time_spant.count() << " seconds."<< endl;
-	delete nuc_minimizer;
-	delete start_bucket;
-	delete current_pos;
+	delete [] nuc_minimizer;
+	delete [] start_bucket;
+	delete [] current_pos;
 }
 
 
@@ -299,9 +299,9 @@ void kmer_Set_Light::construct_index_fof(const string& input_file, bool countcol
 	cout<<"Super buckets created: "<< time_span43.count() << " seconds."<<endl;
 
 	read_super_buckets("_blout");
-	delete nuc_minimizer;
-	delete start_bucket;
-	delete current_pos;
+	delete [] nuc_minimizer ;
+	delete [] start_bucket ;
+	delete [] current_pos ;
 
 	high_resolution_clock::time_point t5 = high_resolution_clock::now();
 	duration<double> time_span53 = duration_cast<duration<double>>(t5 - t3);
@@ -743,9 +743,10 @@ void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t 
 			minimizers[stoi(splitted[0])%minimizer_to_minitigs.size()]=(stoi(splitted[0]));
 		}
 	}
-	#pragma omp parallel for num_threads(coreNumber)
+	#pragma omp parallel for num_threads(num_threads)
 	for(uint i=(0);i<minimizer_to_minitigs.size();i++){
 		if(minimizers[i]!=-1){
+			cout<<minimizer_to_minitigs[i].size()<<endl;
 			get_monocolor_minitigs_mem(minimizer_to_minitigs[i],out,to_string(minimizers[i]),number_color);
 		}
 	}
