@@ -360,7 +360,7 @@ bool kmer_in_superkmer(const kmer canon,const vector<kmer>& V){
 
 
 
-void dump_vector_bool(const vector<bool> V, ostream* out ){
+void dump_vector_bool(const vector<bool>& V, ostream* out ){
 	int cmp = 0;
 	uint8_t output=0;
 	vector<uint8_t> buf;
@@ -369,8 +369,9 @@ void dump_vector_bool(const vector<bool> V, ostream* out ){
 		cmp++;
 		if(cmp==8){
 			buf.push_back(output);
-			if(buf.size()==8000){
+			if(buf.size()>=8000){
 				out->write((char*)buf.data(),buf.size());
+				//~ *out<<flush;
 				buf.clear();
 			}
 			cmp = 0;

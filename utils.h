@@ -4,7 +4,7 @@
 kmer nuc2int(char c);
 kmer nuc2intrc(char c);
 void read_vector_bool(vector<bool>& V, zstr::ifstream* out, uint64_t n_bits );
-void dump_vector_bool(const vector<bool> V, ostream* out );
+void dump_vector_bool(const vector<bool>& V, ostream* out );
 string intToString(uint64_t n);
 bool kmer_in_superkmer(const kmer canon,const vector<kmer>& V);
 kmer min_k (const kmer& k1,const kmer& k2);

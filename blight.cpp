@@ -1413,7 +1413,6 @@ void kmer_Set_Light::dump_disk(const string& output_file){
 	out.write(reinterpret_cast<const char*>(&positions_size),sizeof(positions_size));
 	out.write(reinterpret_cast<const char*>(&bucketSeq_size),sizeof(bucketSeq_size));
 
-
 	for(uint64_t i(0);i<mphf_number;++i){
 		out.write(reinterpret_cast<const char*>(&all_mphf[i].mphf_size),sizeof(all_mphf[i].mphf_size));
 		out.write(reinterpret_cast<const char*>(&all_mphf[i].empty),sizeof(all_mphf[i].empty));
@@ -1426,10 +1425,8 @@ void kmer_Set_Light::dump_disk(const string& output_file){
 
 	dump_vector_bool(bucketSeq,&out);
 	dump_vector_bool(positions,&out);
-
 	for(uint64_t i(0);i<minimizer_number;++i){
 		out.write(reinterpret_cast<const char*>(&all_buckets[i].skmer_number),sizeof(all_buckets[i].skmer_number));
-		//~ out.write(reinterpret_cast<const char*>(&all_buckets[i].start),sizeof(all_buckets[i].start));
 	}
 	out<<flush;
 	fb.close();
