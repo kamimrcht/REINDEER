@@ -277,7 +277,7 @@ void kmer_Set_Light::construct_index_fof(const string& input_file, bool countcol
 
 	{
 		zstr::ofstream out("_blmonocolor.fa.gz",ios::app);
-		//~ #pragma omp parallel for num_threads(coreNumber)
+		#pragma omp parallel for num_threads(coreNumber)
 		for(uint i_superbuckets=0; i_superbuckets<number_superbuckets.value(); ++i_superbuckets){
 			//SORT SUPERBUCKETS
 			merge_super_buckets_mem("_blout"+to_string(i_superbuckets),i_file-1,&out);
