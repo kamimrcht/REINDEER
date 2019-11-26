@@ -127,6 +127,7 @@ public:
 	uint64_t coreNumber;
 	uint64_t bit_saved_sub;
 	bool count_color;
+	double max_divergence_count=1;
 
 	Pow2<kmer> offsetUpdateAnchor;
 	Pow2<kmer> offsetUpdateMinimizer;
@@ -272,7 +273,7 @@ public:
 	void get_monocolor_minitigs(const  vector<string>& minitigs, const vector<int64_t>& color,const vector<uint16_t>& coverage, zstr::ofstream* out, const string& mini,uint64_t number_color);
 	void merge_super_buckets(const string& input_file, uint64_t number_color,zstr::ofstream* out);
 	string compaction(const string& seq1,const string& seq2,bool);
-	void construct_index_fof(const string& input_file, bool=true);
+	void construct_index_fof(const string& input_file, bool=true, double=1);
 	void reset();
 	void dump_disk(const string& output_file);
 	vector<bool> get_presence_query(const string& seq);
@@ -290,6 +291,7 @@ public:
 	void get_monocolor_minitigs_mem(const  vector<minitig>& minitigs , zstr::ofstream* out, const string& mini,uint64_t number_color);
 	void str2bool(const string& str,uint64_t mini);
 	void dump_and_destroy(const string& output_file);
+	bool similar_count(const vector<uint16_t>& V1,const vector<uint16_t>& V2);
 };
 
 

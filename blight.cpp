@@ -245,8 +245,9 @@ void kmer_Set_Light::reset(){
 
 
 
-void kmer_Set_Light::construct_index_fof(const string& input_file, bool countcolor){
+void kmer_Set_Light::construct_index_fof(const string& input_file, bool countcolor, double max_divergence){
 	count_color=countcolor;
+	max_divergence_count=max_divergence;
 	if(m1<m2){
 		cout<<"n should be inferior to m"<<endl;
 		exit(0);
@@ -291,7 +292,6 @@ void kmer_Set_Light::construct_index_fof(const string& input_file, bool countcol
 	cout<<"Monocolor minitig computed, now regular indexing start"<<endl;
 	duration<double> time_span32 = duration_cast<duration<double>>(t3 - t2);
 	cout<<time_span32.count() << " seconds."<<endl;
-	exit(0);
 	create_super_buckets("_blmonocolor.fa.gz");
 
 	high_resolution_clock::time_point t4 = high_resolution_clock::now();
@@ -579,10 +579,22 @@ void kmer_Set_Light::get_monocolor_minitigs(const  vector<string>& minitigs, con
 
 bool equal_nonull(const vector<uint16_t>& V1,const vector<uint16_t>& V2){
 	if(V1.empty()){return false;}
-	if(V2.empty()){return false;}
+	if(V2.size()!=V1.size()){return false;}
 	for(uint i(0);i<V1.size();++i){
 		if((V1[i]==0)^(V2[i]==0)){
-			//~ cout<<V1[i]<<" "<<V2[i]<<endl;
+			return false;
+		}
+	}
+	return true;
+}
+
+
+
+bool kmer_Set_Light::similar_count(const vector<uint16_t>& V1,const vector<uint16_t>& V2){
+	if(V1.empty()){return false;}
+	if(V2.size()!=V1.size()){return false;}
+	for(uint i(0);i<V1.size();++i){
+		if(max(V1[i],V2[i])/(min(V1[i],V2[i])>max_divergence_count)){
 			return false;
 		}
 	}
@@ -650,9 +662,13 @@ void kmer_Set_Light::get_monocolor_minitigs_mem(const  vector<minitig>& minitigs
 				kmer next(kmer2context[canon].next_kmer);
 				if(kmer2context[next].isdump){break;}
 				if(count_color){
-					if(kmer2context[next].count!=colorV2dump){break;}
+					if(max_divergence_count==1){
+						if(kmer2context[next].count!=colorV2dump){break;}
+					}else{
+						if(not equal_nonull(kmer2context[canon].count,colorV2dump)){break;}
+					}
 				}else{
-					if(not equal_nonull(kmer2context[canon].count,colorV2dump)){break;}
+					if(not similar_count(kmer2context[canon].count,colorV2dump)){break;}
 				}
 				compact=compaction(seq2dump,kmer2str(next));
 				if(compact.empty()){break;}

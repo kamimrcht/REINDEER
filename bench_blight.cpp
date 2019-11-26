@@ -110,7 +110,7 @@ int main(int argc, char ** argv){
 		kmer_Set_Light ksl(k,m1,m2,m3,c,bit);
 		if(inputfof!=""){
 			cout<<"Build index from list of file "<<inputfof<<endl;
-			ksl.construct_index_fof(inputfof);
+			ksl.construct_index_fof(inputfof,true,3);
 		}else{
 			cout<<"Build index from file "<<input<<endl;
 			ksl.construct_index(input);
@@ -137,7 +137,6 @@ int main(int argc, char ** argv){
 		}
 
 		cout<<"I am glad you are here with me. Here at the end of all things."<<endl;
-		cin.get();
 	}
 	return 0;
 }
