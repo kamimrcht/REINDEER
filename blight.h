@@ -289,6 +289,7 @@ public:
 	void merge_super_buckets_mem(const string& input_file, uint64_t number_color, zstr::ofstream* out);
 	void get_monocolor_minitigs_mem(const  vector<minitig>& minitigs , zstr::ofstream* out, const string& mini,uint64_t number_color);
 	void str2bool(const string& str,uint64_t mini);
+	void dump_and_destroy(const string& output_file);
 };
 
 

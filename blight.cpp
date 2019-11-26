@@ -291,7 +291,7 @@ void kmer_Set_Light::construct_index_fof(const string& input_file, bool countcol
 	cout<<"Monocolor minitig computed, now regular indexing start"<<endl;
 	duration<double> time_span32 = duration_cast<duration<double>>(t3 - t2);
 	cout<<time_span32.count() << " seconds."<<endl;
-
+	exit(0);
 	create_super_buckets("_blmonocolor.fa.gz");
 
 	high_resolution_clock::time_point t4 = high_resolution_clock::now();
@@ -1389,6 +1389,37 @@ void kmer_Set_Light::dump_disk(const string& output_file){
 	fb.open (output_file, ios::out | ios::binary | ios::trunc);
 	zstr::ostream out(&fb);
 
+	//VARIOUS INTEGERS
+	out.write(reinterpret_cast<const char*>(&k),sizeof(k));
+	out.write(reinterpret_cast<const char*>(&m1),sizeof(m1));
+	out.write(reinterpret_cast<const char*>(&m3),sizeof(m3));
+	out.write(reinterpret_cast<const char*>(&minimizer_size_graph),sizeof(minimizer_size_graph));
+	out.write(reinterpret_cast<const char*>(&bit_saved_sub),sizeof(bit_saved_sub));
+	uint64_t positions_size(positions.size()), bucketSeq_size(bucketSeq.size());
+	out.write(reinterpret_cast<const char*>(&positions_size),sizeof(positions_size));
+	out.write(reinterpret_cast<const char*>(&bucketSeq_size),sizeof(bucketSeq_size));
+
+	//BOOL VECTOR
+	dump_vector_bool(bucketSeq,&out);
+	dump_vector_bool(positions,&out);
+
+
+	//BUCKETS INFORMATION
+
+	for(uint64_t i(0);i<mphf_number;++i){
+	out.write(reinterpret_cast<const char*>(&all_mphf[i].mphf_size),sizeof(all_mphf[i].mphf_size));
+	out.write(reinterpret_cast<const char*>(&all_mphf[i].empty),sizeof(all_mphf[i].empty));
+	out.write(reinterpret_cast<const char*>(&all_mphf[i].start),sizeof(all_mphf[i].start));
+	out.write(reinterpret_cast<const char*>(&all_mphf[i].bit_to_encode),sizeof(all_mphf[i].bit_to_encode));
+	if(not all_mphf[i].empty){
+			all_mphf[i].kmer_MPHF->save(out);
+		}
+	}
+	for(uint64_t i(0);i<minimizer_number;++i){
+		out.write(reinterpret_cast<const char*>(&all_buckets[i].skmer_number),sizeof(all_buckets[i].skmer_number));
+	}
+
+	//BM VECTOR
 	bm::serializer<bm::bvector<> > bvs;
 	bvs.byte_order_serialization(false);
 	bvs.gap_length_serialization(false);
@@ -1403,16 +1434,40 @@ void kmer_Set_Light::dump_disk(const string& output_file){
 		out.write((char*)point2,sz);
 	}
 
+	out<<flush;
+	fb.close();
+}
+
+
+
+
+void kmer_Set_Light::dump_and_destroy(const string& output_file){
+	//OPEN
+	filebuf fb;
+	remove(output_file.c_str());
+	fb.open (output_file, ios::out | ios::binary | ios::trunc);
+	zstr::ostream out(&fb);
+
+	//VARIOUS INTEGERS
 	out.write(reinterpret_cast<const char*>(&k),sizeof(k));
 	out.write(reinterpret_cast<const char*>(&m1),sizeof(m1));
 	out.write(reinterpret_cast<const char*>(&m3),sizeof(m3));
 	out.write(reinterpret_cast<const char*>(&minimizer_size_graph),sizeof(minimizer_size_graph));
 	out.write(reinterpret_cast<const char*>(&bit_saved_sub),sizeof(bit_saved_sub));
-
 	uint64_t positions_size(positions.size()), bucketSeq_size(bucketSeq.size());
 	out.write(reinterpret_cast<const char*>(&positions_size),sizeof(positions_size));
 	out.write(reinterpret_cast<const char*>(&bucketSeq_size),sizeof(bucketSeq_size));
 
+	//BOOL VECTOR
+	vector<bool> nadine;
+	dump_vector_bool(bucketSeq,&out);
+	bucketSeq.clear();
+	bucketSeq.swap(nadine);
+	dump_vector_bool(positions,&out);
+	positions.clear();
+	positions.swap(nadine);
+
+	//BCUKETS INFORMATION
 	for(uint64_t i(0);i<mphf_number;++i){
 		out.write(reinterpret_cast<const char*>(&all_mphf[i].mphf_size),sizeof(all_mphf[i].mphf_size));
 		out.write(reinterpret_cast<const char*>(&all_mphf[i].empty),sizeof(all_mphf[i].empty));
@@ -1420,14 +1475,29 @@ void kmer_Set_Light::dump_disk(const string& output_file){
 		out.write(reinterpret_cast<const char*>(&all_mphf[i].bit_to_encode),sizeof(all_mphf[i].bit_to_encode));
 		if(not all_mphf[i].empty){
 			all_mphf[i].kmer_MPHF->save(out);
+			delete all_mphf[i].kmer_MPHF;
+			all_mphf[i].empty=true;
 		}
 	}
-
-	dump_vector_bool(bucketSeq,&out);
-	dump_vector_bool(positions,&out);
 	for(uint64_t i(0);i<minimizer_number;++i){
 		out.write(reinterpret_cast<const char*>(&all_buckets[i].skmer_number),sizeof(all_buckets[i].skmer_number));
 	}
+
+	//BM VECTOR
+	bm::serializer<bm::bvector<> > bvs;
+	bvs.byte_order_serialization(false);
+	bvs.gap_length_serialization(false);
+	bm::serializer<bm::bvector<> >::buffer sbuf;
+	{
+		unsigned char* buf = 0;
+		bvs.serialize(position_super_kmers, sbuf);
+		buf = sbuf.data();
+		uint64_t sz = sbuf.size();
+		auto point2 =&buf[0];
+		out.write(reinterpret_cast<const char*>(&sz),sizeof(sz));
+		out.write((char*)point2,sz);
+	}
+
 	out<<flush;
 	fb.close();
 }
@@ -1437,14 +1507,7 @@ void kmer_Set_Light::dump_disk(const string& output_file){
 kmer_Set_Light::kmer_Set_Light(const string& index_file){
 	zstr::ifstream out(index_file);
 
-	uint64_t sz;
-	out.read(reinterpret_cast< char*>(&sz),sizeof(sz));
-	uint8_t* buff= new uint8_t[sz];
-	out.read((char*)buff,sz);
-
-	bm::deserialize(position_super_kmers, buff);
-	delete buff;
-
+	//VARIOUS INTEGERS
 	out.read(reinterpret_cast< char*>(&k),sizeof(k));
 	out.read(reinterpret_cast< char*>(&m1),sizeof(m1));
 	m2=m1;
@@ -1466,6 +1529,11 @@ kmer_Set_Light::kmer_Set_Light(const string& index_file){
 	positions_to_check=(bit_saved_sub);
 	gammaFactor=2;
 
+	//BOOL VECTOR
+	read_vector_bool(bucketSeq,&out,bucketSeq_size);
+	read_vector_bool(positions,&out,positions_size);
+
+	//BUCKETS INFORMATION
 	all_buckets=new bucket_minimizer[minimizer_number.value()]();
 	all_mphf=new info_mphf[mphf_number.value()];
 	for(uint64_t i(0);i<mphf_number;++i){
@@ -1478,14 +1546,18 @@ kmer_Set_Light::kmer_Set_Light(const string& index_file){
 			all_mphf[i].kmer_MPHF->load(out);
 		}
 	}
-
-	read_vector_bool(bucketSeq,&out,bucketSeq_size);
-	read_vector_bool(positions,&out,positions_size);
-
 	for(uint64_t i(0);i<minimizer_number;++i){
 		out.read(reinterpret_cast< char*>(&all_buckets[i].skmer_number),sizeof(all_buckets[i].skmer_number));
-		//~ out.read(reinterpret_cast< char*>(&all_buckets[i].start),sizeof(all_buckets[i].start));
 	}
+
+	//BM VECTOR
+	uint64_t sz;
+	out.read(reinterpret_cast< char*>(&sz),sizeof(sz));
+	uint8_t* buff= new uint8_t[sz];
+	out.read((char*)buff,sz);
+	bm::deserialize(position_super_kmers, buff);
+	delete buff;
+
 
 	position_super_kmers_RS=new bm::bvector<>::rs_index_type();
 	position_super_kmers.build_rs_index(position_super_kmers_RS);

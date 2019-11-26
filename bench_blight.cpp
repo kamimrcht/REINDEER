@@ -38,7 +38,7 @@ int main(int argc, char ** argv){
 	char ch;
 	string input,inputfof,query;
 	uint k(31);
-	uint m1(9);
+	uint m1(10);
 	uint m2(0);
 	uint m3(4);
 	uint c(1);
@@ -128,15 +128,16 @@ int main(int argc, char ** argv){
 
 		if(dump){
 			cout<<"DUMP"<<endl;
-			ksl.dump_disk("index.txt.gz");
-			kmer_Set_Light ksl2("index.txt.gz");
+			ksl.dump_and_destroy("index.txt.gz");
 			if(not query.empty()){
+				kmer_Set_Light ksl2("index.txt.gz");
 				for(uint i(0);i<1;++i)
 					ksl2.file_query_all_test(query,full);
 			}
 		}
 
 		cout<<"I am glad you are here with me. Here at the end of all things."<<endl;
+		cin.get();
 	}
 	return 0;
 }
