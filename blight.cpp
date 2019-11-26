@@ -247,7 +247,10 @@ void kmer_Set_Light::reset(){
 
 void kmer_Set_Light::construct_index_fof(const string& input_file, bool countcolor, double max_divergence){
 	count_color=countcolor;
-	max_divergence_count=max_divergence;
+	if(count_color){
+		max_divergence_count=(max_divergence/100)+1;
+	}
+	cout<<max_divergence_count<<endl;
 	if(m1<m2){
 		cout<<"n should be inferior to m"<<endl;
 		exit(0);
@@ -594,7 +597,7 @@ bool kmer_Set_Light::similar_count(const vector<uint16_t>& V1,const vector<uint1
 	if(V1.empty()){return false;}
 	if(V2.size()!=V1.size()){return false;}
 	for(uint i(0);i<V1.size();++i){
-		if(max(V1[i],V2[i])/(min(V1[i],V2[i])>max_divergence_count)){
+		if((double)max(V1[i],V2[i])/((double)min(V1[i],V2[i])>max_divergence_count)){
 			return false;
 		}
 	}
@@ -662,13 +665,13 @@ void kmer_Set_Light::get_monocolor_minitigs_mem(const  vector<minitig>& minitigs
 				kmer next(kmer2context[canon].next_kmer);
 				if(kmer2context[next].isdump){break;}
 				if(count_color){
-					if(max_divergence_count==1){
+					if(max_divergence_count==0){
 						if(kmer2context[next].count!=colorV2dump){break;}
 					}else{
-						if(not equal_nonull(kmer2context[canon].count,colorV2dump)){break;}
+						if(not similar_count(kmer2context[canon].count,colorV2dump)){break;}
 					}
 				}else{
-					if(not similar_count(kmer2context[canon].count,colorV2dump)){break;}
+					if(not equal_nonull(kmer2context[canon].count,colorV2dump)){break;}
 				}
 				compact=compaction(seq2dump,kmer2str(next));
 				if(compact.empty()){break;}
