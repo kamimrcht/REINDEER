@@ -190,7 +190,10 @@ void kmer_Set_Light::abundance_minimizer_construct(const string& input_file){
 
 
 
-void kmer_Set_Light::construct_index(const string& input_file){
+void kmer_Set_Light::construct_index(const string& input_file, const string& tmp_dir){
+	if(not tmp_dir.empty()){
+		chd(tmp_dir);
+	}
 	if(m1<m2){
 		cout<<"n should be inferior to m"<<endl;
 		exit(0);
@@ -221,6 +224,9 @@ void kmer_Set_Light::construct_index(const string& input_file){
 	delete [] nuc_minimizer;
 	delete [] start_bucket;
 	delete [] current_pos;
+	if(not tmp_dir.empty()){
+		chd("..");
+	}
 }
 
 
@@ -245,7 +251,10 @@ void kmer_Set_Light::reset(){
 
 
 
-void kmer_Set_Light::construct_index_fof(const string& input_file, bool countcolor, double max_divergence){
+void kmer_Set_Light::construct_index_fof(const string& input_file, const string& tmp_dir, bool countcolor, double max_divergence){
+	if(not tmp_dir.empty()){
+		chd(tmp_dir);
+	}
 	count_color=countcolor;
 	if(count_color){
 		max_divergence_count=(max_divergence/100)+1;
@@ -311,6 +320,9 @@ void kmer_Set_Light::construct_index_fof(const string& input_file, bool countcol
 	cout<<"Indexes created: "<< time_span53.count() << " seconds."<<endl;
 	duration<double> time_spant = duration_cast<duration<double>>(t5 - t1);
 	cout << "The whole indexing took me " << time_spant.count() << " seconds."<< endl;
+	if(not tmp_dir.empty()){
+		chd(tmp_dir);
+	}
 }
 
 
@@ -321,7 +333,7 @@ void kmer_Set_Light::create_super_buckets(const string& input_file,int dbg_id){
 	rl.rlim_cur = number_superbuckets.value()+10;
 	setrlimit (RLIMIT_NOFILE, &rl);
 	uint64_t total_nuc_number(0);
-	auto inUnitigs=new zstr::ifstream(input_file);
+	auto inUnitigs=new zstr::ifstream(dir_to_get_back_to.empty()? input_file : "../"+input_file);
 	if( not inUnitigs->good()){
 		cout<<"Problem with files opening"<<endl;
 		exit(1);
@@ -330,6 +342,10 @@ void kmer_Set_Light::create_super_buckets(const string& input_file,int dbg_id){
 	for(uint64_t i(0);i<number_superbuckets;++i){
 		if(dbg_id==0){
 			auto out =new zstr::ofstream("_blout"+to_string(i));
+			if(not out->good()){
+				cout<<"Problem with files opening"<<endl;
+				exit(1);
+			}
 			out_files.push_back(out);
 		}else{
 			//FOR SPLITTER
@@ -978,6 +994,24 @@ void kmer_Set_Light::create_mphf_mem(uint64_t begin_BC,uint64_t end_BC){
 	}
 }
 
+
+
+void kmer_Set_Light::chd(const string& dir){
+	char s[1000];
+	getcwd(s, 1000);
+	string current_dir(s);
+	if(chdir(dir.c_str())!=0){
+		cout<<dir<<" do not exist I create it or die in the attempt"<<endl;
+		if(mkdir(dir.c_str(),0777)!=0){
+			cout<<"Sorry..."<<endl;
+			exit(0);
+		}
+		if(chdir(dir.c_str())!=0){
+			cout<<"Not sorry"<<endl;
+		}
+	}
+	dir_to_get_back_to=current_dir;
+}
 
 
 void kmer_Set_Light::create_mphf_disk(uint64_t begin_BC,uint64_t end_BC){

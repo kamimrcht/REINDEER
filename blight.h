@@ -127,6 +127,7 @@ public:
 	uint64_t coreNumber;
 	uint64_t bit_saved_sub;
 	bool count_color;
+	string dir_to_get_back_to;
 	double max_divergence_count=0;
 
 	Pow2<kmer> offsetUpdateAnchor;
@@ -261,8 +262,7 @@ public:
 	int64_t query_kmer_hash(kmer canon);
 	int64_t query_get_hash(const kmer canon,kmer minimizer);
 	vector<int64_t> query_sequence_hash(const string& query);
-	void construct_index(const string& input_file);
-	//~ void report_memusage(boomphf::memreport_t& report, const std::string& prefix="blight", bool add_struct=true);
+	void construct_index(const string& input_file,const string& osef="");
 	vector<int64_t> query_sequence_minitig(const string& query);
 	int64_t query_get_rank_minitig(const kmer canon,uint64_t minimizer);
 	int64_t query_kmer_minitig(kmer canon);
@@ -273,7 +273,7 @@ public:
 	void get_monocolor_minitigs(const  vector<string>& minitigs, const vector<int64_t>& color,const vector<uint16_t>& coverage, zstr::ofstream* out, const string& mini,uint64_t number_color);
 	void merge_super_buckets(const string& input_file, uint64_t number_color,zstr::ofstream* out);
 	string compaction(const string& seq1,const string& seq2,bool);
-	void construct_index_fof(const string& input_file, bool=false, double=0);
+	void construct_index_fof(const string& input_file,const string& osef="", bool=false, double=0);
 	void reset();
 	void dump_disk(const string& output_file);
 	vector<bool> get_presence_query(const string& seq);
@@ -292,6 +292,7 @@ public:
 	void str2bool(const string& str,uint64_t mini);
 	void dump_and_destroy(const string& output_file);
 	bool similar_count(const vector<uint16_t>& V1,const vector<uint16_t>& V2);
+	void chd(const string& dir);
 };
 
 
