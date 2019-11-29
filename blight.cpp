@@ -483,7 +483,7 @@ void kmer_Set_Light::merge_super_buckets_direct(const string& input_file, uint64
 	#pragma omp parallel num_threads(coreNumber)
 	{
 		string seq2dump,compact,buffer;
-		#pragma omp for schedule(monotonic:static, 16)
+		#pragma omp for schedule(static, 16)
 		for(uint i_ht=(0);i_ht<kmer2context.size();i_ht++){
 			for (auto& it: kmer2context[i_ht]){
 				if(not it.second.isdump){
@@ -564,7 +564,7 @@ vector<uint16_t> bit_vector(number_color,0);
 {
 	robin_hood::unordered_map<kmer,kmer_context> kmer2context;
 	string sequence, buffer,seq2dump,compact;
-	#pragma omp for schedule(monotonic:static, 256)
+	#pragma omp for schedule(static, 256)
 	for(uint i_set=(0);i_set<minitigs.size();i_set++){
 		for(uint64_t i_mini=(0);i_mini<minitigs[i_set].size();++i_mini){
 			sequence=(minitigs[i_set][i_mini].sequence);
