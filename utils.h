@@ -26,6 +26,16 @@ inline T xs(const T& x) { return hash64shift(x); }
 
 
 
+template <typename T>
+std::ostream& operator<< (std::ostream& out, const std::vector<T>& v) {
+  if ( !v.empty() ) {
+    out << '[';
+    std::copy (v.begin(), v.end(), std::ostream_iterator<T>(out, ", "));
+    out << "\b\b]";
+  }
+  return out;
+}
+
 
 // iterator from disk file of u_int64_t with buffered read,   todo template
 class bfile_iterator : public std::iterator<std::forward_iterator_tag, kmer>{

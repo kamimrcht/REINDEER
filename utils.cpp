@@ -420,15 +420,33 @@ void read_vector_bool(vector<bool>& V, zstr::ifstream* out, uint64_t n_bits ){
 }
 
 
+
+
+
+//~ vector<string> split(const string &s, char delim){
+	//~ stringstream ss(s);
+	//~ string item;
+	//~ vector<string> elems;
+	//~ while (getline(ss, item, delim)) {
+		//~ elems.push_back(move(item));
+	//~ }
+	//~ return elems;
+//~ }
+
 vector<string> split(const string &s, char delim){
-	stringstream ss(s);
-	string item;
-	vector<string> elems;
-	while (getline(ss, item, delim)) {
-		elems.push_back(move(item));
+	vector<string> res;
+	uint pred(0);
+	for(uint i(0);i<s.size();++i){
+		if(s[i]==delim){
+			res.push_back(s.substr(pred,i-pred));
+			pred=i+1;
+		}
 	}
-	return elems;
+	res.push_back(s.substr(pred));
+	return res;
 }
+
+
 
 
 

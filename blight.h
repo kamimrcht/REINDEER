@@ -79,7 +79,7 @@ struct info_mphf{
 struct minitig{
 int32_t color;
 uint16_t coverage;
-vector<bool> sequence;
+string sequence;
 } ;
 
 
@@ -288,11 +288,12 @@ public:
 	uint64_t canonize(uint64_t x,uint64_t n);
 	kmer get_kmer(uint64_t pos);
 	void merge_super_buckets_mem(const string& input_file, uint64_t number_color, zstr::ofstream* out);
-	void get_monocolor_minitigs_mem(const  vector<minitig>& minitigs , zstr::ofstream* out, const string& mini,uint64_t number_color);
+	void get_monocolor_minitigs_mem(const  vector<vector<minitig>>& minitigs , zstr::ofstream* out, const vector<int32_t>& mini,uint64_t number_color);
 	void str2bool(const string& str,uint64_t mini);
 	void dump_and_destroy(const string& output_file);
 	bool similar_count(const vector<uint16_t>& V1,const vector<uint16_t>& V2);
 	void chd(const string& dir);
+	void merge_super_buckets_direct(const string& input_file, uint64_t number_color, zstr::ofstream* out);
 };
 
 
