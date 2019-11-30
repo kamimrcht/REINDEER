@@ -193,7 +193,7 @@ void kmer_Set_Light::abundance_minimizer_construct(const string& input_file){
 
 void kmer_Set_Light::construct_index(const string& input_file, const string& tmp_dir){
 	if(not tmp_dir.empty()){
-		chd(tmp_dir);
+		working_dir=tmp_dir+"/";
 	}
 	if(m1<m2){
 		cout<<"n should be inferior to m"<<endl;
@@ -215,7 +215,7 @@ void kmer_Set_Light::construct_index(const string& input_file, const string& tmp
 	duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
 	cout<<"Super bucket created: "<< time_span12.count() << " seconds."<<endl;
 
-	read_super_buckets("_blout");
+	read_super_buckets(working_dir+"_blout");
 
 	high_resolution_clock::time_point t13 = high_resolution_clock::now();
 	duration<double> time_span13 = duration_cast<duration<double>>(t13 - t12);
@@ -225,9 +225,6 @@ void kmer_Set_Light::construct_index(const string& input_file, const string& tmp
 	delete [] nuc_minimizer;
 	delete [] start_bucket;
 	delete [] current_pos;
-	if(not tmp_dir.empty()){
-		chd("..");
-	}
 }
 
 
@@ -315,7 +312,7 @@ string kmer_Set_Light::compaction(const string& seq1,const string& seq2, bool re
 void kmer_Set_Light::construct_index_fof(const string& input_file, const string& tmp_dir, bool countcolor, double max_divergence){
 	omp_set_nested(2);
 	if(not tmp_dir.empty()){
-		chd(tmp_dir);
+		working_dir=tmp_dir+"/";
 	}
 	count_color=countcolor;
 	if(count_color){
@@ -348,13 +345,12 @@ void kmer_Set_Light::construct_index_fof(const string& input_file, const string&
 	cout<<"Partition created	"<<intToString(read_kmer)<<" kmers read "<<endl;
 	duration<double> time_span12 = duration_cast<duration<double>>(t2 - t1);
 	cout<<time_span12.count() << " seconds."<<endl;
-
 	{
-		zstr::ofstream out("_blmonocolor.fa.gz",ios::app);
+		zstr::ofstream out(working_dir+"_blmonocolor.fa.gz",ios::app);
 		//~ #pragma omp parallel for num_threads(min(coreNumber,(uint64_t)4))
 		#pragma omp parallel for num_threads((coreNumber))
 		for(uint i_superbuckets=0; i_superbuckets<number_superbuckets.value(); ++i_superbuckets){
-			merge_super_buckets_mem("_blout"+to_string(i_superbuckets),i_file-1,&out);
+			merge_super_buckets_mem(working_dir+"_blout"+to_string(i_superbuckets),i_file-1,&out);
 			//~ merge_super_buckets_direct("_blout"+to_string(i_superbuckets),i_file-1,&out);
 			remove(("_blsout"+to_string(i_superbuckets)).c_str());
 			cout<<"-"<<flush;
@@ -363,18 +359,19 @@ void kmer_Set_Light::construct_index_fof(const string& input_file, const string&
 	cout<<endl;
 	reset();
 
+
 	high_resolution_clock::time_point t3 = high_resolution_clock::now();
 	cout<<"Monocolor minitig computed, now regular indexing start"<<endl;
 	duration<double> time_span32 = duration_cast<duration<double>>(t3 - t2);
 	cout<<time_span32.count() << " seconds."<<endl;
 
-	create_super_buckets("_blmonocolor.fa.gz");
+	create_super_buckets(working_dir+"_blmonocolor.fa.gz");
 
 	high_resolution_clock::time_point t4 = high_resolution_clock::now();
 	duration<double> time_span43 = duration_cast<duration<double>>(t4 - t3);
 	cout<<"Super buckets created: "<< time_span43.count() << " seconds."<<endl;
 
-	read_super_buckets("_blout");
+	read_super_buckets(working_dir+"_blout");
 	delete [] nuc_minimizer ;
 	delete [] start_bucket ;
 	delete [] current_pos ;
@@ -384,15 +381,11 @@ void kmer_Set_Light::construct_index_fof(const string& input_file, const string&
 	cout<<"Indexes created: "<< time_span53.count() << " seconds."<<endl;
 	duration<double> time_spant = duration_cast<duration<double>>(t5 - t1);
 	cout << "The whole indexing took me " << time_spant.count() << " seconds."<< endl;
-	if(not tmp_dir.empty()){
-		chd(tmp_dir);
-	}
 }
 
 
 
 void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t number_color, zstr::ofstream* out){
-
 	vector<vector<minitig>> minimizer_to_minitigs(minimizer_number.value()/number_superbuckets.value());
 	vector<int32_t> minimizers(minimizer_to_minitigs.size(),-1);
 	zstr::ifstream in(input_file);
@@ -670,7 +663,7 @@ void kmer_Set_Light::create_super_buckets(const string& input_file,int dbg_id){
 	rl.rlim_cur = number_superbuckets.value()+10;
 	setrlimit (RLIMIT_NOFILE, &rl);
 	uint64_t total_nuc_number(0);
-	auto inUnitigs=new zstr::ifstream(dir_to_get_back_to.empty()? input_file : "../"+input_file);
+	auto inUnitigs=new zstr::ifstream( input_file);
 	if( not inUnitigs->good()){
 		cout<<"Problem with files opening"<<endl;
 		exit(1);
@@ -678,7 +671,7 @@ void kmer_Set_Light::create_super_buckets(const string& input_file,int dbg_id){
 	vector<ostream*> out_files;
 	for(uint64_t i(0);i<number_superbuckets;++i){
 		if(dbg_id==0){
-			auto out =new zstr::ofstream("_blout"+to_string(i));
+			auto out =new zstr::ofstream(working_dir+"_blout"+to_string(i));
 			if(not out->good()){
 				cout<<"Problem with files opening"<<endl;
 				exit(1);
@@ -686,7 +679,7 @@ void kmer_Set_Light::create_super_buckets(const string& input_file,int dbg_id){
 			out_files.push_back(out);
 		}else{
 			//FOR SPLITTER
-			auto out =new  zstr::ofstream("_blout"+to_string(i),ofstream::app);
+			auto out =new  zstr::ofstream(working_dir+"_blout"+to_string(i),ofstream::app);
 			out_files.push_back(out);
 		}
 
@@ -1168,23 +1161,6 @@ void kmer_Set_Light::create_mphf_mem(uint64_t begin_BC,uint64_t end_BC){
 
 
 
-void kmer_Set_Light::chd(const string& dir){
-	char s[1000];
-	auto nadine=getcwd(s, 1000);
-	string current_dir(s);
-	if(chdir(dir.c_str())!=0){
-		cout<<dir<<" do not exist I create it or die in the attempt"<<endl;
-		if(mkdir(dir.c_str(),0777)!=0){
-			cout<<"Sorry..."<<endl;
-			exit(0);
-		}
-		if(chdir(dir.c_str())!=0){
-			cout<<"Not sorry"<<endl;
-		}
-	}
-	dir_to_get_back_to=current_dir;
-}
-
 
 void kmer_Set_Light::create_mphf_disk(uint64_t begin_BC,uint64_t end_BC){
 	#pragma omp parallel  num_threads(coreNumber)
@@ -1194,7 +1170,7 @@ void kmer_Set_Light::create_mphf_disk(uint64_t begin_BC,uint64_t end_BC){
 		#pragma omp for schedule(dynamic, number_bucket_per_mphf.value())
 		for(uint64_t BC=(begin_BC);BC<end_BC;++BC){
 			uint64_t mphfSize(0);
-			string name("_blkmers"+to_string(BC));
+			string name(working_dir+"_blkmers"+to_string(BC));
 			if(nuc_minimizer[BC]!=0){
 				ofstream out(name,ofstream::binary | ofstream::trunc);
 				largest_bucket_nuc=max(largest_bucket_nuc,nuc_minimizer[BC]);

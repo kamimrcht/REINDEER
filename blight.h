@@ -127,7 +127,7 @@ public:
 	uint64_t coreNumber;
 	uint64_t bit_saved_sub;
 	bool count_color;
-	string dir_to_get_back_to;
+	string working_dir;
 	double max_divergence_count=0;
 
 	Pow2<kmer> offsetUpdateAnchor;
