@@ -698,7 +698,11 @@ void kmer_Set_Light::create_super_buckets(const string& input_file,int dbg_id){
 			{
 				getline(*inUnitigs,useless);
 				getline(*inUnitigs,ref);
-				read_kmer+=ref.size()-k+1;
+				if(ref.size()<k){
+					ref="";
+				}else{
+					read_kmer+=ref.size()-k+1;
+				}
 			}
 			//FOREACH UNITIG
 			if(not ref.empty() and not useless.empty()){
