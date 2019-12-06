@@ -46,10 +46,14 @@ void build_matrix(string& color_load_file, string& color_dump_file, string& fof,
 {
 	auto minitigs_file = new zstr::ifstream(output +"/_blmonocolor.fa.gz");
 	uint64_t nb_minitigs(0);
-	ofstream out(output_file);
+	//~ ofstream out(output_file);
+	auto out=new zstr::ofstream(output_file);
+	ofstream out_nb(output_file+"_minitig_nb");
 	mutex mm;
-	out.write(reinterpret_cast<char*>(&nb_minitigs),sizeof(uint64_t)); // number of minitigs - wait before the real value
-	out.write(reinterpret_cast<char*>(&color_number),sizeof(uint64_t)); // number of colors
+	//~ out.write(reinterpret_cast<char*>(&nb_minitigs),sizeof(uint64_t)); // number of minitigs - wait before the real value
+	//~ out.write(reinterpret_cast<char*>(&color_number),sizeof(uint64_t)); // number of colors
+	//~ out.write(reinterpret_cast<char*>(&nb_minitigs),sizeof(uint64_t)); // number of minitigs - wait before the real value
+	out->write(reinterpret_cast<char*>(&color_number),sizeof(uint64_t)); // number of colors
 	#pragma omp parallel num_threads(nb_threads)
 	{
 		vector<int64_t> minitig_id;
@@ -82,7 +86,8 @@ void build_matrix(string& color_load_file, string& color_dump_file, string& fof,
 					{
 						#pragma omp critical(outfile)
 						{
-							out.write(&buffer[0], buffer.size());
+							//~ out.write(&buffer[0], buffer.size());
+							out->write(&buffer[0], buffer.size());
 						}
 						buffer.clear();
 					}
@@ -93,17 +98,20 @@ void build_matrix(string& color_load_file, string& color_dump_file, string& fof,
 		{
 			#pragma omp critical(outfile)
 			{
-				out.write(&buffer[0], buffer.size());
+				//~ out.write(&buffer[0], buffer.size());
+				out->write(&buffer[0], buffer.size());
 			}
 			buffer.clear();
 		}
-		//~ memset(&in, 0, color_number*2);
 		delete(in);
 	}
-	out.seekp(0, ios::beg);
-	out.write(reinterpret_cast<char*>(&nb_minitigs),sizeof(uint64_t));
+	//~ out.seekp(0, ios::beg);
+	out_nb.write(reinterpret_cast<char*>(&nb_minitigs),sizeof(uint64_t));
+	//~ out.write(reinterpret_cast<char*>(&nb_minitigs),sizeof(uint64_t));
 	delete(minitigs_file);
-	out.close();
+	//~ out.close();
+	delete out;
+	out_nb.close();
 
 }
 

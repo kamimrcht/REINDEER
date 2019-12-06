@@ -74,7 +74,7 @@ void reindeer_query(uint k, string& output,string& output_query, bool record_cou
 	// QUERY //
 	string fof( getRealPath("graphs.lst", output));
 	string color_dump_file("");
-	string color_load_file(getRealPath("reindeer_matrix", output));
+	string color_load_file(getRealPath("reindeer_matrix.gz", output));
 	uint64_t color_number(get_color_number(fof));
 	uint nb_threads(1);
 	vector<unsigned char*> compr_minitig_color;
