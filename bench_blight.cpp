@@ -111,7 +111,7 @@ int main(int argc, char ** argv){
 		if(inputfof!=""){
 			cout<<"Build index from list of file "<<inputfof<<endl;
 			//~ ksl.construct_index_fof(inputfof);
-			ksl.construct_index_fof(inputfof,"lol",false,0);
+			ksl.construct_index_fof(inputfof,"lol",true,100000);
 		}else{
 			cout<<"Build index from file "<<input<<endl;
 			ksl.construct_index(input,"lol");
@@ -140,4 +140,3 @@ int main(int argc, char ** argv){
 	}
 	return 0;
 }
-

@@ -278,7 +278,7 @@ bool kmer_Set_Light::similar_count(const vector<uint16_t>& V1,const vector<uint1
 	if(V1.empty()){return false;}
 	if(V2.size()!=V1.size()){return false;}
 	for(uint i(0);i<V1.size();++i){
-		if((double)max(V1[i],V2[i])/((double)min(V1[i],V2[i])>max_divergence_count)){
+		if( ((double)max(V1[i],V2[i])/((double)min(V1[i],V2[i])) >max_divergence_count)){
 			return false;
 		}
 	}
@@ -299,8 +299,8 @@ string kmer_Set_Light::compaction(const string& seq1,const string& seq2, bool re
 	if(recur){
 		return compaction(revComp(seq1),seq2,false);
 	}else{
-		//~ cout<<seq1<<" "<<seq2<<endl;
-		//~ cout<<++misscompaction<<endl;
+		// cout<<seq1<<" "<<seq2<<endl;
+	 	// cout<<++misscompaction<<endl;
 		//~ //TODO SOME COMPACTION ARE MISSED CAN WE DO BETTER
 	}
 	return "";
@@ -352,7 +352,7 @@ void kmer_Set_Light::construct_index_fof(const string& input_file, const string&
 		#pragma omp parallel for num_threads((coreNumber))
 		for(uint i_superbuckets=0; i_superbuckets<number_superbuckets.value(); ++i_superbuckets){
 			merge_super_buckets_mem(working_dir+"_blout"+to_string(i_superbuckets),i_file-1,&out);
-			//~ merge_super_buckets_direct(working_dir+"_blout"+to_string(i_superbuckets),i_file-1,&out);
+			// merge_super_buckets_direct(working_dir+"_blout"+to_string(i_superbuckets),i_file-1,&out);
 			remove(("_blsout"+to_string(i_superbuckets)).c_str());
 			cout<<"-"<<flush;
 		}
@@ -390,42 +390,39 @@ void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t 
 	vector<vector<minitig>> minimizer_to_minitigs(minimizer_number.value()/number_superbuckets.value());
 	vector<int32_t> minimizers(minimizer_to_minitigs.size(),-1);
 	zstr::ifstream in(input_file);
-	//~ cout<<input_file<<endl;
-	//~ #pragma omp parallel
+	#pragma omp parallel
 	{
+		vector<string> buffer;
 		string line;
 		vector<string> splitted;
 		while(not in.eof() and in.good()){
-			//~ #pragma omp critical
+			#pragma omp critical
 			{
-				getline(in,line);
+				for(uint i(0);i<10 and not in.eof() ;++i){
+					getline(in,line);
+					buffer.push_back(line);
+				}
 			}
-			if(not line.empty()){
+			for(uint i(0);i<buffer.size();++i){
+				line=buffer[i];
+				if(line.empty()){break;}
 				splitted=split(line,':');
-				//~ cout<<line<<endl;
 				minitig mini;
 				mini.color=stoi(splitted[1]);
 				mini.sequence=(splitted[2]);
 				mini.coverage=(stoi(splitted[3]));
 				uint64_t min_int(stoi(splitted[0]));
 				uint64_t indice(min_int%minimizer_to_minitigs.size());
-				//~ positions_mutex[indice%4096].lock();
+				positions_mutex[indice%4096].lock();
 				minimizer_to_minitigs[indice].push_back(mini);
-				//~ positions_mutex[indice%4096].unlock();
+				positions_mutex[indice%4096].unlock();
 				minimizers[min_int%minimizer_to_minitigs.size()]=(min_int);
 			}
+			buffer.clear();
 		}
 	}
 	get_monocolor_minitigs_mem(minimizer_to_minitigs,out,minimizers,number_color);
-	//~ uint size_chunk(minimizer_to_minitigs.size()/coreNumber+1);
-	//~ #pragma omp parallel for num_threads(coreNumber)
-	//~ for(uint c=0;c<coreNumber;++c){
-		//~ for(uint i=(c*size_chunk);i<(c+1)*size_chunk and i< minimizer_to_minitigs.size() ;i++){
-			//~ if(minimizers[i]!=-1){
-				//~ get_monocolor_minitigs_mem(minimizer_to_minitigs[i],out,to_string(minimizers[i]),number_color);
-			//~ }
-		//~ }
-	//~ }
+
 }
 
 
@@ -444,7 +441,6 @@ void kmer_Set_Light::merge_super_buckets_direct(const string& input_file, uint64
 			}
 			if(not line.empty()){
 				splitted=split(line,':');
-				//~ cout<<line<<endl;
 				auto color=stoi(splitted[1]);
 				sequence=(splitted[2]);
 				auto coverage=(stoi(splitted[3]));
@@ -455,13 +451,7 @@ void kmer_Set_Light::merge_super_buckets_direct(const string& input_file, uint64
 				if(kmer2context[indice].count(canon)==0){
 					kmer2context[indice][canon]={false,false,false,(kmer)-1,(kmer)-1,bit_vector,minimizer};
 				}
-				//~ cout<<color-1<<endl;
-				//~ cout<<indice<<endl;
-				//~ cout<<kmer2context.size()<<endl;
-				//~ cout<<kmer2context[indice][canon].count.size()<<endl;
-				//~ cin.get();
 				kmer2context[indice][canon].count[color-1]=coverage;
-				//~ cout<<"lebug"<<endl;
 				for(uint i(0);i+k<sequence.size();++i){
 					prev=canon;
 					updateK(seq,sequence[i+k]);
@@ -568,7 +558,7 @@ vector<uint16_t> bit_vector(number_color,0);
 {
 	robin_hood::unordered_map<kmer,kmer_context> kmer2context;
 	string sequence, buffer,seq2dump,compact;
-	#pragma omp for schedule(static, 256)
+	#pragma omp for schedule(static, 16)
 	for(uint i_set=(0);i_set<minitigs.size();i_set++){
 		for(uint64_t i_mini=(0);i_mini<minitigs[i_set].size();++i_mini){
 			sequence=(minitigs[i_set][i_mini].sequence);
@@ -586,6 +576,7 @@ vector<uint16_t> bit_vector(number_color,0);
 				if(kmer2context.count(canon)==0){
 					kmer2context[canon]={false,false,false,(kmer)-1,(kmer)-1,bit_vector};
 				}
+
 				kmer2context[canon].count[minitigs[i_set][i_mini].color-1]=minitigs[i_set][i_mini].coverage;
 				if(not kmer2context[prev].nextOK){
 					kmer2context[prev].next_kmer=canon;
@@ -606,30 +597,25 @@ vector<uint16_t> bit_vector(number_color,0);
 				seq2dump=kmer2str(canon);
 
 				while(true){
-					if( not kmer2context[canon].nextOK){break;}
+					if(not kmer2context[canon].nextOK){break;}
 					kmer next(kmer2context[canon].next_kmer);
 					if(kmer2context[next].isdump){break;}
 					if(count_color){
-						//~ cout<<1<<endl;
 						if(max_divergence_count==0){
-							//~ cout<<2<<endl;
 							if(kmer2context[next].count!=colorV2dump){break;}
 						}else{
-							//~ cout<<4<<endl;
-							if(not similar_count(kmer2context[canon].count,colorV2dump)){break;}
+							if(not similar_count(kmer2context[next].count,colorV2dump)){break;}
 						}
 					}else{
-						//~ cout<<6<<endl;
-						if(not equal_nonull(kmer2context[canon].count,colorV2dump)){break;}
+						if(not equal_nonull(kmer2context[next].count,colorV2dump)){break;}
 					}
-					//~ cout<<8<<endl;
 					compact=compaction(seq2dump,kmer2str(next));
 					if(compact.empty()){break;}
-					//~ cout<<10<<endl;
 					kmer2context[next].isdump=true;
 					seq2dump=compact;
 					canon=next;
 				}
+
 				canon=it.first;
 				while(true){
 					if(not kmer2context[canon].prevOK){break;}
@@ -639,10 +625,10 @@ vector<uint16_t> bit_vector(number_color,0);
 						if(max_divergence_count==0){
 							if(kmer2context[prev].count!=colorV2dump){break;}
 						}else{
-							if(not similar_count(kmer2context[canon].count,colorV2dump)){break;}
+							if(not similar_count(kmer2context[prev].count,colorV2dump)){break;}
 						}
 					}else{
-						if(not equal_nonull(kmer2context[canon].count,colorV2dump)){break;}
+						if(not equal_nonull(kmer2context[prev].count,colorV2dump)){break;}
 					}
 					compact=compaction(seq2dump,kmer2str(prev));
 					if(compact.empty()){break;}
@@ -660,8 +646,6 @@ vector<uint16_t> bit_vector(number_color,0);
 				}
 			}
 		}
-
-		//~ cout<<kmer2context.size()<<endl;
 		kmer2context.clear();
 	}
 	#pragma omp critical (monocolorFile)
@@ -860,6 +844,7 @@ void kmer_Set_Light::get_monocolor_minitigs(const  vector<string>& minitigs, con
 		if(kmer_color.count(canon)==0){
 			kmer_color[canon]=bit_vector;
 		}
+
 		kmer_color[canon][color[i_mini]-1]=coverage[i_mini];
 
 		for(uint i(0);i+k<minitigs[i_mini].size();++i){
@@ -1220,10 +1205,6 @@ void kmer_Set_Light::create_mphf_disk(uint64_t begin_BC,uint64_t end_BC){
 				}
 				largest_bucket_anchor=max(largest_bucket_anchor,bucketSize);
 			}
-			 //~ #pragma omp critical(coute)
-			//~ {
-				//~ cout<<mphfSize<<	"|"<<flush;
-			//~ }
 			if((BC+1)%number_bucket_per_mphf==0 and mphfSize!=0){
 				largest_MPHF=max(largest_MPHF,mphfSize);
 				auto data_iterator = file_binary(name.c_str());

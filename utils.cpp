@@ -448,8 +448,6 @@ vector<string> split(const string &s, char delim){
 
 
 
-
-
 string bool2str(vector<bool> V){
 	string result;
 	for(uint64_t i(0);i<V.size();++i){
@@ -467,5 +465,3 @@ string color_coverage2str(const vector<uint16_t>& V){
 	}
 	return result;
 }
-
-
