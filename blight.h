@@ -258,7 +258,8 @@ public:
 	pair<uint64_t,uint64_t> query_sequence_bool(const string& query);
 	string kmer2str(kmer num);
 	kmer regular_minimizer(kmer seq);
-	void create_super_buckets(const string&,int dbg_id=0);
+	void create_super_buckets(const string&);
+  void create_super_buckets_list(const vector<string>& input_files);
 	int64_t query_kmer_hash(kmer canon);
 	int64_t query_get_hash(const kmer canon,kmer minimizer);
 	vector<int64_t> query_sequence_hash(const string& query);
