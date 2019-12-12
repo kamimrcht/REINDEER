@@ -48,9 +48,9 @@ inline __uint128_t kmer_Set_Light::rcb(const __uint128_t& in){
 
 	// Swap byte order
 
-	kmer_u shuffidxs = { .u8 = {15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0} };
+	kmer_u shuffidunrevhash = { .u8 = {15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0} };
 
-	res.m128i = _mm_shuffle_epi8 (res.m128i, shuffidxs.m128i);
+	res.m128i = _mm_shuffle_epi8 (res.m128i, shuffidunrevhash.m128i);
 
 	// Swap nuc order in bytes
 
@@ -100,8 +100,6 @@ uint64_t kmer_Set_Light::canonize(uint64_t x,uint64_t n){
 
 
 
-
-
 inline void kmer_Set_Light::updateK(kmer& min, char nuc){
 	min<<=2;
 	min+=nuc2int(nuc);
@@ -127,7 +125,7 @@ inline void kmer_Set_Light::updateRCK(kmer& min, char nuc){
 
 inline void kmer_Set_Light::updateRCM(kmer& min, char nuc){
 	min>>=2;
-	min+=(nuc2intrc(nuc)<<(2*m1-2));
+	min+=(nuc2intrc(nuc)<<(2*minimizer_size_graph-2));
 }
 
 
@@ -143,12 +141,12 @@ kmer kmer_Set_Light::regular_minimizer(kmer seq){
 	kmer mini,mmer;
 	mmer=seq%minimizer_number_graph;
 	mini=mmer=canonize(mmer,minimizer_size_graph);
-	uint64_t hash_mini = (xs(mmer));
+	uint64_t hash_mini = (unrevhash(mmer));
 	for(uint64_t i(1);i<=k-minimizer_size_graph;i++){
 		seq>>=2;
 		mmer=seq%minimizer_number_graph;
 		mmer=canonize(mmer,minimizer_size_graph);
-		uint64_t hash = (xs(mmer));
+		uint64_t hash = (unrevhash(mmer));
 		if(hash_mini>hash){
 			mini=mmer;
 			hash_mini=hash;
@@ -159,36 +157,29 @@ kmer kmer_Set_Light::regular_minimizer(kmer seq){
 
 
 
-void kmer_Set_Light::abundance_minimizer_construct(const string& input_file){
-	auto inUnitigs=new zstr::ifstream(input_file);
-	if( not inUnitigs->good()){
-		cout<<"Problem with files opening"<<endl;
-		exit(1);
-	}
-	string ref,useless;
-	while(not inUnitigs->eof()){
-		getline(*inUnitigs,useless);
-		getline(*inUnitigs,ref);
-		//FOREACH UNITIG
-		if(not ref.empty() and not useless.empty()){
-			//FOREACH KMER
-			kmer seq(str2num(ref.substr(0,m1))),rcSeq(rcbc(seq,m1)),canon(min_k(seq,rcSeq));
-				abundance_minimizer_temp[canon]++;
-			uint64_t i(0);
-			for(;i+m1<ref.size();++i){
-				updateM(seq,ref[i+m1]);
-				updateRCM(rcSeq,ref[i+m1]);
-				canon=(min_k(seq,rcSeq));
-					abundance_minimizer_temp[canon]++;
-			}
+kmer kmer_Set_Light::regular_minimizer_pos(kmer seq,uint64_t& position){
+	kmer mini,mmer;
+	mmer=seq%minimizer_number_graph;
+	mini=mmer=canonize(mmer,minimizer_size_graph);
+	uint64_t hash_mini = (unrevhash(mmer));
+	position=0;
+	for(uint64_t i(1);i<=k-minimizer_size_graph;i++){
+		seq>>=2;
+		mmer=seq%minimizer_number_graph;
+		mmer=canonize(mmer,minimizer_size_graph);
+		uint64_t hash = (unrevhash(mmer));
+		if(hash_mini>hash){
+			position=k-minimizer_size_graph-i;
+			mini=mmer;
+			hash_mini=hash;
 		}
 	}
-	for(uint64_t i(0);i<minimizer_number;++i){
-		abundance_minimizer[i]=(uint8_t)(log2(abundance_minimizer_temp[i])*8);
-	}
-	delete[] abundance_minimizer_temp;
-	delete inUnitigs;
+	return mini;
 }
+
+
+
+
 
 
 
@@ -250,7 +241,6 @@ void kmer_Set_Light::reset(){
 
 
 
-
 struct kmer_context{
 	bool isdump;
 	bool nextOK;
@@ -260,6 +250,7 @@ struct kmer_context{
 	vector<uint16_t> count;
 	kmer minimizer;
 };
+
 
 
 bool equal_nonull(const vector<uint16_t>& V1,const vector<uint16_t>& V2){
@@ -288,7 +279,9 @@ bool kmer_Set_Light::similar_count(const vector<uint16_t>& V1,const vector<uint1
 }
 
 
+
 uint32_t misscompaction(0);
+
 
 
 string kmer_Set_Light::compaction(const string& seq1,const string& seq2, bool recur=true){
@@ -301,14 +294,10 @@ string kmer_Set_Light::compaction(const string& seq1,const string& seq2, bool re
 	if(recur){
 		return compaction(revComp(seq1),seq2,false);
 	}else{
-		// cout<<seq1<<" "<<seq2<<endl;
-	 	// cout<<++misscompaction<<endl;
 		//~ //TODO SOME COMPACTION ARE MISSED CAN WE DO BETTER
 	}
 	return "";
 }
-
-
 
 
 
@@ -363,7 +352,6 @@ void kmer_Set_Light::construct_index_fof(const string& input_file, const string&
 	}
 	cout<<endl;
 	reset();
-
 
 	high_resolution_clock::time_point t3 = high_resolution_clock::now();
 	cout<<"Monocolor minitig computed, now regular indexing start"<<endl;
@@ -426,7 +414,6 @@ void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t 
 		}
 	}
 	get_monocolor_minitigs_mem(minimizer_to_minitigs,out,minimizers,number_color);
-
 }
 
 
@@ -560,7 +547,6 @@ void kmer_Set_Light::get_monocolor_minitigs_mem(const  vector<vector<minitig>>& 
 vector<uint16_t> bit_vector(number_color,0);
 #pragma omp parallel num_threads(coreNumber)
 {
-	//~ map<kmer,kmer_context> kmer2context;
 	robin_hood::unordered_map<kmer,kmer_context> kmer2context;
 	string sequence, buffer,seq2dump,compact;
 	#pragma omp for schedule(dynamic)
@@ -688,8 +674,8 @@ void kmer_Set_Light::create_super_buckets_list(const vector<string>& input_files
 		}
 
 		string ref,useless;
+		vector<string> buffer(number_superbuckets.value());
 		minimizer_type old_minimizer,minimizer;
-
 		while(not inUnitigsread->eof()){
 			ref=useless="";
 			getline(*inUnitigsread,useless);
@@ -706,46 +692,63 @@ void kmer_Set_Light::create_super_buckets_list(const vector<string>& input_files
 				uint64_t last_position(0);
 				//FOREACH KMER
 				kmer seq(str2num(ref.substr(0,k)));
-				minimizer=regular_minimizer(seq);
+				uint64_t position_min;
+				uint64_t min_seq=(str2num(ref.substr(k-minimizer_size_graph,minimizer_size_graph))),min_rcseq(rcbc(min_seq,minimizer_size_graph)),min_canon(min(min_seq,min_rcseq));
+				minimizer=regular_minimizer_pos(seq,position_min);
 				old_minimizer=minimizer;
+				uint64_t hash_min=unrevhash(minimizer);
 				uint64_t i(0);
 				for(;i+k<ref.size();++i){
 					updateK(seq,ref[i+k]);
-					//COMPUTE KMER MINIMIZER
-					minimizer=regular_minimizer(seq);
+					updateM(min_seq,ref[i+k]);
+					updateRCM(min_rcseq,ref[i+k]);
+					min_canon=(min(min_seq,min_rcseq));
+					uint64_t new_h=unrevhash(min_canon);
+						//THE NEW mmer is a MINIMIZor
+					if(new_h<hash_min){
+						minimizer=(min_canon);
+						hash_min=new_h;
+						position_min=i+k-minimizer_size_graph+1;
+					}else{
+						//the previous minimizer is outdated
+						if(i>=position_min){
+							minimizer=regular_minimizer_pos(seq,position_min);
+							hash_min=unrevhash(minimizer);
+							position_min+=(i+1);
+						}else{
+						}
+					}
 					if(old_minimizer!=minimizer){
-						omp_set_lock(&(lock[((old_minimizer))/bucket_per_superBuckets]));
-						*(out_files[((old_minimizer))/bucket_per_superBuckets])<<""+to_string(old_minimizer)+":"<<to_string(i_file)<<":"<<ref.substr(last_position,i-last_position+k)<<":"<<parseCoverage(useless)<<"\n";
-						omp_unset_lock(&(lock[((old_minimizer))/bucket_per_superBuckets]));
+						old_minimizer=(revhash(old_minimizer)%minimizer_number);
+						buffer[old_minimizer/bucket_per_superBuckets.value()]+=to_string(old_minimizer)+":"+to_string(i_file)+":"+ref.substr(last_position,i-last_position+k)+":"+to_string(parseCoverage(useless))+"\n";
+						if(buffer[old_minimizer/bucket_per_superBuckets.value()].size()>80000){
+							omp_set_lock(&(lock[((old_minimizer))/bucket_per_superBuckets.value()]));
+							*(out_files[((old_minimizer))/bucket_per_superBuckets.value()])<<buffer[old_minimizer/bucket_per_superBuckets.value()];
+							omp_unset_lock(&(lock[((old_minimizer))/bucket_per_superBuckets.value()]));
+							buffer[old_minimizer/bucket_per_superBuckets.value()].clear();
+						}
 
-						// #pragma omp atomic
-						// nuc_minimizer[old_minimizer]+=(i-last_position+k);
-						// #pragma omp atomic
-						// all_buckets[old_minimizer].skmer_number++;
-						// #pragma omp atomic
-						// all_mphf[old_minimizer/number_bucket_per_mphf].mphf_size+=(i-last_position+k)-k+1;
-						// all_mphf[old_minimizer/number_bucket_per_mphf].empty=false;
-						// #pragma omp atomic
-						// total_nuc_number+=(i-last_position+k);
 						last_position=i+1;
 						old_minimizer=minimizer;
 					}
 				}
 				if(ref.size()-last_position>k-1){
-					omp_set_lock(&(lock[((old_minimizer))/bucket_per_superBuckets]));
-					*(out_files[((old_minimizer))/bucket_per_superBuckets])<<""+to_string(old_minimizer)+":"<<to_string(i_file)<<":"<<ref.substr(last_position)<<":"<<parseCoverage(useless)<<"\n";
-					omp_unset_lock(&(lock[((old_minimizer))/bucket_per_superBuckets]));
-
-					// #pragma omp atomic
-					// nuc_minimizer[old_minimizer]+=(ref.substr(last_position)).size();
-					// #pragma omp atomic
-					// all_buckets[old_minimizer].skmer_number++;
-					// #pragma omp atomic
-					// total_nuc_number+=(ref.substr(last_position)).size();
-					// #pragma omp atomic
-					// all_mphf[old_minimizer/number_bucket_per_mphf].mphf_size+=(ref.substr(last_position)).size()-k+1;
-					// all_mphf[old_minimizer/number_bucket_per_mphf].empty=false;
+					old_minimizer=(revhash(old_minimizer)%minimizer_number);
+					buffer[old_minimizer/bucket_per_superBuckets.value()]+=to_string(old_minimizer)+":"+to_string(i_file)+":"+ref.substr(last_position)+":"+to_string(parseCoverage(useless))+"\n";
+					if(buffer[old_minimizer/bucket_per_superBuckets.value()].size()>80000){
+						omp_set_lock(&(lock[((old_minimizer))/bucket_per_superBuckets.value()]));
+						*(out_files[((old_minimizer))/bucket_per_superBuckets.value()])<<buffer[old_minimizer/bucket_per_superBuckets.value()];
+						omp_unset_lock(&(lock[((old_minimizer))/bucket_per_superBuckets.value()]));
+						buffer[old_minimizer/bucket_per_superBuckets.value()].clear();
+					}
 				}
+			}
+		}
+		for(uint64_t i(0);i<number_superbuckets.value();++i){
+			if(not buffer[i].empty()){
+				omp_set_lock(&(lock[i]));
+				*(out_files[i])<<buffer[i];
+				omp_unset_lock(&(lock[i]));
 			}
 		}
 		delete inUnitigsread;
@@ -786,6 +789,7 @@ void kmer_Set_Light::create_super_buckets(const string& input_file){
 	#pragma omp parallel num_threads(coreNumber)
 	{
 		string ref,useless;
+		vector<string> buffer(number_superbuckets.value());
 		minimizer_type old_minimizer,minimizer;
 		while(not inUnitigs->eof()){
 			ref=useless="";
@@ -805,17 +809,43 @@ void kmer_Set_Light::create_super_buckets(const string& input_file){
 				uint64_t last_position(0);
 				//FOREACH KMER
 				kmer seq(str2num(ref.substr(0,k)));
-				minimizer=regular_minimizer(seq);
+				uint64_t position_min;
+				uint64_t min_seq=(str2num(ref.substr(k-minimizer_size_graph,minimizer_size_graph))),min_rcseq(rcbc(min_seq,minimizer_size_graph)),min_canon(min(min_seq,min_rcseq));
+				minimizer=regular_minimizer_pos(seq,position_min);
 				old_minimizer=minimizer;
+				uint64_t hash_min=unrevhash(minimizer);
 				uint64_t i(0);
 				for(;i+k<ref.size();++i){
 					updateK(seq,ref[i+k]);
+					updateM(min_seq,ref[i+k]);
+					updateRCM(min_rcseq,ref[i+k]);
+					min_canon=(min(min_seq,min_rcseq));
+					uint64_t new_h=unrevhash(min_canon);
+						//THE NEW mmer is a MINIMIZor
+					if(new_h<hash_min){
+						minimizer=(min_canon);
+						hash_min=new_h;
+						position_min=i+k-minimizer_size_graph+1;
+					}else{
+						//the previous minimizer is outdated
+						if(i>=position_min){
+							minimizer=regular_minimizer_pos(seq,position_min);
+							hash_min=unrevhash(minimizer);
+							position_min+=(i+1);
+						}else{
+						}
+					}
 					//COMPUTE KMER MINIMIZER
-					minimizer=regular_minimizer(seq);
 					if(old_minimizer!=minimizer){
-						omp_set_lock(&(lock[((old_minimizer))/bucket_per_superBuckets]));
-						*(out_files[((old_minimizer))/bucket_per_superBuckets])<<">"+to_string(old_minimizer)+"\n"<<ref.substr(last_position,i-last_position+k)<<"\n";
-						omp_unset_lock(&(lock[((old_minimizer))/bucket_per_superBuckets]));
+						old_minimizer=(revhash(old_minimizer)%minimizer_number);
+						buffer[old_minimizer/bucket_per_superBuckets.value()]+=">"+to_string(old_minimizer)+"\n"+ref.substr(last_position,i-last_position+k)+"\n";
+						// *(out_files[((old_minimizer))/bucket_per_superBuckets])<<">"+to_string(old_minimizer)+"\n"<<ref.substr(last_position,i-last_position+k)<<"\n";
+						if(buffer[old_minimizer/bucket_per_superBuckets.value()].size()>80000){
+							omp_set_lock(&(lock[((old_minimizer))/bucket_per_superBuckets.value()]));
+							*(out_files[((old_minimizer))/bucket_per_superBuckets.value()])<<buffer[old_minimizer/bucket_per_superBuckets.value()];
+							omp_unset_lock(&(lock[((old_minimizer))/bucket_per_superBuckets.value()]));
+							buffer[old_minimizer/bucket_per_superBuckets.value()].clear();
+						}
 						#pragma omp atomic
 						nuc_minimizer[old_minimizer]+=(i-last_position+k);
 						#pragma omp atomic
@@ -830,9 +860,15 @@ void kmer_Set_Light::create_super_buckets(const string& input_file){
 					}
 				}
 				if(ref.size()-last_position>k-1){
-					omp_set_lock(&(lock[((old_minimizer))/bucket_per_superBuckets]));
-					*(out_files[((old_minimizer))/bucket_per_superBuckets])<<">"+to_string(old_minimizer)+"\n"<<ref.substr(last_position)<<"\n";
-					omp_unset_lock(&(lock[((old_minimizer))/bucket_per_superBuckets]));
+					old_minimizer=(revhash(old_minimizer)%minimizer_number);
+					buffer[old_minimizer/bucket_per_superBuckets.value()]+=">"+to_string(old_minimizer)+"\n"+ref.substr(last_position)+"\n";
+					// *(out_files[((old_minimizer))/bucket_per_superBuckets])<<">"+to_string(old_minimizer)+"\n"<<ref.substr(last_position)<<"\n";
+					if(buffer[old_minimizer/bucket_per_superBuckets.value()].size()>80000){
+						omp_set_lock(&(lock[((old_minimizer))/bucket_per_superBuckets.value()]));
+						*(out_files[((old_minimizer))/bucket_per_superBuckets.value()])<<buffer[old_minimizer/bucket_per_superBuckets.value()];
+						omp_unset_lock(&(lock[((old_minimizer))/bucket_per_superBuckets.value()]));
+						buffer[old_minimizer/bucket_per_superBuckets.value()].clear();
+					}
 					#pragma omp atomic
 					nuc_minimizer[old_minimizer]+=(ref.substr(last_position)).size();
 					#pragma omp atomic
@@ -845,7 +881,15 @@ void kmer_Set_Light::create_super_buckets(const string& input_file){
 				}
 			}
 		}
+		for(uint64_t i(0);i<number_superbuckets.value();++i){
+			if(not buffer[i].empty()){
+				omp_set_lock(&(lock[i]));
+				*(out_files[i])<<buffer[i];
+				omp_unset_lock(&(lock[i]));
+			}
+		}
 	}
+
 	delete inUnitigs;
 	for(uint64_t i(0);i<number_superbuckets;++i){
 		*out_files[i]<<flush;
@@ -915,8 +959,6 @@ void kmer_Set_Light::str2bool(const string& str,uint64_t mini){
 
 
 
-
-
 void kmer_Set_Light::get_monocolor_minitigs(const  vector<string>& minitigs, const vector<int64_t>& color, const  vector<uint16_t>& coverage, zstr::ofstream* out, const string& mini,uint64_t number_color){
 	unordered_map<kmer,kmer,KmerHasher> next_kmer;
 	unordered_map<kmer,kmer,KmerHasher> previous_kmer;
@@ -929,9 +971,7 @@ void kmer_Set_Light::get_monocolor_minitigs(const  vector<string>& minitigs, con
 		if(kmer_color.count(canon)==0){
 			kmer_color[canon]=bit_vector;
 		}
-
 		kmer_color[canon][color[i_mini]-1]=coverage[i_mini];
-
 		for(uint i(0);i+k<minitigs[i_mini].size();++i){
 			prev=canon;
 			updateK(seq,minitigs[i_mini][i+k]);
@@ -999,18 +1039,6 @@ void kmer_Set_Light::get_monocolor_minitigs(const  vector<string>& minitigs, con
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 void kmer_Set_Light::merge_super_buckets(const string& input_file, uint64_t number_color, zstr::ofstream* out){
 	string line;
 	vector<string> splitted;
@@ -1037,10 +1065,6 @@ void kmer_Set_Light::merge_super_buckets(const string& input_file, uint64_t numb
 	}
 	get_monocolor_minitigs(minitigs,color,coverage,out,to_string(minimizer),number_color);
 }
-
-
-
-
 
 
 
@@ -1130,7 +1154,6 @@ inline kmer kmer_Set_Light::get_kmer(uint64_t pos){
 	}
 	return res;
 }
-
 
 
 
@@ -1252,7 +1275,6 @@ void kmer_Set_Light::create_mphf_mem(uint64_t begin_BC,uint64_t end_BC){
 
 
 
-
 void kmer_Set_Light::create_mphf_disk(uint64_t begin_BC,uint64_t end_BC){
 	#pragma omp parallel  num_threads(coreNumber)
 		{
@@ -1316,6 +1338,7 @@ void kmer_Set_Light::int_to_bool(uint64_t n_bits_to_encode,uint64_t X, uint64_t 
 }
 
 
+
 uint64_t kmer_Set_Light::bool_to_int(uint64_t n_bits_to_encode,uint64_t pos,uint64_t start){
 	uint64_t res(0);
 	uint64_t acc(1);
@@ -1368,6 +1391,11 @@ void kmer_Set_Light::fill_positions(uint64_t begin_BC,uint64_t end_BC){
 int64_t kmer_Set_Light::kmer_to_hash(const kmer canon,kmer minimizer){
 	if(unlikely(all_mphf[minimizer/number_bucket_per_mphf].empty)){return -1;}
 	uint64_t hash=(all_mphf[minimizer/number_bucket_per_mphf].kmer_MPHF->lookup(canon));
+	uint64_t pos;
+	if(minimizer!=revhash(regular_minimizer_pos(canon,pos))%minimizer_number){
+		cout<<minimizer<<" "<<revhash(regular_minimizer_pos(canon,pos))%minimizer_number<<endl;
+			cout<<"NOP"<<endl;cin.get();
+	}
 	if(unlikely(hash == ULLONG_MAX)){
 		return -1;
 	}else{
@@ -1393,9 +1421,7 @@ vector<kmer> kmer_Set_Light::kmer_to_superkmer(const kmer canon,kmer minimizer, 
 	vector<kmer> result;
 	bool found(false);
 	bm::id64_t pos,next_position,stop_position ;
-
 	position_super_kmers.select(rank+1, pos, *(position_super_kmers_RS));
-
 	for(uint64_t check_super_kmer(0);check_super_kmer<positions_to_check.value() and not found;++check_super_kmer){
 		next_position=(position_super_kmers.get_next(pos));
 		if(next_position==0){
@@ -1417,7 +1443,6 @@ vector<kmer> kmer_Set_Light::kmer_to_superkmer(const kmer canon,kmer minimizer, 
 					found=true;
 				}
 				if(likely(((j+k)*2<bucketSeq.size()))){
-					//~ seqR=update_kmer(j+k,0,seqR);//can be avoided
 					seqR=update_kmer_local(j+k, bucketSeq, seqR);
 				}
 			}
@@ -1436,17 +1461,16 @@ vector<bool> kmer_Set_Light::get_presence_query(const string& query){
 	kmer seq(str2num(query.substr(0,k))),rcSeq(rcb(seq)),canon(min_k(seq,rcSeq));
 	int64_t i(0),rank,hash;
 	vector<kmer> superKmers;
-	canon=(min_k(seq, rcSeq));
-
+	kmer minimizer(regular_minimizer(canon));
 	for(;i+k<=query.size();++i){
 		if(superKmers.empty()){
-			superKmers=kmer_to_superkmer(canon,regular_minimizer(canon),rank,hash);
+			superKmers=kmer_to_superkmer(canon,minimizer,rank,hash);
 			result.push_back(not superKmers.empty());
 		}else{
 			if(kmer_in_superkmer(canon,superKmers)){
 				result.push_back(true);
 			}else{
-				superKmers=kmer_to_superkmer(canon,regular_minimizer(canon),rank,hash);
+				superKmers=kmer_to_superkmer(canon,minimizer,rank,hash);
 				result.push_back(not superKmers.empty());
 			}
 		}
@@ -1454,6 +1478,7 @@ vector<bool> kmer_Set_Light::get_presence_query(const string& query){
 			updateK(seq,query[i+k]);
 			updateRCK(rcSeq,query[i+k]);
 			canon=(min_k(seq, rcSeq));
+			minimizer=(regular_minimizer(canon));
 		}
 	}
 	return result;
@@ -1467,7 +1492,6 @@ vector<int64_t> kmer_Set_Light::get_rank_query(const string& query){
 	kmer seq(str2num(query.substr(0,k))),rcSeq(rcb(seq)),canon(min_k(seq,rcSeq));
 	int64_t i(0),rank,hash;
 	vector<kmer> superKmers;
-	canon=(min_k(seq, rcSeq));
 	kmer minimizer(regular_minimizer(canon));
 
 	for(;i+k<=query.size();++i){
@@ -1500,9 +1524,9 @@ vector<int64_t> kmer_Set_Light::get_hashes_query(const string& query){
 	kmer seq(str2num(query.substr(0,k))),rcSeq(rcb(seq)),canon(min_k(seq,rcSeq));
 	int64_t i(0),rank,hash;
 	vector<kmer> superKmers;
-	canon=(min_k(seq, rcSeq));
 	kmer minimizer(regular_minimizer(canon));
 
+	uint64_t position;
 	for(;i+k<=query.size();++i){
 		if(superKmers.empty()){
 			superKmers=kmer_to_superkmer(canon,minimizer,rank,hash);
@@ -1599,6 +1623,7 @@ void kmer_Set_Light::file_query_hases(const string& query_file, bool check){
 		if(all_hashes[i]!=i){
 			cout<<all_hashes[i]<<":"<<i<<"	";
 			bijective=false;
+			// cin.get ();
 			break;
 		}
 	}
@@ -1691,7 +1716,6 @@ void kmer_Set_Light::dump_disk(const string& output_file){
 	dump_vector_bool(bucketSeq,&out);
 	dump_vector_bool(positions,&out);
 
-
 	//BUCKETS INFORMATION
 
 	for(uint64_t i(0);i<mphf_number;++i){
@@ -1725,7 +1749,6 @@ void kmer_Set_Light::dump_disk(const string& output_file){
 	out<<flush;
 	fb.close();
 }
-
 
 
 
@@ -1785,7 +1808,6 @@ void kmer_Set_Light::dump_and_destroy(const string& output_file){
 		out.write(reinterpret_cast<const char*>(&sz),sizeof(sz));
 		out.write((char*)point2,sz);
 	}
-
 	out<<flush;
 	fb.close();
 }
@@ -1794,7 +1816,6 @@ void kmer_Set_Light::dump_and_destroy(const string& output_file){
 
 kmer_Set_Light::kmer_Set_Light(const string& index_file){
 	zstr::ifstream out(index_file);
-
 	//VARIOUS INTEGERS
 	out.read(reinterpret_cast< char*>(&k),sizeof(k));
 	out.read(reinterpret_cast< char*>(&m1),sizeof(m1));
@@ -1807,7 +1828,7 @@ kmer_Set_Light::kmer_Set_Light(const string& index_file){
 	out.read(reinterpret_cast< char*>(&positions_size),sizeof(positions_size));
 	out.read(reinterpret_cast< char*>(&bucketSeq_size),sizeof(bucketSeq_size));
 	offsetUpdateAnchor=(2*k);
-	offsetUpdateMinimizer=(2*m1);
+	offsetUpdateMinimizer=(2*minimizer_size_graph);
 	mphf_number=(2*m2);
 	number_superbuckets=(2*m3);
 	minimizer_number=(2*m1);
@@ -1845,7 +1866,6 @@ kmer_Set_Light::kmer_Set_Light(const string& index_file){
 	out.read((char*)buff,sz);
 	bm::deserialize(position_super_kmers, buff);
 	delete buff;
-
 
 	position_super_kmers_RS=new bm::bvector<>::rs_index_type();
 	position_super_kmers.build_rs_index(position_super_kmers_RS);

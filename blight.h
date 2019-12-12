@@ -177,7 +177,7 @@ public:
 		, bit_saved_sub(bit_to_save)
 
 		, offsetUpdateAnchor(2*k)
-		, offsetUpdateMinimizer(2*m1)
+		, offsetUpdateMinimizer(2*minimizer_size_graph)
 		, mphf_number(2*m2)
 		, number_superbuckets(2*m3)
 		, minimizer_number(2*m1)
@@ -295,6 +295,7 @@ public:
 	bool similar_count(const vector<uint16_t>& V1,const vector<uint16_t>& V2);
 	void chd(const string& dir);
 	void merge_super_buckets_direct(const string& input_file, uint64_t number_color, zstr::ofstream* out);
+  kmer regular_minimizer_pos(kmer seq,uint64_t& position);
 };
 
 
