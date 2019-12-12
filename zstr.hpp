@@ -315,7 +315,7 @@ private:
     detail::z_stream_wrapper * zstrm_p;
     std::size_t buff_size;
 
-    static const std::size_t default_buff_size = (std::size_t)1 << 20;
+    static const std::size_t default_buff_size = (std::size_t)1 << 22;
 }; // class ostreambuf
 
 class istream final

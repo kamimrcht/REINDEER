@@ -447,6 +447,19 @@ vector<string> split(const string &s, char delim){
 }
 
 
+void split(const string &s, char delim,vector<string>& res){
+	res.clear();
+	uint pred(0);
+	for(uint i(0);i<s.size();++i){
+		if(s[i]==delim){
+			res.push_back(s.substr(pred,i-pred));
+			pred=i+1;
+		}
+	}
+	res.push_back(s.substr(pred));
+}
+
+
 
 string bool2str(vector<bool> V){
 	string result;

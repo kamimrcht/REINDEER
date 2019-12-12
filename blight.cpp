@@ -340,7 +340,7 @@ void kmer_Set_Light::construct_index_fof(const string& input_file, const string&
 	duration<double> time_span12 = duration_cast<duration<double>>(t2 - t1);
 	cout<<time_span12.count() << " seconds."<<endl;
 	{
-		zstr::ofstream out(working_dir+"_blmonocolor.fa.gz",ios::app);
+		ofstream out(working_dir+"_blmonocolor.fa.gz",ios::app);
 		//~ #pragma omp parallel for num_threads(min(coreNumber,(uint64_t)4))
 		// #pragma omp parallel for num_threads((coreNumber))
 		for(uint i_superbuckets=0; i_superbuckets<number_superbuckets.value(); ++i_superbuckets){
@@ -353,11 +353,11 @@ void kmer_Set_Light::construct_index_fof(const string& input_file, const string&
 	cout<<endl;
 	reset();
 
+
 	high_resolution_clock::time_point t3 = high_resolution_clock::now();
 	cout<<"Monocolor minitig computed, now regular indexing start"<<endl;
 	duration<double> time_span32 = duration_cast<duration<double>>(t3 - t2);
 	cout<<time_span32.count() << " seconds."<<endl;
-
 	create_super_buckets(working_dir+"_blmonocolor.fa.gz");
 
 	high_resolution_clock::time_point t4 = high_resolution_clock::now();
@@ -378,9 +378,11 @@ void kmer_Set_Light::construct_index_fof(const string& input_file, const string&
 
 
 
-void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t number_color, zstr::ofstream* out){
+void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t number_color, ofstream* out){
+	// return;
 	vector<vector<minitig>> minimizer_to_minitigs(minimizer_number.value()/number_superbuckets.value());
-	vector<int32_t> minimizers(minimizer_to_minitigs.size(),-1);
+	uint64_t mms=minimizer_to_minitigs.size();
+	vector<int32_t> minimizers(mms,-1);
 	zstr::ifstream in(input_file);
 	#pragma omp parallel num_threads(coreNumber)
 	{
@@ -395,20 +397,21 @@ void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t 
 					buffer.push_back(line);
 				}
 			}
-			for(uint i(0);i<buffer.size();++i){
+			uint64_t bsize(buffer.size());
+			for(uint i(0);i<bsize;++i){
 				line=buffer[i];
 				if(line.empty()){break;}
-				splitted=split(line,':');
+				split(line,':',splitted);
 				minitig mini;
 				mini.color=stoi(splitted[1]);
 				mini.sequence=(splitted[2]);
 				mini.coverage=(stoi(splitted[3]));
 				uint64_t min_int(stoi(splitted[0]));
-				uint64_t indice(min_int%minimizer_to_minitigs.size());
+				uint64_t indice(min_int%mms);
 				positions_mutex[indice%4096].lock();
 				minimizer_to_minitigs[indice].push_back(mini);
 				positions_mutex[indice%4096].unlock();
-				minimizers[min_int%minimizer_to_minitigs.size()]=(min_int);
+				minimizers[min_int%mms]=(min_int);
 			}
 			buffer.clear();
 		}
@@ -418,7 +421,7 @@ void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t 
 
 
 
-void kmer_Set_Light::merge_super_buckets_direct(const string& input_file, uint64_t number_color, zstr::ofstream* out){
+void kmer_Set_Light::merge_super_buckets_direct(const string& input_file, uint64_t number_color, ofstream* out){
 	vector<uint16_t> bit_vector(number_color,0);
 	zstr::ifstream in(input_file);
 	//WE INDEX ALL KMERS
@@ -543,7 +546,7 @@ void kmer_Set_Light::merge_super_buckets_direct(const string& input_file, uint64
 
 
 
-void kmer_Set_Light::get_monocolor_minitigs_mem(const  vector<vector<minitig>>& minitigs , zstr::ofstream* out, const vector<int32_t>& mini,uint64_t number_color){
+void kmer_Set_Light::get_monocolor_minitigs_mem(const  vector<vector<minitig>>& minitigs , ofstream* out, const vector<int32_t>& mini,uint64_t number_color){
 vector<uint16_t> bit_vector(number_color,0);
 #pragma omp parallel num_threads(coreNumber)
 {
@@ -657,7 +660,7 @@ void kmer_Set_Light::create_super_buckets_list(const vector<string>& input_files
 
 	vector<ostream*> out_files;
 	for(uint64_t i(0);i<number_superbuckets;++i){
-		auto out =new  zstr::ofstream(working_dir+"_blout"+to_string(i),ofstream::app);
+		auto out =new  ofstream(working_dir+"_blout"+to_string(i),ofstream::app);
 		out_files.push_back(out);
 	}
 	omp_lock_t lock[number_superbuckets.value()];
@@ -775,7 +778,7 @@ void kmer_Set_Light::create_super_buckets(const string& input_file){
 	}
 	vector<ostream*> out_files;
 	for(uint64_t i(0);i<number_superbuckets;++i){
-		auto out =new zstr::ofstream(working_dir+"_blout"+to_string(i));
+		auto out =new ofstream(working_dir+"_blout"+to_string(i));
 		if(not out->good()){
 			cout<<"Problem with files opening"<<endl;
 			exit(1);
@@ -959,7 +962,7 @@ void kmer_Set_Light::str2bool(const string& str,uint64_t mini){
 
 
 
-void kmer_Set_Light::get_monocolor_minitigs(const  vector<string>& minitigs, const vector<int64_t>& color, const  vector<uint16_t>& coverage, zstr::ofstream* out, const string& mini,uint64_t number_color){
+void kmer_Set_Light::get_monocolor_minitigs(const  vector<string>& minitigs, const vector<int64_t>& color, const  vector<uint16_t>& coverage, ofstream* out, const string& mini,uint64_t number_color){
 	unordered_map<kmer,kmer,KmerHasher> next_kmer;
 	unordered_map<kmer,kmer,KmerHasher> previous_kmer;
 	unordered_map<kmer,vector<uint16_t>,KmerHasher> kmer_color;
@@ -1039,7 +1042,7 @@ void kmer_Set_Light::get_monocolor_minitigs(const  vector<string>& minitigs, con
 
 
 
-void kmer_Set_Light::merge_super_buckets(const string& input_file, uint64_t number_color, zstr::ofstream* out){
+void kmer_Set_Light::merge_super_buckets(const string& input_file, uint64_t number_color, ofstream* out){
 	string line;
 	vector<string> splitted;
 	vector<string> minitigs;

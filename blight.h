@@ -28,6 +28,8 @@
 using namespace std;
 
 
+
+
 // FOR k<32
 #define kmer uint64_t
 // FOR k<64
@@ -271,8 +273,8 @@ public:
 	vector<kmer> kmer_to_superkmer(const kmer canon,kmer minimizer, int64_t& rank, int64_t& hash);
 	int64_t hash_to_rank(const int64_t hash,kmer minimizer);
 	int64_t kmer_to_hash(const kmer canon,kmer minimizer);
-	void get_monocolor_minitigs(const  vector<string>& minitigs, const vector<int64_t>& color,const vector<uint16_t>& coverage, zstr::ofstream* out, const string& mini,uint64_t number_color);
-	void merge_super_buckets(const string& input_file, uint64_t number_color,zstr::ofstream* out);
+	void get_monocolor_minitigs(const  vector<string>& minitigs, const vector<int64_t>& color,const vector<uint16_t>& coverage, ofstream* out, const string& mini,uint64_t number_color);
+	void merge_super_buckets(const string& input_file, uint64_t number_color,ofstream* out);
 	string compaction(const string& seq1,const string& seq2,bool);
 	void construct_index_fof(const string& input_file,const string& osef="", bool=false, double=0);
 	void reset();
@@ -288,13 +290,13 @@ public:
 	uint64_t rcb(const uint64_t&);
 	uint64_t canonize(uint64_t x,uint64_t n);
 	kmer get_kmer(uint64_t pos);
-	void merge_super_buckets_mem(const string& input_file, uint64_t number_color, zstr::ofstream* out);
-	void get_monocolor_minitigs_mem(const  vector<vector<minitig>>& minitigs , zstr::ofstream* out, const vector<int32_t>& mini,uint64_t number_color);
+	void merge_super_buckets_mem(const string& input_file, uint64_t number_color, ofstream* out);
+	void get_monocolor_minitigs_mem(const  vector<vector<minitig>>& minitigs , ofstream* out, const vector<int32_t>& mini,uint64_t number_color);
 	void str2bool(const string& str,uint64_t mini);
 	void dump_and_destroy(const string& output_file);
 	bool similar_count(const vector<uint16_t>& V1,const vector<uint16_t>& V2);
 	void chd(const string& dir);
-	void merge_super_buckets_direct(const string& input_file, uint64_t number_color, zstr::ofstream* out);
+	void merge_super_buckets_direct(const string& input_file, uint64_t number_color, ofstream* out);
   kmer regular_minimizer_pos(kmer seq,uint64_t& position);
 };
 

@@ -22,6 +22,7 @@ string revComp(const string& s);
 void decompress_file(const string& file, const string& output_file);
 vector<bool> str2boolv(const string& str);
 string bool2strv(const vector<bool>& v);
+void split(const string &s, char delim,vector<string>& res);
 template<typename T>
 inline T xs(const T& x) { return unrevhash(x); }
 
