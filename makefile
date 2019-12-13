@@ -11,7 +11,7 @@ else
 endif
 
 
-CFLAGS+=-std=c++11 -pipe -lz -fopenmp ${WARNS}
+CFLAGS+=-std=c++11 -pipe -lz -fopenmp -msse4 ${WARNS}
 INC=blight.h bbhash.h common.h
 EXEC=bench_blight
 
