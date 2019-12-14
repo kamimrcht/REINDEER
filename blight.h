@@ -21,6 +21,8 @@
 #include "encoding.h"
 #include "zstr.hpp"
 #include "bmserial.h"
+#include "robin_hood.h"
+
 #define BMSSE2OPT
 #define BMSSE42OPT
 #define BMAVX2OPT
@@ -42,6 +44,19 @@ struct KmerHasher
     return((uint64_t)k);
 	}
 };
+
+
+
+struct kmer_context{
+	bool isdump;
+	// bool nextOK;
+	// bool prevOK;
+	// vector<kmer> next_kmers;
+	// vector<kmer> previous_kmers;
+	vector<uint16_t> count;
+	kmer minimizer;
+};
+
 
 
 
@@ -298,6 +313,9 @@ public:
 	void chd(const string& dir);
 	void merge_super_buckets_direct(const string& input_file, uint64_t number_color, ofstream* out);
   kmer regular_minimizer_pos(kmer seq,uint64_t& position);
+  kmer select_good_successor(const robin_hood::unordered_map<kmer,kmer_context>& kmer2context,const kmer& canon);
+  kmer select_good_predecessor(robin_hood::unordered_map<kmer,kmer_context>& kmer2context,const kmer& canon);
+
 };
 
 

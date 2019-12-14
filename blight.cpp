@@ -241,15 +241,6 @@ void kmer_Set_Light::reset(){
 
 
 
-struct kmer_context{
-	bool isdump;
-	bool nextOK;
-	bool prevOK;
-	kmer next_kmer;
-	kmer previous_kmer;
-	vector<uint16_t> count;
-	kmer minimizer;
-};
 
 
 
@@ -294,7 +285,6 @@ string kmer_Set_Light::compaction(const string& seq1,const string& seq2, bool re
 	if(recur){
 		return compaction(revComp(seq1),seq2,false);
 	}else{
-		//~ //TODO SOME COMPACTION ARE MISSED CAN WE DO BETTER
 	}
 	return "";
 }
@@ -334,13 +324,12 @@ void kmer_Set_Light::construct_index_fof(const string& input_file, const string&
 	}
 
 	create_super_buckets_list(fnames);
-
 	high_resolution_clock::time_point t2 = high_resolution_clock::now();
 	cout<<"Partition created	"<<intToString(read_kmer)<<" kmers read "<<endl;
 	duration<double> time_span12 = duration_cast<duration<double>>(t2 - t1);
 	cout<<time_span12.count() << " seconds."<<endl;
 	{
-		ofstream out(working_dir+"_blmonocolor.fa.gz",ios::app);
+		ofstream out(working_dir+"_blmonocolor.fa",ios::app);
 		//~ #pragma omp parallel for num_threads(min(coreNumber,(uint64_t)4))
 		// #pragma omp parallel for num_threads((coreNumber))
 		for(uint i_superbuckets=0; i_superbuckets<number_superbuckets.value(); ++i_superbuckets){
@@ -358,7 +347,9 @@ void kmer_Set_Light::construct_index_fof(const string& input_file, const string&
 	cout<<"Monocolor minitig computed, now regular indexing start"<<endl;
 	duration<double> time_span32 = duration_cast<duration<double>>(t3 - t2);
 	cout<<time_span32.count() << " seconds."<<endl;
-	create_super_buckets(working_dir+"_blmonocolor.fa.gz");
+
+
+	create_super_buckets(working_dir+"_blmonocolor.fa");
 
 	high_resolution_clock::time_point t4 = high_resolution_clock::now();
 	duration<double> time_span43 = duration_cast<duration<double>>(t4 - t3);
@@ -421,124 +412,72 @@ void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t 
 
 
 
-void kmer_Set_Light::merge_super_buckets_direct(const string& input_file, uint64_t number_color, ofstream* out){
-	vector<uint16_t> bit_vector(number_color,0);
-	zstr::ifstream in(input_file);
-	//WE INDEX ALL KMERS
-	vector<robin_hood::unordered_map<kmer,kmer_context>> kmer2context((minimizer_number.value()/number_superbuckets.value()));
-	{
-		string line,sequence;
-		vector<string> splitted;
-		while(not in.eof() and in.good()){
-			{
-				getline(in,line);
-			}
-			if(not line.empty()){
-				splitted=split(line,':');
-				auto color=stoi(splitted[1]);
-				sequence=(splitted[2]);
-				auto coverage=(stoi(splitted[3]));
-				kmer minimizer=stoi(splitted[0]);
-				uint64_t indice(minimizer%kmer2context.size());
-				kmer seq(str2num(sequence.substr(0,k))),rcSeq(rcb(seq)),canon(min_k(seq,rcSeq)),prev;
-				canon=(min_k(seq, rcSeq));
-				if(kmer2context[indice].count(canon)==0){
-					kmer2context[indice][canon]={false,false,false,(kmer)-1,(kmer)-1,bit_vector,minimizer};
+
+
+	// void add_predecessor(kmer_context& kc, const kmer canon){
+	// 	for(uint64_t i(0);i<kc.previous_kmers.size();++i){
+	// 		if(kc.previous_kmers[i]==canon){
+	// 			return;
+	// 		}
+	// 	}
+	// 	kc.previous_kmers.push_back(canon);
+	// }
+
+
+
+// void add_successor(kmer_context& kc, const kmer canon){
+// 	for(uint64_t i(0);i<kc.next_kmers.size();++i){
+// 		if(kc.next_kmers[i]==canon){
+// 			return;
+// 		}
+// 	}
+// 	kc.next_kmers.push_back(canon);
+// }
+
+string nucleotides("ACGT");
+
+kmer kmer_Set_Light::select_good_successor(const  robin_hood::unordered_map<kmer,kmer_context>& kmer2context,const kmer& start){
+	kmer canon=canonize(start,k);
+	if(kmer2context.count(canon)==0){return -1;}
+	kmer_context kc(kmer2context.at(canon));
+	for(uint64_t i(0);i<4;++i){
+		kmer target=start;
+		updateK(target,nucleotides[i]);
+		kmer targetc=canonize(target,k);
+		if(kmer2context.count(targetc)!=0){
+			if(kmer2context.at(targetc).isdump){continue;}
+			if(count_color){
+				if(kmer2context.at(targetc).count==kc.count){
+					return target;
 				}
-				kmer2context[indice][canon].count[color-1]=coverage;
-				for(uint i(0);i+k<sequence.size();++i){
-					prev=canon;
-					updateK(seq,sequence[i+k]);
-					updateRCK(rcSeq,sequence[i+k]);
-					canon=(min_k(seq, rcSeq));
-					if(kmer2context[indice].count(canon)==0){
-						kmer2context[indice][canon]={false,false,false,(kmer)-1,(kmer)-1,bit_vector};
-					}
-					kmer2context[indice][canon].count[color-1]=coverage;
-					if(not kmer2context[indice][prev].nextOK){
-						kmer2context[indice][prev].next_kmer=canon;
-						kmer2context[indice][prev].nextOK=true;
-					}
-					if(kmer2context[indice][canon].prevOK==0){
-						kmer2context[indice][canon].previous_kmer=prev;
-						kmer2context[indice][canon].prevOK=true;
-					}
+			}else{
+				if(equal_nonull(kmer2context.at(targetc).count,kc.count)){
+					return target;
+				}else{
 				}
 			}
 		}
 	}
-	//KMER INDEXED
-	#pragma omp parallel num_threads(coreNumber)
-	{
-		string seq2dump,compact,buffer;
-		#pragma omp for schedule(static, 16)
-		for(uint i_ht=(0);i_ht<kmer2context.size();i_ht++){
-			for (auto& it: kmer2context[i_ht]){
-				if(not it.second.isdump){
-					it.second.isdump=true;
-					auto colorV2dump(it.second.count);
-					kmer canon=it.first;
-					seq2dump=kmer2str(canon);
-
-					while(true){
-						if( not kmer2context[i_ht][canon].nextOK){break;}
-						kmer next(kmer2context[i_ht][canon].next_kmer);
-						if(kmer2context[i_ht][next].isdump){break;}
-						if(count_color){
-							if(max_divergence_count==0){
-								if(kmer2context[i_ht][next].count!=colorV2dump){break;}
-							}else{
-								if(not similar_count(kmer2context[i_ht][canon].count,colorV2dump)){break;}
-							}
-						}else{
-							if(not equal_nonull(kmer2context[i_ht][canon].count,colorV2dump)){break;}
-						}
-						compact=compaction(seq2dump,kmer2str(next));
-						if(compact.empty()){break;}
-						kmer2context[i_ht][next].isdump=true;
-						seq2dump=compact;
-						canon=next;
-					}
-					canon=it.first;
-					while(true){
-						if(not kmer2context[i_ht][canon].prevOK){break;}
-						kmer prev(kmer2context[i_ht][canon].previous_kmer);
-						if(kmer2context[i_ht][prev].isdump){break;}
-						if(count_color){
-							if(max_divergence_count==0){
-								if(kmer2context[i_ht][prev].count!=colorV2dump){break;}
-							}else{
-								if(not similar_count(kmer2context[i_ht][canon].count,colorV2dump)){break;}
-							}
-						}else{
-							if(not equal_nonull(kmer2context[i_ht][canon].count,colorV2dump)){break;}
-						}
-						compact=compaction(seq2dump,kmer2str(prev));
-						if(compact.empty()){break;}
-						kmer2context[i_ht][prev].isdump=true;
-						seq2dump=compact;
-						canon=prev;
-					}
-					buffer+=">"+to_string(it.second.minimizer)+color_coverage2str(colorV2dump)+"\n"+seq2dump+"\n";
-					if(buffer.size()>80000){
-						#pragma omp critical (monocolorFile)
-						{
-							*out<<buffer;
-						}
-						buffer.clear();
-					}
-				}
-			}
-			kmer2context[i_ht].clear();
-		}
-
-		#pragma omp critical (monocolorFile)
-		{
-			*out<<buffer;
-		}
-	}
+	return -1;
 }
 
+
+
+// kmer kmer_Set_Light::select_good_predecessor(robin_hood::unordered_map<kmer,kmer_context>& kmer2context,const kmer& canon){
+// 	kmer_context kc(kmer2context[canon]);
+// 	for(uint64_t i(0);i<kc.next_kmers.size();++i){
+// 		if(count_color){
+// 			if(kmer2context[kc.next_kmers[i]].count==kc.count){
+// 				return kc.next_kmers[i];
+// 			}
+// 		}else{
+// 			if(equal_nonull(kmer2context[kc.next_kmers[i]].count,kc.count)){
+// 				return kc.next_kmers[i];
+// 			}
+// 		}
+// 	}
+// 	return -1;
+// }
 
 
 
@@ -552,33 +491,28 @@ vector<uint16_t> bit_vector(number_color,0);
 {
 	robin_hood::unordered_map<kmer,kmer_context> kmer2context;
 	string sequence, buffer,seq2dump,compact;
+	uint64_t ms=minitigs.size();
 	#pragma omp for schedule(dynamic)
-	for(uint i_set=(0);i_set<minitigs.size();i_set++){
-		for(uint64_t i_mini=(0);i_mini<minitigs[i_set].size();++i_mini){
+	for(uint i_set=(0);i_set<ms;i_set++){
+		uint64_t mss=minitigs[i_set].size();
+		for(uint64_t i_mini=(0);i_mini<mss;++i_mini){
 			sequence=(minitigs[i_set][i_mini].sequence);
 			kmer seq(str2num(sequence.substr(0,k))),rcSeq(rcb(seq)),canon(min_k(seq,rcSeq)),prev;
 			canon=(min_k(seq, rcSeq));
 			if(kmer2context.count(canon)==0){
-				kmer2context[canon]={false,false,false,(kmer)-1,(kmer)-1,bit_vector};
+				kmer2context[canon]={false,bit_vector};
 			}
 			kmer2context[canon].count[minitigs[i_set][i_mini].color]=minitigs[i_set][i_mini].coverage;
-			for(uint i(0);i+k<sequence.size();++i){
+			uint64_t sks=sequence.size();
+			for(uint i(0);i+k<sks;++i){
 				prev=canon;
 				updateK(seq,sequence[i+k]);
 				updateRCK(rcSeq,sequence[i+k]);
 				canon=(min_k(seq, rcSeq));
 				if(kmer2context.count(canon)==0){
-					kmer2context[canon]={false,false,false,(kmer)-1,(kmer)-1,bit_vector};
+					kmer2context[canon]={false,bit_vector};
 				}
 				kmer2context[canon].count[minitigs[i_set][i_mini].color]=minitigs[i_set][i_mini].coverage;
-				if(not kmer2context[prev].nextOK){
-					kmer2context[prev].next_kmer=canon;
-					kmer2context[prev].nextOK=true;
-				}
-				if(not kmer2context[canon].prevOK){
-					kmer2context[canon].previous_kmer=prev;
-					kmer2context[canon].prevOK=true;
-				}
 			}
 		}
 
@@ -586,48 +520,21 @@ vector<uint16_t> bit_vector(number_color,0);
 			if(not it.second.isdump){
 				it.second.isdump=true;
 				auto colorV2dump(it.second.count);
-				kmer canon=it.first;
-				seq2dump=kmer2str(canon);
-
-				while(true){
-					if(not kmer2context[canon].nextOK){break;}
-					kmer next(kmer2context[canon].next_kmer);
-					if(kmer2context[next].isdump){break;}
-					if(count_color){
-						if(max_divergence_count==0){
-							if(kmer2context[next].count!=colorV2dump){break;}
-						}else{
-							if(not similar_count(kmer2context[next].count,colorV2dump)){break;}
-						}
-					}else{
-						if(not equal_nonull(kmer2context[next].count,colorV2dump)){break;}
+				kmer start=it.first;
+				seq2dump=kmer2str(start);
+				for(uint64_t step(0);step<2;step++){
+					while(true){
+						kmer next=select_good_successor(kmer2context,start);
+						if(next==(kmer)-1){
+							break;}
+						compact=compaction(seq2dump,kmer2str(next),false);
+						if(compact.empty()){break;}
+						kmer2context.at(canonize(next,k)).isdump=true;
+						seq2dump=compact;
+						start=next;
 					}
-					compact=compaction(seq2dump,kmer2str(next));
-					if(compact.empty()){break;}
-					kmer2context[next].isdump=true;
-					seq2dump=compact;
-					canon=next;
-				}
-
-				canon=it.first;
-				while(true){
-					if(not kmer2context[canon].prevOK){break;}
-					kmer prev(kmer2context[canon].previous_kmer);
-					if(kmer2context[prev].isdump){break;}
-					if(count_color){
-						if(max_divergence_count==0){
-							if(kmer2context[prev].count!=colorV2dump){break;}
-						}else{
-							if(not similar_count(kmer2context[prev].count,colorV2dump)){break;}
-						}
-					}else{
-						if(not equal_nonull(kmer2context[prev].count,colorV2dump)){break;}
-					}
-					compact=compaction(seq2dump,kmer2str(prev));
-					if(compact.empty()){break;}
-					kmer2context[prev].isdump=true;
-					seq2dump=compact;
-					canon=prev;
+					start=rcb(it.first);
+					seq2dump=revComp(seq2dump);
 				}
 				buffer+=">"+to_string(mini[i_set])+color_coverage2str(colorV2dump)+"\n"+seq2dump+"\n";
 				if(buffer.size()>80000){
