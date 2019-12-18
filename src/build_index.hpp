@@ -44,7 +44,7 @@ vector<uint16_t> get_counts_minitigs(string& line)
 // build color/count matrix and dump it
 void build_matrix(string& color_load_file, string& color_dump_file, string& fof, kmer_Set_Light* ksl, bool record_counts, bool record_reads, uint k, uint64_t& color_number, uint nb_threads, bool exact, string& output, vector <unsigned char*>& compressed_colors, vector <unsigned>& compressed_colors_size, string& output_file)
 {
-	auto minitigs_file = new zstr::ifstream(output +"/_blmonocolor.fa.gz");
+	auto minitigs_file = new zstr::ifstream(output +"/_blmonocolor.fa");
 	uint64_t nb_minitigs(0);
 	//~ ofstream out(output_file);
 	auto out=new zstr::ofstream(output_file);
@@ -157,7 +157,7 @@ kmer_Set_Light* load_rle_index(uint k, string& color_load_file, string& color_du
 {
 	kmer_Set_Light* ksl= new kmer_Set_Light(output + "/reindeer_index.gz");
 	do_coloring(color_load_file, color_dump_file, fof, ksl, record_counts, record_reads, k, color_number, nb_threads, exact, output, compr_minitig_color, compr_minitig_color_sizes);
-	string cmd("rm -f " + output +"/_blmonocolor.fa.gz");
+	string cmd("rm -f " + output +"/_blmonocolor.fa");
 	int sysRet(system(cmd.c_str()));
 	return ksl;
 }
@@ -184,7 +184,7 @@ void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, string& colo
 	cout << "Dump index..."<< endl;
 	ksl.dump_disk(output + "/reindeer_index.gz");
 	high_resolution_clock::time_point t13 = high_resolution_clock::now();
-	string cmd("rm -f " + output +"/_blmonocolor.fa.gz");
+	string cmd("rm -f " + output +"/_blmonocolor.fa");
 	int sysRet(system(cmd.c_str()));
 	duration<double> time_span13 = duration_cast<duration<double>>(t13 - t2);
 	cout<<"Index written on disk: "<< time_span13.count() << " seconds."<<endl;
