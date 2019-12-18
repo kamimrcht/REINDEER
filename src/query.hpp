@@ -42,8 +42,8 @@ using namespace chrono;
 // decode rl encoded vector (color/count of ONE minitig)
 unsigned char* decode_vector(unsigned char* minitig_counts, unsigned vector_size, uint64_t color_number)
 {
-	auto decoded_vector= new unsigned char[color_number*2];
-	trled(minitig_counts, vector_size, decoded_vector, color_number*2);
+	auto decoded_vector= new unsigned char[color_number*2 + 1024];
+	auto sz = trled(minitig_counts, vector_size, decoded_vector, color_number*2);
 	return decoded_vector;
 }
 
@@ -55,7 +55,7 @@ vector<uint16_t> count_string_to_count_vector(unsigned char* count_char_minitig,
 	{
 		counts.push_back((uint16_t)count_char_minitig[i] + (uint16_t)count_char_minitig[i+1]*256);
 	}
-	return counts;
+return counts;
 }
 
 // for ONE minitig, get a vector of its counts/colors (uint) from the rle encoded matrix
@@ -63,6 +63,7 @@ vector<uint16_t> get_count_minitig(unsigned char* minitig_counts, unsigned vecto
 {
 	unsigned char* decoded(decode_vector(minitig_counts, vector_size,color_number));
 	vector<uint16_t> counts (count_string_to_count_vector(decoded, color_number*2));
+delete [] decoded;
 	return counts;
 }
 
