@@ -62,7 +62,7 @@ vector<unsigned char*> load_compressed_vectors(const string& input_file, vector<
 
 
 // dump rle vector on disk
-void dump_compressed_vector(vector<uint16_t>& counts, int64_t minitig_id, ofstream& out, unsigned char *in)
+void dump_compressed_vector(vector<uint16_t>& counts, int64_t minitig_id, ofstream& out, unsigned char *in, ofstream& out_positions)
 {
 	// one vector corresponding to the minitig count/colors
 	// convert to string for the compression
@@ -71,10 +71,13 @@ void dump_compressed_vector(vector<uint16_t>& counts, int64_t minitig_id, ofstre
 	unsigned char comp[nn];
 	in = (unsigned char*)&counts[0];
 	unsigned compr_vector_size = trlec(in, n, comp) ; 
+	long position(out.tellp());
 	out.write(reinterpret_cast<char*>(&compr_vector_size),sizeof(unsigned));
 	int64_t tw(minitig_id);
+	
 	out.write(reinterpret_cast<char*>(&tw),sizeof(int64_t));
 	out.write((const char*)comp,(compr_vector_size));
+	out_positions.write(reinterpret_cast<char*>(&position), sizeof(long));
 }
 
 

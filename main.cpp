@@ -41,6 +41,7 @@ uint k(31), threads(1);
 bool record_counts(false);
 bool record_reads(false);
 bool exact(false);
+bool do_query_on_disk(false);
 bool bcalm(false), do_Index(false), do_Query(false), PE(false);
 uint threshold(40);
 
@@ -62,6 +63,7 @@ void PrintHelp()
             "--count                 :     Retain abundances instead of presence/absence\n"
             "--bcalm                 :     Launch bcalm on each single read dataset\n\n"
             "--paired-end            :     Index using paired-end files (provide pairs of files one after another in the fof). Works only with --bcalm.\n\n"
+            "--disk-query            :     Index for on-disk query (default: in-memory). To be used for large indexes that won't fit in RAM.\n\n"
             "* Output options\n"
             "-o <file>               :     Directory to write output files (default: output_reindeer)\n"
 
@@ -75,6 +77,8 @@ void PrintHelp()
             "-S                      :     Threshold: at least S% of the query k-mers must be in a dataset to be reported\n"
             "-q <FASTA>              :     FASTA query file with query sequences\n\n\n"
             "-o <file>               :     Directory to write output files (default: output_reindeer/query_results)\n"
+            "--disk-query            :     On-disk query (default: in-memory). To be used for large indexes that won't fit in RAM, if the index was constructed with the same option.\n\n"
+
 
             "                    Performances\n"
             "-t <integer>            :     Number of threads (default 1)\n\n\n"
@@ -94,6 +98,7 @@ void ProcessArgs(int argc, char** argv)
             {"bcalm", no_argument, nullptr, 'b'},
             {"query", no_argument, nullptr, 'Q'},
             {"paired-end", no_argument, nullptr, 'P'},
+            {"disk-query", no_argument, nullptr, 'd'},
             {nullptr, no_argument, nullptr, 0}
     };
 
@@ -141,6 +146,9 @@ void ProcessArgs(int argc, char** argv)
 				break;
 			case 'b':
 				bcalm=true;
+				break;
+			case 'd':
+				do_query_on_disk=true;
 				break;
         case 'h': // -h or --help
         case '?': // Unrecognized option
@@ -192,7 +200,7 @@ int main(int argc, char **argv)
 		systRet=system(cmd.c_str());
 		cout << "Indexing k-mers...\n\n" << endl;
 		color_dump_file = output + "/" + color_dump_file;
-		reindeer_index(k, fof, color_dump_file, record_counts,record_reads, output, cl, threads, exact);
+		reindeer_index(k, fof, color_dump_file, record_counts,record_reads, output, cl, threads, exact, do_query_on_disk);
 		if (PE)
 		{
 			string cmd("rm " + output + "/PE*" );
@@ -211,7 +219,7 @@ int main(int argc, char **argv)
 			if (not dirExists(output_query)){
 				systRet=system(("mkdir " + output_query).c_str());
 			}
-			reindeer_query(k, color_load_file, output_query,  record_counts,  record_reads,  threshold,  bgreat_paths_fof,  query, threads, exact);
+			reindeer_query(k, color_load_file, output_query,  record_counts,  record_reads,  threshold,  bgreat_paths_fof,  query, threads, exact, do_query_on_disk);
 		}
 	}
     return 0;

@@ -116,12 +116,77 @@ void build_matrix(string& color_load_file, string& color_dump_file, string& fof,
 }
 
 
+void build_matrix_for_disk_query(string& color_load_file, string& color_dump_file, string& fof, kmer_Set_Light* ksl, bool record_counts, bool record_reads, uint k, uint64_t& color_number, uint nb_threads, bool exact, string& output, vector <unsigned char*>& compressed_colors, vector <unsigned>& compressed_colors_size, string& output_file)
+{
+	auto minitigs_file = new zstr::ifstream(output +"/_blmonocolor.fa");
+	uint64_t nb_minitigs(0);
+	//~ ofstream out(output_file);
+	ofstream out(output_file);
+	ofstream out_nb(output_file+"_minitig_nb");
+	ofstream out_position(output_file+"_position");
+	mutex mm;
+	//~ out.write(reinterpret_cast<char*>(&nb_minitigs),sizeof(uint64_t)); // number of minitigs - wait before the real value
+	//~ out.write(reinterpret_cast<char*>(&color_number),sizeof(uint64_t)); // number of colors
+	//~ out.write(reinterpret_cast<char*>(&nb_minitigs),sizeof(uint64_t)); // number of minitigs - wait before the real value
+	out.write(reinterpret_cast<char*>(&color_number),sizeof(uint64_t)); // number of colors
+	#pragma omp parallel num_threads(nb_threads)
+	{
+		vector<int64_t> minitig_id;
+		vector<uint16_t> counts;
+		string header,minitig, buffer;
+		unsigned char *in;
+		while(not minitigs_file->eof())
+		{
+			#pragma omp critical(infile)
+			{
+				getline(*minitigs_file, header);
+				getline(*minitigs_file, minitig);
+
+			}
+			if(minitig.empty() or header.empty()){continue;}
+			counts = get_counts_minitigs(header);
+			minitig_id.clear();
+			if (minitig[0] == 'A' or minitig[0] == 'C' or minitig[0] == 'G' or minitig[0] == 'T')
+			{
+				mm.lock();
+				++nb_minitigs;
+				mm.unlock();
+				minitig_id=ksl->get_rank_query(minitig.substr(0,k)); // all kmers have the same id so we only query one
+				if((not minitig_id.empty()) and minitig_id.back()>=0)
+				{
+					mm.lock();
+					dump_compressed_vector(counts, minitig_id.back(), out, in, out_position);
+					mm.unlock();
+				}
+			}
+		}
+		//~ if(buffer.size()>0)
+		//~ {
+			//~ #pragma omp critical(outfile)
+			//~ {
+				//~ out.write(&buffer[0], buffer.size());
+			//~ }
+			//~ buffer.clear();
+		//~ }
+		delete(in);
+	}
+	//~ out.seekp(0, ios::beg);
+	out_nb.write(reinterpret_cast<char*>(&nb_minitigs),sizeof(uint64_t));
+	//~ out.write(reinterpret_cast<char*>(&nb_minitigs),sizeof(uint64_t));
+	delete(minitigs_file);
+	out.close();
+	//~ delete out;
+	out_nb.close();
+	out_position.close();
+}
+
+
 
 
 
 
 // color using minitig file: either build and dump the color matrix during the index construction, or load it during the query
-void do_coloring(string& color_load_file, string& color_dump_file, string& fof, kmer_Set_Light* ksl, bool record_counts, bool record_reads, uint k, uint64_t& color_number, uint nb_threads, bool exact, string& output, vector<unsigned char*>& compr_minitig_color,vector<unsigned>& compr_minitig_color_size)
+void do_coloring(string& color_load_file, string& color_dump_file, string& fof, kmer_Set_Light* ksl, bool record_counts, bool record_reads, uint k, uint64_t& color_number, uint nb_threads, bool exact, string& output, vector<unsigned char*>& compr_minitig_color,vector<unsigned>& compr_minitig_color_size, bool do_query_on_disk)
 {
 	vector <string> file_names;
 	if(exists_test(fof)){
@@ -143,20 +208,28 @@ void do_coloring(string& color_load_file, string& color_dump_file, string& fof, 
 	color_number = file_names.size();
 	if (not color_load_file.empty())
 	{
-		uint64_t color_number;
-		uint64_t minitig_number;
-		compr_minitig_color = load_compressed_vectors(color_load_file, compr_minitig_color_size, color_number,minitig_number);
-	} else {
-		build_matrix( color_load_file,  color_dump_file,  fof,  ksl,  record_counts, record_reads,  k, color_number, nb_threads,  exact, output, compr_minitig_color, compr_minitig_color_size, color_dump_file);
+		if (not do_query_on_disk)
+		{
+			uint64_t color_number;
+			uint64_t minitig_number;
+			compr_minitig_color = load_compressed_vectors(color_load_file, compr_minitig_color_size, color_number, minitig_number);
+		}
+	} 
+	else 
+	{
+		if (do_query_on_disk)
+			build_matrix_for_disk_query(color_load_file,  color_dump_file,  fof,  ksl,  record_counts, record_reads,  k, color_number, nb_threads,  exact, output, compr_minitig_color, compr_minitig_color_size, color_dump_file);
+		else 
+			build_matrix(color_load_file,  color_dump_file,  fof,  ksl,  record_counts, record_reads,  k, color_number, nb_threads,  exact, output, compr_minitig_color, compr_minitig_color_size, color_dump_file);
 	}
 }
 
 
 // load dumped index(+colors)
-kmer_Set_Light* load_rle_index(uint k, string& color_load_file, string& color_dump_file, string& fof, bool record_counts, bool record_reads, uint64_t& color_number, uint nb_threads, bool exact, string& output, vector<unsigned char*> &compr_minitig_color,  vector<unsigned>& compr_minitig_color_sizes)
+kmer_Set_Light* load_rle_index(uint k, string& color_load_file, string& color_dump_file, string& fof, bool record_counts, bool record_reads, uint64_t& color_number, uint nb_threads, bool exact, string& output, vector<unsigned char*> &compr_minitig_color,  vector<unsigned>& compr_minitig_color_sizes, bool do_query_on_disk)
 {
 	kmer_Set_Light* ksl= new kmer_Set_Light(output + "/reindeer_index.gz");
-	do_coloring(color_load_file, color_dump_file, fof, ksl, record_counts, record_reads, k, color_number, nb_threads, exact, output, compr_minitig_color, compr_minitig_color_sizes);
+	do_coloring(color_load_file, color_dump_file, fof, ksl, record_counts, record_reads, k, color_number, nb_threads, exact, output, compr_minitig_color, compr_minitig_color_sizes, do_query_on_disk);
 	string cmd("rm -f " + output +"/_blmonocolor.fa");
 	int sysRet(system(cmd.c_str()));
 	return ksl;
@@ -165,7 +238,7 @@ kmer_Set_Light* load_rle_index(uint k, string& color_load_file, string& color_du
 
 
 // build index from new file
-void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, string& color_load_file, string& color_dump_file, string& fof, bool record_counts, bool record_reads, uint64_t& color_number, kmer_Set_Light& ksl, uint nb_threads, bool exact, string& output)
+void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, string& color_load_file, string& color_dump_file, string& fof, bool record_counts, bool record_reads, uint64_t& color_number, kmer_Set_Light& ksl, uint nb_threads, bool exact, string& output, bool do_query_on_disk)
 {
 	cout << "Minitig coloring..."<< endl;
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
@@ -176,7 +249,7 @@ void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, string& colo
 		ksl.construct_index_fof(fof, output, false, 10);
 	vector<unsigned char*>compr_minitig_color;
 	vector<unsigned> compr_minitig_color_size;
-	do_coloring(color_load_file, color_dump_file, fof, &ksl, record_counts, record_reads, k, color_number, nb_threads, exact, output, compr_minitig_color, compr_minitig_color_size);
+	do_coloring(color_load_file, color_dump_file, fof, &ksl, record_counts, record_reads, k, color_number, nb_threads, exact, output, compr_minitig_color, compr_minitig_color_size, do_query_on_disk);
 	high_resolution_clock::time_point t12 = high_resolution_clock::now();
 	duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
 	cout<<"Coloration done: "<< time_span12.count() << " seconds."<<endl;

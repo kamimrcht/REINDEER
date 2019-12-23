@@ -53,14 +53,14 @@ uint c(1);
 uint bit(0);
 uint ex(0);
 
-void reindeer_index(uint k, string& fof,  string& color_dump_file, bool record_counts, bool record_reads, string& output, string& color_load_file, uint threads, bool exact)
+void reindeer_index(uint k, string& fof,  string& color_dump_file, bool record_counts, bool record_reads, string& output, string& color_load_file, uint threads, bool exact, bool do_query_on_disk)
 {
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
 	uint64_t color_number;
 	kmer_Set_Light ksl(k,m1,m2,m3,threads,bit);
 	int systemRet;
 	// BUILD THE INDEX
-	build_index(k, m1, m2, m3, c, bit, color_load_file, color_dump_file, fof, record_counts, record_reads, color_number, ksl, threads, exact, output);
+	build_index(k, m1, m2, m3, c, bit, color_load_file, color_dump_file, fof, record_counts, record_reads, color_number, ksl, threads, exact, output, do_query_on_disk);
 	high_resolution_clock::time_point t12 = high_resolution_clock::now();
 	duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
 	cout<<"Index building and Coloration done total: "<< time_span12.count() << " seconds."<<endl;
@@ -69,7 +69,7 @@ void reindeer_index(uint k, string& fof,  string& color_dump_file, bool record_c
 
 
 
-void reindeer_query(uint k, string& output,string& output_query, bool record_counts, bool record_reads, uint threshold, string& bgreat_paths_fof, string& query, uint threads, bool exact)
+void reindeer_query(uint k, string& output,string& output_query, bool record_counts, bool record_reads, uint threshold, string& bgreat_paths_fof, string& query, uint threads, bool exact, bool do_query_on_disk)
 {
 	// QUERY //
 	string fof( getRealPath("graphs.lst", output));
@@ -80,9 +80,9 @@ void reindeer_query(uint k, string& output,string& output_query, bool record_cou
 	vector<unsigned char*> compr_minitig_color;
 	vector<unsigned> compr_minitig_color_sizes;
 	cout << "\nLoading index.." << endl;
-	kmer_Set_Light* ksl = load_rle_index(k, color_load_file, color_dump_file, fof, record_counts, record_reads, color_number, nb_threads, exact, output, compr_minitig_color, compr_minitig_color_sizes);
+	kmer_Set_Light* ksl = load_rle_index(k, color_load_file, color_dump_file, fof, record_counts, record_reads, color_number, nb_threads, exact, output, compr_minitig_color, compr_minitig_color_sizes, do_query_on_disk);
 	cout << "\nComputing query..." << endl;
-	perform_query(*ksl, color_number, k, record_counts,  record_reads,  threshold, bgreat_paths_fof, query, output_query, threads, exact, compr_minitig_color, compr_minitig_color_sizes);
+	perform_query(*ksl, color_number, k, record_counts,  record_reads,  threshold, bgreat_paths_fof, query, output_query, threads, exact, compr_minitig_color, compr_minitig_color_sizes, do_query_on_disk, color_load_file);
 	//~ delete [] ksl; //todo fix blight destructor
 }
 
