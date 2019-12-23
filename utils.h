@@ -1,3 +1,5 @@
+#ifndef UTIL
+#define UTIL
 
 
 
@@ -12,6 +14,9 @@ kmer str2num(const string& str);
 uint64_t revhash ( uint64_t x );
 uint64_t unrevhash ( uint64_t x );
 uint16_t parseCoverage(const string& str);
+uint16_t parseCoverage_log2(const string& str);
+uint16_t parseCoverage_exact(const string& str);
+uint16_t parseCoverage_bool(const string& str);
 string color_coverage2str(const vector<uint16_t>& V);
 vector<string> split(const string &s, char delim);
 kmer hash64shift(kmer key);
@@ -25,6 +30,12 @@ string bool2strv(const vector<bool>& v);
 void split(const string &s, char delim,vector<string>& res);
 template<typename T>
 inline T xs(const T& x) { return unrevhash(x); }
+
+
+
+
+
+
 
 
 
@@ -153,3 +164,6 @@ class file_binary{
 	private:
 	FILE * _is;
 };
+
+
+#endif

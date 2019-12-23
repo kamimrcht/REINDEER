@@ -143,9 +143,11 @@ public:
 	uint64_t k, m1, m2, m3, minimizer_size_graph;
 	uint64_t coreNumber;
 	uint64_t bit_saved_sub;
-	bool count_color;
+	int color_mode;
 	string working_dir;
 	double max_divergence_count=0;
+  uint64_t MAX_ABUNDANCE_DISCRETE;
+  vector<uint8_t> abundance_discretization;
 
 	Pow2<kmer> offsetUpdateAnchor;
 	Pow2<kmer> offsetUpdateMinimizer;
@@ -291,7 +293,7 @@ public:
 	void get_monocolor_minitigs(const  vector<string>& minitigs, const vector<int64_t>& color,const vector<uint16_t>& coverage, ofstream* out, const string& mini,uint64_t number_color);
 	void merge_super_buckets(const string& input_file, uint64_t number_color,ofstream* out);
 	string compaction(const string& seq1,const string& seq2,bool);
-	void construct_index_fof(const string& input_file,const string& osef="", bool=false, double=0);
+	void construct_index_fof(const string& input_file,const string& osef="", int=0, double=0);
 	void reset();
 	void dump_disk(const string& output_file);
 	vector<bool> get_presence_query(const string& seq);
@@ -315,6 +317,12 @@ public:
   kmer regular_minimizer_pos(kmer seq,uint64_t& position);
   kmer select_good_successor(const robin_hood::unordered_map<kmer,kmer_context>& kmer2context,const kmer& canon);
   kmer select_good_predecessor(robin_hood::unordered_map<kmer,kmer_context>& kmer2context,const kmer& canon);
+  uint16_t parseCoverage(const string& str);
+  void init_discretization_scheme();
+  uint16_t parseCoverage_bin(const string& str);
+  uint16_t abundance_at (uint8_t index);
+  uint8_t return_count_bin(uint16_t abundance);
+
 
 };
 

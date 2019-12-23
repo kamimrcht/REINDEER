@@ -295,19 +295,19 @@ bool exists_test (const  string& name) {
 
 
 
-  uint64_t rcbc(uint64_t in, uint64_t n){
-    assume(n <= 32, "n=%u > 32", n);
-    // Complement, swap byte order
-    uint64_t res = __builtin_bswap64(in ^ 0xaaaaaaaaaaaaaaaa);
-    // Swap nuc order in bytes
-    const uint64_t c1 = 0x0f0f0f0f0f0f0f0f;
-    const uint64_t c2 = 0x3333333333333333;
-    res               = ((res & c1) << 4) | ((res & (c1 << 4)) >> 4); // swap 2-nuc order in bytes
-    res               = ((res & c2) << 2) | ((res & (c2 << 2)) >> 2); // swap nuc order in 2-nuc
+uint64_t rcbc(uint64_t in, uint64_t n){
+  assume(n <= 32, "n=%u > 32", n);
+  // Complement, swap byte order
+  uint64_t res = __builtin_bswap64(in ^ 0xaaaaaaaaaaaaaaaa);
+  // Swap nuc order in bytes
+  const uint64_t c1 = 0x0f0f0f0f0f0f0f0f;
+  const uint64_t c2 = 0x3333333333333333;
+  res               = ((res & c1) << 4) | ((res & (c1 << 4)) >> 4); // swap 2-nuc order in bytes
+  res               = ((res & c2) << 2) | ((res & (c2 << 2)) >> 2); // swap nuc order in 2-nuc
 
-    // Realign to the right
-    res >>= 64 - 2 * n;
-    return res;
+  // Realign to the right
+  res >>= 64 - 2 * n;
+  return res;
 }
 
 
@@ -333,7 +333,7 @@ kmer min_k (const kmer& k1,const kmer& k2){
 }
 
 
-uint16_t parseCoverage(const string& str){
+uint16_t parseCoverage_exact(const string& str){
 	size_t pos(str.find("km:f:"));
 	if(pos==string::npos){
 		pos=(str.find("KM:f:"));
@@ -345,7 +345,56 @@ uint16_t parseCoverage(const string& str){
 	while(str[i+pos+5]!=' '){
 		++i;
 	}
+	// cout<<"exact"<< (uint16_t)stof(str.substr(pos+5,i))<<endl;
 	return (uint16_t)stof(str.substr(pos+5,i));
+}
+
+
+
+uint16_t parseCoverage_bool(const string& str){
+	return 1;
+}
+
+
+
+
+
+uint64_t asm_log2(const uint64_t x) {
+  uint64_t y;
+  asm ( "\tbsr %1, %0\n"
+      : "=r"(y)
+      : "r" (x)
+  );
+  return y;
+}
+
+
+uint64_t mylog2 (uint64_t val) {
+    if (val == 0) return 0;
+    if (val == 1) return 0;
+    uint64_t ret = 0;
+    while (val > 1) {
+        val >>= 1;
+        ret++;
+    }
+    return ret;
+}
+
+
+uint16_t parseCoverage_log2(const string& str){
+	size_t pos(str.find("km:f:"));
+	if(pos==string::npos){
+		pos=(str.find("KM:f:"));
+	}
+	if(pos==string::npos){
+		return 1;
+	}
+	uint i(1);
+	while(str[i+pos+5]!=' '){
+		++i;
+	}
+	// cout<<"log"<<asm_log2((uint16_t)stof(str.substr(pos+5,i)))<<endl;
+	return asm_log2((uint16_t)stof(str.substr(pos+5,i)));
 }
 
 

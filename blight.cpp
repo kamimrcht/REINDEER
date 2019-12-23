@@ -23,7 +23,6 @@
 #include "robin_hood.h"
 
 
-
 using namespace std;
 using namespace chrono;
 
@@ -178,8 +177,105 @@ kmer kmer_Set_Light::regular_minimizer_pos(kmer seq,uint64_t& position){
 }
 
 
+uint16_t kmer_Set_Light::abundance_at (uint8_t index)
+{
+	if (index < abundance_discretization.size())
+	{
+		return floorf((abundance_discretization[index]  +  abundance_discretization[index+1])/2.0);
+	}
+	else
+	{
+		return 0;
+	}
+}
 
 
+
+void kmer_Set_Light::init_discretization_scheme()
+{
+	MAX_ABUNDANCE_DISCRETE=65536;
+	abundance_discretization.resize(257);
+	int total =0;
+	abundance_discretization[0] = 0;
+	int idx=1;
+	for(int ii=1; ii<= 70; ii++,idx++ )
+	{
+		total += 1;
+		abundance_discretization[idx] = total ;
+	}
+
+	for(int ii=1; ii<= 15; ii++,idx++ )
+	{
+		total += 2;
+		abundance_discretization[idx] = total  ;
+	}
+
+	for(int ii=1; ii<= 40; ii++,idx++ )
+	{
+		total += 10;
+		abundance_discretization[idx] = total  ;
+	}
+	for(int ii=1; ii<= 25; ii++,idx++ )
+	{
+		total += 20;
+		abundance_discretization[idx] = total  ;
+	}
+	for(int ii=1; ii<= 40; ii++,idx++ )
+	{
+		total += 100;
+		abundance_discretization[idx] = total  ;
+	}
+	for(int ii=1; ii<= 25; ii++,idx++ )
+	{
+		total += 200;
+		abundance_discretization[idx] = total  ;
+	}
+	for(int ii=1; ii<= 40; ii++,idx++ )
+	{
+		total += 1000;
+		abundance_discretization[idx] = total  ;
+	}
+	abundance_discretization[256] = total;
+}
+
+
+uint8_t kmer_Set_Light::return_count_bin(uint16_t abundance)
+{
+	int idx ;
+	if (abundance >= MAX_ABUNDANCE_DISCRETE)
+	{
+		//~ _nb_abundances_above_precision++;
+		//std::cout << "found abundance larger than discrete: " << abundance << std::endl;
+		idx = abundance_discretization.size() -2 ;
+	}
+	else
+	{
+		//get first cell strictly greater than abundance
+		auto  up = upper_bound(abundance_discretization.begin(), abundance_discretization.end(), abundance);
+		up--; // get previous cell
+		idx = up- abundance_discretization.begin() ;
+	}
+	return idx;
+}
+
+
+
+
+uint16_t kmer_Set_Light::parseCoverage_bin(const string& str){
+	size_t pos(str.find("km:f:"));
+	if(pos==string::npos){
+		pos=(str.find("KM:f:"));
+	}
+	if(pos==string::npos){
+		return 1;
+	}
+	uint i(1);
+	while(str[i+pos+5]!=' '){
+		++i;
+	}
+	// cout<<"bin"<<(int) return_count_bin((uint16_t)stof(str.substr(pos+5,i)))<<endl;cin.get ();
+	return return_count_bin((uint16_t)stof(str.substr(pos+5,i)));
+}
 
 
 
@@ -291,14 +387,17 @@ string kmer_Set_Light::compaction(const string& seq1,const string& seq2, bool re
 
 
 
-void kmer_Set_Light::construct_index_fof(const string& input_file, const string& tmp_dir, bool countcolor, double max_divergence){
+void kmer_Set_Light::construct_index_fof(const string& input_file, const string& tmp_dir, int colormode, double max_divergence){
 	omp_set_nested(2);
 	if(not tmp_dir.empty()){
 		working_dir=tmp_dir+"/";
 	}
-	count_color=countcolor;
-	if(count_color){
+	color_mode=colormode;
+	if(color_mode==1){
 		max_divergence_count=(max_divergence/100)+1;
+	}
+	if(color_mode==2){
+		init_discretization_scheme();
 	}
 	if(m1<m2){
 		cout<<"n should be inferior to m"<<endl;
@@ -331,10 +430,9 @@ void kmer_Set_Light::construct_index_fof(const string& input_file, const string&
 	{
 		ofstream out(working_dir+"_blmonocolor.fa",ios::app);
 		//~ #pragma omp parallel for num_threads(min(coreNumber,(uint64_t)4))
-		// #pragma omp parallel for num_threads((coreNumber))
+		#pragma omp parallel for num_threads((coreNumber)) schedule(static)
 		for(uint i_superbuckets=0; i_superbuckets<number_superbuckets.value(); ++i_superbuckets){
 			merge_super_buckets_mem(working_dir+"_blout"+to_string(i_superbuckets),fnames.size(),&out);
-			// merge_super_buckets_direct(working_dir+"_blout"+to_string(i_superbuckets),i_file-1,&out);
 			remove((working_dir+"_blsout"+to_string(i_superbuckets)).c_str());
 			cout<<"-"<<flush;
 		}
@@ -412,29 +510,9 @@ void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t 
 
 
 
-
-
-	// void add_predecessor(kmer_context& kc, const kmer canon){
-	// 	for(uint64_t i(0);i<kc.previous_kmers.size();++i){
-	// 		if(kc.previous_kmers[i]==canon){
-	// 			return;
-	// 		}
-	// 	}
-	// 	kc.previous_kmers.push_back(canon);
-	// }
-
-
-
-// void add_successor(kmer_context& kc, const kmer canon){
-// 	for(uint64_t i(0);i<kc.next_kmers.size();++i){
-// 		if(kc.next_kmers[i]==canon){
-// 			return;
-// 		}
-// 	}
-// 	kc.next_kmers.push_back(canon);
-// }
-
 string nucleotides("ACGT");
+
+
 
 kmer kmer_Set_Light::select_good_successor(const  robin_hood::unordered_map<kmer,kmer_context>& kmer2context,const kmer& start){
 	kmer canon=canonize(start,k);
@@ -446,42 +524,21 @@ kmer kmer_Set_Light::select_good_successor(const  robin_hood::unordered_map<kmer
 		kmer targetc=canonize(target,k);
 		if(kmer2context.count(targetc)!=0){
 			if(kmer2context.at(targetc).isdump){continue;}
-			if(count_color){
-				if(kmer2context.at(targetc).count==kc.count){
-					return target;
-				}
-			}else{
-				if(equal_nonull(kmer2context.at(targetc).count,kc.count)){
-					return target;
-				}else{
-				}
+			// if(color_mode!=0){
+			if(kmer2context.at(targetc).count==kc.count){
+				return target;
 			}
+			// 	}
+			// }else{
+			// 	if(equal_nonull(kmer2context.at(targetc).count,kc.count)){
+			// 		return target;
+			// 	}else{
+			// 	}
+			// }
 		}
 	}
 	return -1;
 }
-
-
-
-// kmer kmer_Set_Light::select_good_predecessor(robin_hood::unordered_map<kmer,kmer_context>& kmer2context,const kmer& canon){
-// 	kmer_context kc(kmer2context[canon]);
-// 	for(uint64_t i(0);i<kc.next_kmers.size();++i){
-// 		if(count_color){
-// 			if(kmer2context[kc.next_kmers[i]].count==kc.count){
-// 				return kc.next_kmers[i];
-// 			}
-// 		}else{
-// 			if(equal_nonull(kmer2context[kc.next_kmers[i]].count,kc.count)){
-// 				return kc.next_kmers[i];
-// 			}
-// 		}
-// 	}
-// 	return -1;
-// }
-
-
-
-
 
 
 
@@ -492,9 +549,11 @@ vector<uint16_t> bit_vector(number_color,0);
 	robin_hood::unordered_map<kmer,kmer_context> kmer2context;
 	string sequence, buffer,seq2dump,compact;
 	uint64_t ms=minitigs.size();
-	#pragma omp for schedule(dynamic)
+	// cout<<"ms: "<<ms<<endl;
+	#pragma omp for schedule(static,ms/coreNumber)
 	for(uint i_set=(0);i_set<ms;i_set++){
 		uint64_t mss=minitigs[i_set].size();
+		// cout<<"mss: "<<mss<<"	";
 		for(uint64_t i_mini=(0);i_mini<mss;++i_mini){
 			sequence=(minitigs[i_set][i_mini].sequence);
 			kmer seq(str2num(sequence.substr(0,k))),rcSeq(rcb(seq)),canon(min_k(seq,rcSeq)),prev;
@@ -556,6 +615,14 @@ vector<uint16_t> bit_vector(number_color,0);
 }
 }
 
+
+
+uint16_t kmer_Set_Light::parseCoverage(const string& str){
+	if(color_mode==0){return parseCoverage_bool(str);}
+	if(color_mode==1){return parseCoverage_exact(str);}
+	if(color_mode==2){return parseCoverage_bin(str);}
+	return parseCoverage_log2(str);
+}
 
 
 void kmer_Set_Light::create_super_buckets_list(const vector<string>& input_files){
@@ -637,7 +704,6 @@ void kmer_Set_Light::create_super_buckets_list(const vector<string>& input_files
 							omp_unset_lock(&(lock[((old_minimizer))/bucket_per_superBuckets.value()]));
 							buffer[old_minimizer/bucket_per_superBuckets.value()].clear();
 						}
-
 						last_position=i+1;
 						old_minimizer=minimizer;
 					}
@@ -1581,7 +1647,7 @@ void kmer_Set_Light::file_query_rank(const string& query_file){
 
 	for(uint i(0);i<all_hashes.size();++i){
 		if(all_hashes[i]!=i){
-			//~ cout<<all_hashes[i]<<":"<<i<<"	";
+			cout<<all_hashes[i]<<":"<<i<<"	";
 			surjective=false;
 			break;
 		}
