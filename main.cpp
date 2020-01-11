@@ -41,6 +41,7 @@ uint k(31), threads(1);
 bool record_counts(false);
 bool record_reads(false);
 bool exact(false);
+bool quantize(false);
 bool do_query_on_disk(false);
 bool bcalm(false), do_Index(false), do_Query(false), PE(false);
 uint threshold(40);
@@ -64,6 +65,7 @@ void PrintHelp()
             "--bcalm                 :     Launch bcalm on each single read dataset\n\n"
             "--paired-end            :     Index using paired-end files (provide pairs of files one after another in the fof). Works only with --bcalm.\n\n"
             "--disk-query            :     Index for on-disk query (default: in-memory). To be used for large indexes that won't fit in RAM.\n\n"
+            "--quantization          :     Quantize the abundances in bins (to use only with --count).\n\n"
             "* Output options\n"
             "-o <file>               :     Directory to write output files (default: output_reindeer)\n"
 
@@ -99,6 +101,7 @@ void ProcessArgs(int argc, char** argv)
             {"query", no_argument, nullptr, 'Q'},
             {"paired-end", no_argument, nullptr, 'P'},
             {"disk-query", no_argument, nullptr, 'd'},
+            {"quantization", no_argument, nullptr, 'u'},
             {nullptr, no_argument, nullptr, 0}
     };
 
@@ -119,6 +122,9 @@ void ProcessArgs(int argc, char** argv)
 				break;
 			case 'Q':
 				do_Query=true;
+				break;
+			case 'u':
+				quantize=true;
 				break;
 			case 'q':
 				query=optarg;
@@ -200,7 +206,7 @@ int main(int argc, char **argv)
 		systRet=system(cmd.c_str());
 		cout << "Indexing k-mers...\n\n" << endl;
 		color_dump_file = output + "/" + color_dump_file;
-		reindeer_index(k, fof, color_dump_file, record_counts,record_reads, output, cl, threads, exact, do_query_on_disk);
+		reindeer_index(k, fof, color_dump_file, record_counts,record_reads, output, cl, threads, exact, do_query_on_disk, quantize);
 		if (PE)
 		{
 			string cmd("rm " + output + "/PE*" );

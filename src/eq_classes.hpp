@@ -31,6 +31,14 @@ void sort_vectors(vector<count_vector>& matrix_lines)
 }
 
 
+uint32_t hashnadine ( uint32_t x ) {
+	x = ( ( x >> 16 ) ^ x ) * 0x2c1b3c6d;
+	x = ( ( x >> 16 ) ^ x ) * 0x297a2d39;
+	x = ( ( x >> 16 ) ^ x );
+	return x;
+}
+
+
 void dump_compressed_vector_bucket(vector<uint16_t>& counts, int64_t minitig_id, unsigned char *in, ofstream& out_positions, vector<ofstream*>& bucket_files)
 {
 	//get the bucket number
@@ -39,7 +47,7 @@ void dump_compressed_vector_bucket(vector<uint16_t>& counts, int64_t minitig_id,
 	unsigned char comp[nn];
 	in = (unsigned char*)&counts[0];
 	unsigned compr_vector_size = trlec(in, n, comp) ;
-	uint16_t bucket_nb (revhash((uint16_t)comp[0] + (uint16_t)comp[1]*256) % bucket_files.size());
+	uint32_t bucket_nb (hashnadine((uint16_t)comp[0] + (uint16_t)comp[1]*256) % bucket_files.size());
 		//~ cout << "here "<< " " << bucket_nb << endl;
 
 	//write info in the bucket
