@@ -245,7 +245,7 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 	//~ cout << "ici3" << endl;
 	//~ cout << output_file << endl;
 
-	#pragma omp parallel num_threads(nb_threads)
+	//~ #pragma omp parallel num_threads(nb_threads)
 	{
 		vector<int64_t> minitig_id;
 		vector<uint16_t> counts;
