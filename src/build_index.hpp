@@ -373,7 +373,7 @@ kmer_Set_Light* load_rle_index(uint k, string& color_load_file, string& color_du
 
 
 // build index from new file
-void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, string& color_load_file, string& color_dump_file, string& fof, bool record_counts, bool record_reads, uint64_t& color_number, kmer_Set_Light& ksl, uint nb_threads, bool exact, string& output, bool do_query_on_disk, bool quantize)
+void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, string& color_load_file, string& color_dump_file, string& fof, bool record_counts, bool record_reads, uint64_t& color_number, kmer_Set_Light& ksl, uint nb_threads, bool exact, string& output, bool do_query_on_disk, bool quantize, bool do_log)
 {
 	cout << "Minitig coloring..."<< endl;
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
@@ -381,10 +381,16 @@ void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, string& colo
 	if (record_counts)
 	{
 		if (quantize)
-			ksl.construct_index_fof(fof, output, 3, 0);
-
+		{
+			ksl.construct_index_fof(fof, output, 2, 0);
+		}
 		else
-			ksl.construct_index_fof(fof, output, 1, 0);
+		{
+			if (do_log)
+				ksl.construct_index_fof(fof, output, 3, 0);
+			else
+				ksl.construct_index_fof(fof, output, 1, 0);
+		}
 	}
 	else
 		ksl.construct_index_fof(fof, output, 0, 0);
