@@ -9,6 +9,11 @@
 using namespace std;
 
 
+bool is_empty_file(ifstream& file)
+{
+	return file.peek() == ifstream::traits_type::eof();
+}
+
 int dirExists(string& path)
 {
     struct stat info;
@@ -99,6 +104,116 @@ void parse_bgreat_output(string& input, vector<vector<uint64_t>>& unitigs_to_nod
 		readID ++;
 	}
 }
+
+//~ uint16_t revhash ( uint32_t x ) {
+	//~ x = ( ( x >> 16 ) ^ x ) * 0x2c1b3c6d;
+	//~ x = ( ( x >> 16 ) ^ x ) * 0x297a2d39;
+	//~ x = ( ( x >> 16 ) ^ x ) * 0x64ea2d65;
+	//~ x = ( ( x >> 16 ) ^ x );
+	//~ return x;
+//~ }
+
+//~ vector<uint16_t> RLE16C(const vector<uint16_t>&V){
+	//~ vector<uint16_t> res;
+	//~ if(V.empty()){return res;}
+	//~ uint16_t pred(V[0]);
+	//~ uint64_t count(1);
+	//~ for(uint64_t i(1);i<V.size();++i){
+		//~ if(V[i]==pred){
+			//~ count++;
+		//~ }else{
+			//~ res.push_back(pred);
+			//~ res.push_back(count);
+			//~ count=1;
+			//~ pred=V[i];
+		//~ }
+	//~ }
+	//~ res.push_back(pred);
+	//~ res.push_back(count);
+	//~ return res;
+//~ }
+
+
+//~ vector<uint8_t> RLE16C(const vector<uint16_t>&V){
+vector<unsigned char> RLE16C(const vector<uint16_t>&V){
+	vector<uint8_t> res;
+	if(V.empty()){return res;}
+	uint16_t pred(V[0]);
+	uint8_t count(1);
+	for(uint64_t i(1);i<V.size();++i){
+		if(V[i]==pred){
+			count++;
+			if(count=254){
+				res.push_back(min(pred/256,254));
+				res.push_back(min(pred%256,254));
+				res.push_back(count);
+				count=1;
+			}
+		}else{
+			res.push_back(min(pred/256,254));
+				res.push_back(min(pred%256,254));
+				res.push_back(count);
+			count=1;
+			pred=V[i];
+		}
+	}
+	res.push_back(min(pred/256,254));
+	res.push_back(min(pred%256,254));
+	res.push_back(count);
+	//~ char res_ca[res.size()] {};
+	vector<unsigned char> res_ca;
+	transform(begin(res), end(res), begin(res_ca), [](uint8_t i) { return '0' + i; });
+	return res_ca;
+}
+
+
+
+vector<uint16_t> RLE16D(const vector<uint8_t>&V){
+	vector<uint16_t> res;
+	if(V.size()<2){return res;}
+	for(uint64_t i(0);i<V.size();i+=3){
+		res.resize(V[i+2],V[i]*256+V[i+1]);
+	}
+	return res;
+}
+
+
+
+vector<uint8_t> RLE8C(const vector<uint8_t>&V){
+	vector<uint8_t> res;
+	if(V.empty()){return res;}
+	uint8_t pred(V[0]);
+	uint8_t count(1);
+	for(uint64_t i(1);i<V.size();++i){
+		if(V[i]==pred){
+			count++;
+			if(count==254){
+			res.push_back(pred);
+			res.push_back(count);
+			count=1;
+			}
+		}else{
+			res.push_back(pred);
+			res.push_back(count);
+			count=1;
+			pred=V[i];
+		}
+	}
+	res.push_back(pred);
+	res.push_back(count);
+	return res;
+}
+
+vector<uint8_t> RLE8D(const vector<uint8_t>&V){
+	vector<uint8_t> res;
+	if(V.size()<2){return res;}
+	for(uint64_t i(0);i<V.size();i+=2){
+		res.resize(V[i+1],V[i]);
+	}
+	return res;
+}
+
+
 
 
 

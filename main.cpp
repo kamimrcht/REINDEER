@@ -36,7 +36,7 @@ using namespace std;
 using namespace chrono;
 
 char ch;
-string query,fof, color_dump_file("reindeer_matrix.gz"), color_load_file(""), bgreat_paths_fof(""), output_bcalm("bcalm_out"),output_union_bcalm("bcalm_union_out"),output("output_reindeer"), output_index("index_out");
+string query,fof, color_dump_file("reindeer_matrix"), color_load_file(""), bgreat_paths_fof(""), output_bcalm("bcalm_out"),output_union_bcalm("bcalm_union_out"),output("output_reindeer"), output_index("index_out");
 uint k(31), threads(1);
 bool record_counts(false);
 bool record_reads(false);

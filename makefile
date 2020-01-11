@@ -18,7 +18,7 @@ ifeq ($(DEBUG_SYMS), 1)
 endif
 CFLAGS2+= -w -Wall -std=gnu99 -DUSE_THREADS  -fstrict-aliasing -Iext $(DEFS)
 CFLAGS+=-std=c++11 -pipe -lz -fopenmp ${WARNS}
-INC=blight/blight.h blight/bbhash.h blight/common.h src/utils.hpp src/reindeer.hpp src/launch_bcalm.hpp trle/trle.h trle/trle_.h trle/conf.h
+INC=blight/blight.h blight/bbhash.h blight/common.h src/utils.hpp src/reindeer.hpp src/launch_bcalm.hpp trle/trle.h trle/trle_.h trle/conf.h src/eq_classes.hpp
 EXEC=Reindeer
 
 
