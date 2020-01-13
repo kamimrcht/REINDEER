@@ -126,8 +126,10 @@ void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_
 	ofstream out(output + "/reindeer_matrix_eqc");
 	out.write(reinterpret_cast<char*>(&color_number),sizeof(uint64_t)); // number of colors
 	long prev_pos(-1);
-
-	for (uint i(0); i < all_files.size(); ++i)
+	uint i(0);
+	mutex mm; 
+	#pragma omp parallel for num_threads(4)
+	for (i=0; i < all_files.size(); ++i)
 	{
 		int64_t rank;
 		uint sizecp(color_number*2 + 1024);
@@ -156,7 +158,9 @@ void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_
 			//sort compressed counts
 			sort_vectors(count_vecs);
 			// go through sorted vectors and write the final matrix
+			mm.lock();
 			get_eq_classes(output, count_vecs,  nb_unitigs, color_number, final_positions, prev_pos, out);
+			mm.unlock();
 		}
 		in.close();
 	}

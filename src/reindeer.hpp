@@ -48,7 +48,7 @@ using namespace chrono;
 // MPHF options
 uint m1(10);
 uint m2(10);
-uint m3(3);
+uint m3(5);
 uint c(1);
 uint bit(0);
 uint ex(0);
