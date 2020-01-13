@@ -430,7 +430,7 @@ void kmer_Set_Light::construct_index_fof(const string& input_file, const string&
 	{
 		ofstream out(working_dir+"_blmonocolor.fa",ios::app);
 		//~ #pragma omp parallel for num_threads(min(coreNumber,(uint64_t)4))
-		#pragma omp parallel for num_threads((coreNumber)) schedule(static)
+		//~ #pragma omp parallel for num_threads((coreNumber)) schedule(static)
 		for(uint i_superbuckets=0; i_superbuckets<number_superbuckets.value(); ++i_superbuckets){
 			merge_super_buckets_mem(working_dir+"_blout"+to_string(i_superbuckets),fnames.size(),&out);
 			remove((working_dir+"_blsout"+to_string(i_superbuckets)).c_str());
