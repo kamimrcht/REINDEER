@@ -308,9 +308,9 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 	write_eq_class_matrix(output, all_files, nb_minitigs, color_number);
 	for (uint i(0); i < all_files.size(); ++i)
 	{
-		//~ all_files[i]->close();
+		all_files[i]->close();
 		string name(output + "/matrix_bucket_"+ to_string(i));
-		//~ remove(&name[0]);
+		remove(&name[0]);
 		delete all_files[i];
 	}
 }
