@@ -413,7 +413,7 @@ void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, string& colo
 	ksl.dump_disk(output + "/reindeer_index.gz");
 	high_resolution_clock::time_point t13 = high_resolution_clock::now();
 	string cmd("rm -f " + output +"/_blmonocolor.fa");
-	//~ int sysRet(system(cmd.c_str()));
+	int sysRet(system(cmd.c_str()));
 	duration<double> time_span13 = duration_cast<duration<double>>(t13 - t2);
 	cout<<"Index written on disk: "<< time_span13.count() << " seconds."<<endl;
 
