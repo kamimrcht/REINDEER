@@ -310,7 +310,7 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 	{
 		all_files[i]->close();
 		string name(output + "/matrix_bucket_"+ to_string(i));
-		remove(&name[0]);
+		//~ remove(&name[0]);
 		delete all_files[i];
 	}
 }

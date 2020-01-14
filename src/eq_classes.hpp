@@ -31,13 +31,19 @@ void sort_vectors(vector<count_vector>& matrix_lines)
 }
 
 
-uint32_t hashnadine ( uint32_t x ) {
-	x = ( ( x >> 16 ) ^ x ) * 0x2c1b3c6d;
-	x = ( ( x >> 16 ) ^ x ) * 0x297a2d39;
-	x = ( ( x >> 16 ) ^ x );
+//~ uint32_t hashnadine ( uint32_t x ) {
+	//~ x = ( ( x >> 16 ) ^ x ) * 0x2c1b3c6d;
+	//~ x = ( ( x >> 16 ) ^ x ) * 0x297a2d39;
+	//~ x = ( ( x >> 16 ) ^ x );
+	//~ return x;
+//~ }
+
+  uint64_t hashnadine ( uint64_t x ) {
+	x = ( ( x >> 32 ) ^ x ) * 0xCFEE444D8B59A89B;
+	x = ( ( x >> 32 ) ^ x ) * 0xCFEE444D8B59A89B;
+	x = ( ( x >> 32 ) ^ x );
 	return x;
 }
-
 
 void dump_compressed_vector_bucket(vector<uint16_t>& counts, int64_t minitig_id, unsigned char *in, ofstream& out_positions, vector<ofstream*>& bucket_files)
 {
@@ -47,7 +53,13 @@ void dump_compressed_vector_bucket(vector<uint16_t>& counts, int64_t minitig_id,
 	unsigned char comp[nn];
 	in = (unsigned char*)&counts[0];
 	unsigned compr_vector_size = trlec(in, n, comp) ;
-	uint32_t bucket_nb (hashnadine((uint16_t)comp[0] + (uint16_t)comp[1]*256) % bucket_files.size());
+	uint64_t bucket_nb;
+	if (compr_vector_size >= 8)
+		bucket_nb = (hashnadine((uint64_t)comp[0]) % bucket_files.size());
+	else
+		bucket_nb = (hashnadine((uint8_t)comp[0]) % bucket_files.size());
+
+	//~ uint32_t bucket_nb (hashnadine((uint32_t)comp[0] + (uint32_t)comp[1]*256) % bucket_files.size());
 		//~ cout << "here "<< " " << bucket_nb << endl;
 
 	//write info in the bucket
@@ -121,6 +133,7 @@ void get_eq_classes(string& output, vector<count_vector>& count_vecs, uint64_t u
 //sort count vectors by file, write one occurence per count in a new matrix file
 void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_t nb_unitigs, uint64_t color_number)
 {
+	cout << "Sorting datasets to find equivalence classes..." << endl;
 	vector<long> final_positions(nb_unitigs);
 	//todo parallel
 	ofstream out(output + "/reindeer_matrix_eqc");
