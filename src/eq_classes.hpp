@@ -53,9 +53,10 @@ void dump_compressed_vector_bucket(vector<uint16_t>& counts, int64_t minitig_id,
 	unsigned char comp[nn];
 	in = (unsigned char*)&counts[0];
 	unsigned compr_vector_size = trlec(in, n, comp) ;
-	uint64_t bucket_nb;
+	uint32_t bucket_nb;
 	if (compr_vector_size >= 8)
-		bucket_nb = (hashnadine((uint64_t)comp[0]) % bucket_files.size());
+		//~ bucket_nb = (hashnadine((uint64_t)comp[0]) % bucket_files.size());
+		bucket_nb = (hashnadine((uint64_t)comp[0] + (uint64_t)comp[1]*256 +  (uint64_t)comp[2]*256*256 + (uint64_t)comp[3]*256*256*256 + (uint64_t)comp[4]*256*256*256*256 + (uint64_t)comp[5]*256*256*256*256*256 + (uint64_t)comp[6]*256*256*256*256*256*256 + (uint64_t)comp[7]*256*256*256*256*256*256*256 ) % bucket_files.size());
 	else
 		bucket_nb = (hashnadine((uint8_t)comp[0]) % bucket_files.size());
 
