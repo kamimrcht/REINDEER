@@ -4,6 +4,7 @@
 
 #include "../trle/trle.h"
 #include "../blight/utils.h"
+#include "../blight/robin_hood.h"
 
 using namespace std;
 
@@ -13,6 +14,19 @@ struct count_vector
 	unsigned compressed_size;
 	int64_t minitig_rank;
 	string compressed;
+	//~ friend bool operator<(const count_vector& a, const count_vector& b) 
+    //~ {
+        //~ return (tie(a.compressed) < tie(b.compressed));
+    //~ }
+    //~ bool operator ==(const count_vector& a) const 
+    //~ {
+		//~ return compressed == a.compressed;
+	//~ }
+    //~ bool operator !=(const count_vector& a) const 
+    //~ {
+		//~ return compressed != a.compressed;
+	//~ }
+
 };
 
 
@@ -54,12 +68,16 @@ void dump_compressed_vector_bucket(vector<uint16_t>& counts, int64_t minitig_id,
 	in = (unsigned char*)&counts[0];
 	unsigned compr_vector_size = trlec(in, n, comp) ;
 	uint32_t bucket_nb;
-	if (compr_vector_size >= 8)
+	if (compr_vector_size >= 8){
 		//~ bucket_nb = (hashnadine((uint64_t)comp[0]) % bucket_files.size());
 		bucket_nb = (hashnadine((uint64_t)comp[0] + (uint64_t)comp[1]*256 +  (uint64_t)comp[2]*256*256 + (uint64_t)comp[3]*256*256*256 + (uint64_t)comp[4]*256*256*256*256 + (uint64_t)comp[5]*256*256*256*256*256 + (uint64_t)comp[6]*256*256*256*256*256*256 + (uint64_t)comp[7]*256*256*256*256*256*256*256 ) % bucket_files.size());
-	else
-		bucket_nb = (hashnadine((uint8_t)comp[0]) % bucket_files.size());
-
+	
+	}else if (compr_vector_size >= 4){
+		bucket_nb = (hashnadine((uint64_t)comp[0] + (uint64_t)comp[1]*256 +  (uint64_t)comp[2]*256*256 + (uint64_t)comp[3]*256*256*256  ) % bucket_files.size());
+	}else{
+		bucket_nb = (hashnadine((uint64_t)comp[0]) % bucket_files.size());
+	}
+	
 	//~ uint32_t bucket_nb (hashnadine((uint32_t)comp[0] + (uint32_t)comp[1]*256) % bucket_files.size());
 		//~ cout << "here "<< " " << bucket_nb << endl;
 
@@ -85,49 +103,48 @@ void read_matrix_compressed_line(ifstream& in, int64_t& rank, char* comp, unsign
 }
 
 
-void get_eq_classes(string& output, vector<count_vector>& count_vecs, uint64_t unitig_nb, uint64_t color_number, vector<long>& final_positions, long& prev_pos, ofstream& out)
+//~ void get_eq_classes(string& output, vector<count_vector>& count_vecs, uint64_t unitig_nb, uint64_t color_number, vector<long>& final_positions, long& prev_pos, ofstream& out)
+void get_eq_classes(string& output, robin_hood::unordered_map<string, pair<count_vector, vector<uint64_t>>>& bucket_class, uint64_t unitig_nb, uint64_t color_number, vector<long>& final_positions, long& prev_pos, ofstream& out)
 {
-	char* comp;
+	//~ char* comp;
 	string prev_comp("");
-	
-
-	//todo parallel
-	//~ long position_in_outfile;
-	//~ vector<long> final_positions(unitig_nb);
-	for (uint i(0); i < count_vecs.size(); ++i)
+	for (auto rk(bucket_class.begin()); rk != bucket_class.end(); ++rk)
 	{
-		if (count_vecs[i].compressed == prev_comp)
+		++prev_pos;
+		count_vector v (rk->second.first);
+		char* comp (&v.compressed[0]);
+		out.write(reinterpret_cast<char*>(&v.compressed_size),sizeof(unsigned));
+		out.write(reinterpret_cast<char*>(&v.minitig_rank),sizeof(int64_t));
+		out.write((const char*)comp,(v.compressed_size));
+		//~ for (uint r(0); r < rk->second.size(); ++r)
+		//~ {
+			//~ uint64_t ranks(rk->second[r]);
+			//~ final_positions[ranks] = prev_pos;
+		//~ }
+		for (auto && rank: rk->second.second)
 		{
-			final_positions[count_vecs[i].minitig_rank] = prev_pos;
-		}
-		else
-		{
-			++prev_pos;
-			prev_comp = count_vecs[i].compressed;
-			//write the new vector in the matrix
-			//~ position_in_outfile = out.tellp();
-			//~ prev_pos = out.tellp();
-			final_positions[count_vecs[i].minitig_rank] = prev_pos;
-			char* comp (&count_vecs[i].compressed[0]);
-			out.write(reinterpret_cast<char*>(&count_vecs[i].compressed_size),sizeof(unsigned));
-			out.write(reinterpret_cast<char*>(&count_vecs[i].minitig_rank),sizeof(int64_t));
-			out.write((const char*)comp,(count_vecs[i].compressed_size));
-			
+			//~ uint64_t ranks(rk->second[r]);
+			final_positions[rank] = prev_pos;
 		}
 	}
-	//~ cin.get();
-	//write a position file
-	//~ ofstream out_position(output + "/reindeer_matrix_eqc_position");
-	//~ uint nb(0);
-	//~ for (uint i(0); i < final_positions.size(); ++i)
+	//~ for (uint i(0); i < count_vecs.size(); ++i)
 	//~ {
-		//~ out_position.write(reinterpret_cast<char*>(&final_positions[i]), sizeof(long));
-		//~ if (final_positions[i] != 0)
-		//~ cout << final_positions[i] << endl;
-		//~ ++nb;
+		//~ if (count_vecs[i].compressed == prev_comp)
+		//~ {
+			//~ final_positions[count_vecs[i].minitig_rank] = prev_pos;
+		//~ }
+		//~ else
+		//~ {
+			//~ ++prev_pos;
+			//~ prev_comp = count_vecs[i].compressed;
+			//~ final_positions[count_vecs[i].minitig_rank] = prev_pos;
+			//~ char* comp (&count_vecs[i].compressed[0]);
+			//~ out.write(reinterpret_cast<char*>(&count_vecs[i].compressed_size),sizeof(unsigned));
+			//~ out.write(reinterpret_cast<char*>(&count_vecs[i].minitig_rank),sizeof(int64_t));
+			//~ out.write((const char*)comp,(count_vecs[i].compressed_size));
+			
+		//~ }
 	//~ }
-	//~ out_position.close();
-	//~ cout << "nb positions " << nb << endl;
 }
 
 
@@ -150,6 +167,8 @@ void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_
 		char comp[sizecp];
 		unsigned comp_size;
 		vector<count_vector> count_vecs;
+		robin_hood::unordered_map<string, pair<count_vector, vector<uint64_t>>> bucket_class;
+
 		string compressed;
 		ifstream in(output + "/matrix_bucket_"+ to_string(i)); //TODO zstr??
 		if (not is_empty_file(in)){
@@ -166,14 +185,26 @@ void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_
 				//~ cout << v.compressed << endl;
 				unsigned char* lo = decode_vector((unsigned char*)&v.compressed[0], v.compressed_size, color_number);
 				vector<uint16_t> cc = count_string_to_count_vector(lo, v.compressed_size);
-				count_vecs.push_back(v);
+				if (not bucket_class.count(v.compressed))
+				{
+					vector<uint64_t> vv;
+					vv.push_back(v.minitig_rank);
+					pair<count_vector, vector<uint64_t>> p (v,vv);
+					bucket_class.insert({v.compressed,p});
+				}
+				else
+				{
+					bucket_class[v.compressed].second.push_back(v.minitig_rank);
+				}
+				//~ count_vecs.push_back(v);
 			}
 			
 			//sort compressed counts
-			sort_vectors(count_vecs);
+			//~ sort_vectors(count_vecs);
 			// go through sorted vectors and write the final matrix
 			mm.lock();
-			get_eq_classes(output, count_vecs,  nb_unitigs, color_number, final_positions, prev_pos, out);
+			//~ get_eq_classes(output, count_vecs,  nb_unitigs, color_number, final_positions, prev_pos, out);
+			get_eq_classes(output, bucket_class,  nb_unitigs, color_number, final_positions, prev_pos, out);
 			mm.unlock();
 		}
 		in.close();
