@@ -117,9 +117,9 @@ void build_matrix(string& color_load_file, string& color_dump_file, string& fof,
 	//~ out.close();
 	delete out;
 	out_nb.close();
-	string cmd("sort -u " + output + "/reindeer_matrix > "+ output + "/reindeer_matrix_sorted"  );
-	int systemRet;
-	systemRet = system((cmd).c_str());
+	//~ string cmd("sort -u " + output + "/reindeer_matrix > "+ output + "/reindeer_matrix_sorted"  );
+	//~ int systemRet;
+	//~ systemRet = system((cmd).c_str());
 	//~ cout << cmd << endl;
 	//~ remove( (output + "/reindeer_matrix").c_str());
 }
@@ -220,11 +220,11 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 	for (uint i(0); i <1000; ++i)
 	{
 		ofstream* out = new ofstream(output + "/matrix_bucket_"+ to_string(i)); //TODO zstr??
-		if(not out->good()){
-			cout<<"fail"<<i<<endl;
-		}else{
+		//~ if(not out->good()){
+			//~ cout<<"fail"<<i<<endl;
+		//~ }else{
 			//~ cout<<"yeah"<<i<<endl;
-		}
+		//~ }
 		all_files.push_back(out); 
 	}
 	//~ cout << "ici" << endl;
@@ -257,15 +257,16 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 		string header,minitig, buffer;
 		unsigned char *in;
 		//~ while(not minitigs_file->eof())
-		while(not minitigs_file.eof() and minitigs_file.good())
+		//~ while(not minitigs_file.eof() and minitigs_file.good())
+		while(not minitigs_file.eof())
 		{
-			//~ cout << "here" << endl;
 			//~ #pragma omp critical(infile)
 			//~ {
 				//~ getline(*minitigs_file, header);
 				//~ getline(*minitigs_file, minitig);
 				getline(minitigs_file, header);
 				getline(minitigs_file, minitig);
+				
 
 			//~ }
 			//~ cout << "here " << minitig << endl;
@@ -413,7 +414,7 @@ void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, string& colo
 	ksl.dump_disk(output + "/reindeer_index.gz");
 	high_resolution_clock::time_point t13 = high_resolution_clock::now();
 	string cmd("rm -f " + output +"/_blmonocolor.fa");
-	int sysRet(system(cmd.c_str()));
+	//~ int sysRet(system(cmd.c_str()));
 	duration<double> time_span13 = duration_cast<duration<double>>(t13 - t2);
 	cout<<"Index written on disk: "<< time_span13.count() << " seconds."<<endl;
 

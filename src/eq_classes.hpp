@@ -124,7 +124,9 @@ void get_eq_classes(string& output, robin_hood::unordered_map<string, pair<count
 		for (auto && rank: rk->second.second)
 		{
 			//~ uint64_t ranks(rk->second[r]);
-			final_positions[rank] = prev_pos;
+			//~ cout << "rank " << rank << " " << final_positions.size() << " " << prev_pos << endl;
+			if (rank < final_positions.size())
+				final_positions[rank] = prev_pos;
 		}
 	}
 	//~ for (uint i(0); i < count_vecs.size(); ++i)
@@ -159,7 +161,7 @@ void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_
 	long prev_pos(-1);
 	uint i(0);
 	mutex mm; 
-	#pragma omp parallel for num_threads(4)
+	//~ #pragma omp parallel for num_threads(4)
 	for (i=0; i < all_files.size(); ++i)
 	{
 		int64_t rank;
@@ -172,7 +174,7 @@ void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_
 		string compressed;
 		ifstream in(output + "/matrix_bucket_"+ to_string(i)); //TODO zstr??
 		if (not is_empty_file(in)){
-			while (not in.eof())
+			while (not in.eof() and not in.fail())
 			{
 				
 				//read file and store each vector in struct
@@ -183,20 +185,32 @@ void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_
 				compressed.assign(comp, comp_size);
 				count_vector v({comp_size, rank, compressed});
 				//~ cout << v.compressed << endl;
-				unsigned char* lo = decode_vector((unsigned char*)&v.compressed[0], v.compressed_size, color_number);
-				vector<uint16_t> cc = count_string_to_count_vector(lo, v.compressed_size);
+				//~ unsigned char* lo = decode_vector((unsigned char*)&v.compressed[0], v.compressed_size, color_number);
+				//~ vector<uint16_t> cc = count_string_to_count_vector(lo, v.compressed_size);
 				if (not bucket_class.count(v.compressed))
 				{
 					vector<uint64_t> vv;
 					vv.push_back(v.minitig_rank);
 					pair<count_vector, vector<uint64_t>> p (v,vv);
+					//~ if (v.minitig_rank == 4092)
+					//~ {
+						//~ cout << "premiere inser"  << endl;
+						//~ cin.get() ;
+					//~ }
 					bucket_class.insert({v.compressed,p});
 				}
 				else
 				{
+					//~ if (v.minitig_rank == 4092)
+					//~ {
+						//~ cout << "2e inser"  << endl;
+						//~ cin.get();
+					//~ }
 					bucket_class[v.compressed].second.push_back(v.minitig_rank);
 				}
 				//~ count_vecs.push_back(v);
+				in.peek();
+
 			}
 			
 			//sort compressed counts
