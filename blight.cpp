@@ -30,6 +30,7 @@ using namespace chrono;
 
 uint kmer_number_check(0);
 uint kmer_number_check2(0);
+
 uint kmer_number_check3(0);
 uint skmer_number_check(0);
 
