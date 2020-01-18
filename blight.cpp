@@ -545,13 +545,13 @@ kmer kmer_Set_Light::select_good_successor(const  robin_hood::unordered_map<kmer
 
 void kmer_Set_Light::get_monocolor_minitigs_mem(const  vector<vector<minitig>>& minitigs , ofstream* out, const vector<int32_t>& mini,uint64_t number_color){
 vector<uint16_t> bit_vector(number_color,0);
-#pragma omp parallel num_threads(coreNumber)
+// #pragma omp parallel num_threads(coreNumber)
 {
 	robin_hood::unordered_map<kmer,kmer_context> kmer2context;
 	string sequence, buffer,seq2dump,compact;
 	uint64_t ms=minitigs.size();
 	// cout<<"ms: "<<ms<<endl;
-	#pragma omp for schedule(static,ms/coreNumber)
+	// #pragma omp for schedule(static,ms/coreNumber)
 	for(uint i_set=(0);i_set<ms;i_set++){
 		uint64_t mss=minitigs[i_set].size();
 		// cout<<"mss: "<<mss<<"	";
