@@ -160,7 +160,6 @@ vector<unsigned char> RLE16C(const vector<uint16_t>&V){
 	res.push_back(min(pred/256,254));
 	res.push_back(min(pred%256,254));
 	res.push_back(count);
-	//~ char res_ca[res.size()] {};
 	vector<unsigned char> res_ca;
 	transform(begin(res), end(res), begin(res_ca), [](uint8_t i) { return '0' + i; });
 	return res_ca;

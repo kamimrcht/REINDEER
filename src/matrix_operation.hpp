@@ -18,7 +18,6 @@ void dump_compressed_vector_buff(vector<uint16_t>& counts, int64_t minitig_id, s
 	unsigned char comp[nn];
 	in = (unsigned char*)&counts[0];
 	unsigned compr_vector_size = trlec(in, n, comp) ; //todo can I write it now on the disk
-	//~ out.write(reinterpret_cast<char*>(&compr_vector_size),sizeof(unsigned));
 	buffer.append(reinterpret_cast<char*>(&compr_vector_size),sizeof(unsigned));
 	int64_t tw(minitig_id);
 	buffer.append(reinterpret_cast<char*>(&tw),sizeof(int64_t));
@@ -28,9 +27,7 @@ void dump_compressed_vector_buff(vector<uint16_t>& counts, int64_t minitig_id, s
 // load rle encoded matrix from disk (keep compressed in ram)
 vector<unsigned char*> load_compressed_vectors(const string& input_file, vector<unsigned>&vector_sizes, uint64_t& color_number, uint64_t& minitig_number, long eq_class_nb)
 {
-	//~ ifstream in(input_file);
 	ifstream in_nb(input_file + "_minitig_nb");
-	//~ auto in=new zstr::ifstream(input_file);
 	ifstream in(input_file);
 	if(not exists_test(input_file))
 	{
@@ -41,32 +38,19 @@ vector<unsigned char*> load_compressed_vectors(const string& input_file, vector<
 	unsigned line_size;
 	in_nb.read(reinterpret_cast<char *>(&minitig_number), sizeof(uint64_t));
 	in.read(reinterpret_cast<char *>(&color_number), sizeof(uint64_t));
-	//~ vector_sizes.resize(minitig_number, 0);
-	//~ vector<unsigned char*> out(minitig_number); //todo resize when loading eq class
 	vector<unsigned char*> out; //todo resize when loading eq class
-	//~ for (uint minit(0); minit < out.size(); ++minit)
-	//~ string line;
 	uint t(0);
-	//~ while (not in.eof()) //lire le nb de classes d'eq
 	for (uint i(0); i < eq_class_nb; ++i) //lire le nb de classes d'eq
 	{
 		in.read(reinterpret_cast<char *>(&line_size), sizeof(unsigned));
 		in.read(reinterpret_cast<char *>(&rank), sizeof(int64_t));
 		vector_sizes.push_back(line_size); 
-		//~ vector_sizes[rank] = line_size; 
-		//~ out[rank] = new unsigned char [line_size];
-		//~ in.read((char*)((out[rank])) , line_size);
 		unsigned char* c = new unsigned char[line_size];
 		in.read((char*)(c) , line_size);
-		//~ unsigned char* lo = decode_vector((unsigned char*)c, line_size, 2);
-				//~ cout << "**** reading from disk " << endl;
-				//~ vector<uint16_t> cc = count_string_to_count_vector(lo, line_size);
-				//~ cout << "*******1******" << cc[0] << " " << cc[1] << endl;
 		out.push_back(c);
 		++t;
 	}
 	in_nb.close();
-	//~ delete in;
 	in.close();
 	return out;
 }

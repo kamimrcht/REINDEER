@@ -74,20 +74,17 @@ void reindeer_query(uint k, string& output,string& output_query, bool record_cou
 	// QUERY //
 	string fof( getRealPath("graphs.lst", output));
 	string color_dump_file("");
-	//~ string color_load_file(getRealPath("reindeer_matrix", output));
 	string color_load_file(getRealPath("reindeer_matrix_eqc", output));
 	string nb_eq_class_file(getRealPath("reindeer_matrix_eqc_nb_class", output));
 	uint64_t color_number(get_color_number(fof));
-	//~ uint nb_threads(1);
 	vector<unsigned char*> compr_minitig_color;
 	vector<unsigned> compr_minitig_color_sizes;
 	cout << "\nLoading index.." << endl;
 	long eq_class_nb(0);
 	kmer_Set_Light* ksl = load_rle_index(k, color_load_file, color_dump_file, fof, record_counts, record_reads, color_number, threads, exact, output, compr_minitig_color, compr_minitig_color_sizes, do_query_on_disk, nb_eq_class_file,eq_class_nb);
+	cout << "\nAll informations loaded. " << endl;
 	cout << "\nComputing query..." << endl;
-
 	perform_query(*ksl, color_number, k, record_counts,  record_reads,  threshold, bgreat_paths_fof, query, output_query, threads, exact, compr_minitig_color, compr_minitig_color_sizes, do_query_on_disk, color_load_file, eq_class_nb);
-	//~ delete [] ksl; //todo fix blight destructor
 }
 
 

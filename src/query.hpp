@@ -74,20 +74,10 @@ void get_position_vector_query_disk(vector<long>& position_in_file, string& posi
 	ifstream in(position_file_name); //positions file
 	long position;
 	uint nb(0);
-	//~ while (not in.eof())
 	while (nb < nb_minitig)
 	{
-		
 		in.read(reinterpret_cast<char*>(&position), sizeof(long));
-		//~ in.read(reinterpret_cast<char *>(&position), sizeof(long));
-		//~ cout << "position :: " << position << endl;
-		//~ if (position == 180)
-			//~ cin.get();
 		position_in_file.push_back(position);
-		//~ if (position == 202)
-		//~ cout <<nb << " position " << position << endl;
-		//~ cin.get();
-
 		++nb;
 		
 	}
@@ -107,9 +97,6 @@ long get_matrix_line_query(int64_t	rank, unsigned char* color, unsigned& line_si
 {
 	
 	long pos =  position_in_file[rank];
-	//~ if (pos == 180)
-		//~ cout << "ici" << endl;
-		//~ cin.get();
 	color = compr_minitig_color[pos];
 	return pos;
 }
@@ -149,8 +136,6 @@ void get_colors_counts_query_on_disk(vector<int64_t>& kmer_ids, string& matrix_f
 }
 void get_colors_counts_query_eq_classes(vector<int64_t>& kmer_ids,   uint64_t color_number, vector<vector<uint16_t>>& query_counts,  vector<unsigned char*>& compr_minitig_color, vector<unsigned>&compr_minitig_color_size,vector<long>& position_in_file)
 {
-	//~ ifstream in(matrix_file);
-	//~ in.read(reinterpret_cast<char *>(&color_number), sizeof(uint64_t));
 	unsigned char* color;
 	color = new unsigned char[2*color_number+1204];
 	unsigned size;
@@ -170,15 +155,13 @@ void get_colors_counts_query_eq_classes(vector<int64_t>& kmer_ids,   uint64_t co
 			else
 			{
 				long pos = get_matrix_line_query(kmer_ids[i], color, size, position_in_file, compr_minitig_color);
-				//~ string a;
-				//~ a.assign(compr_minitig_color[pos],compr_minitig_color_size[pos]);
 				unsigned char* lo = decode_vector((unsigned char*)&compr_minitig_color[pos][0], compr_minitig_color_size[pos], color_number);
 				vector<uint16_t> cc = count_string_to_count_vector(lo, compr_minitig_color_size[pos]);
-				//~ qcounts = get_count_minitig(compr_minitig_color[pos], compr_minitig_color_size[pos], color_number);
 				qcounts = get_count_minitig(compr_minitig_color[pos], compr_minitig_color_size[pos], color_number);
 				lastV = qcounts;
 				if (not qcounts.empty())
 					query_counts.push_back( qcounts );
+				delete [] lo;
 			}
 		}
 	}
@@ -204,7 +187,6 @@ void get_colors_counts(vector<int64_t>& kmer_ids, bool record_counts, uint64_t c
 			}
 			else
 			{
-				//~ get_matrix_line_query_disk(kmer_ids[i], color, size, position_in_file, in);
 				qcounts = get_count_minitig(compr_minitig_color[kmer_ids[i]], compr_minitig_color_size[kmer_ids[i]], color_number);
 				lastV = qcounts;
 				if (not qcounts.empty())
@@ -297,7 +279,6 @@ void write_output(vector<int64_t>& kmers_colors, string& toWrite, bool record_re
 void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t& color_number, uint k, bool record_counts, bool record_reads, uint threshold,vector<vector<uint32_t>>& query_unitigID, uint nb_threads, bool exact, vector<unsigned char*>& compr_minitig_color, vector<unsigned >& compr_minitig_color_size, bool do_query_on_disk, string& rd_file, long eq_class_nb, uint64_t nb_minitig){
 	ifstream query_file(input);
 	ofstream out(name);
-	// #pragma omp parallel
 	uint64_t num_seq(0);
 	string qline;
 	vector<string> lines;
@@ -305,7 +286,6 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t& color_n
 	vector<long> position_in_file;
 	// FOR EACH LINE OF THE QUERY FILE
 	string position_file_name(rd_file+"_position");
-	//~ if (do_query_on_disk)
 	get_position_vector_query_disk(position_in_file,  position_file_name,nb_minitig);
 	while(not query_file.eof()){
 		#pragma omp parallel num_threads(nb_threads)
@@ -322,6 +302,7 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t& color_n
 			string header;
 			#pragma omp for ordered
 			for(i=(0);i<lines.size();++i){
+				cout << "-";
 				string toWrite;
 				string line=lines[i];
 				if(line[0]=='A' or line[0]=='C' or line[0]=='G' or line[0]=='T')
@@ -332,11 +313,8 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t& color_n
 					kmer_ids=ksl.get_rank_query(line);
 					vector<vector<uint16_t>> query_counts;
 					if (do_query_on_disk)
-					//todo color number?
 						get_colors_counts_query_on_disk(kmer_ids, rd_file,  position_in_file, color_number, query_counts);
-
 					else
-						//~ get_colors_counts(kmer_ids,  record_counts,  color_number, kmers_colors,  query_counts, compr_minitig_color, compr_minitig_color_size);
 						get_colors_counts_query_eq_classes( kmer_ids, color_number, query_counts,  compr_minitig_color, compr_minitig_color_size, position_in_file);
 					write_output( kmers_colors, toWrite,  record_reads,  record_counts,  query_unitigID,query_unitigID_tmp,  color_number, header, line, k, threshold, query_counts);
 				} else {
@@ -352,6 +330,7 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t& color_n
 		}
 		lines={};
 	}
+	cout << endl;
 	query_file.close();
 	out.close();
 }
@@ -374,7 +353,6 @@ void perform_query(kmer_Set_Light& ksl, uint64_t& color_number,  uint k, bool re
 {
 	uint64_t nb_minitig;
 	ifstream nb_minit_f(rd_file + "_minitig_nb");
-			//~ long nb_eq_class(0);
 	nb_minit_f.read(reinterpret_cast<char *>(&nb_minitig), sizeof(uint64_t));
 	uint counter(0),patience(0);
 	vector<string> bgreat_files;
