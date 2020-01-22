@@ -308,7 +308,7 @@ public:
 	uint64_t canonize(uint64_t x,uint64_t n);
 	kmer get_kmer(uint64_t pos);
 	void merge_super_buckets_mem(const string& input_file, uint64_t number_color, ofstream* out);
-	void get_monocolor_minitigs_mem(const  vector<vector<minitig>>& minitigs , ofstream* out, const vector<int32_t>& mini,uint64_t number_color);
+    void get_monocolor_minitigs_mem(vector<robin_hood::unordered_map<kmer,kmer_context>>&  min2kmer2context , ofstream* out, const vector<int32_t>& mini,uint64_t number_color);
 	void str2bool(const string& str,uint64_t mini);
 	void dump_and_destroy(const string& output_file);
 	bool similar_count(const vector<uint16_t>& V1,const vector<uint16_t>& V2);

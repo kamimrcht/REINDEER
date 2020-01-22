@@ -469,12 +469,12 @@ void kmer_Set_Light::construct_index_fof(const string& input_file, const string&
 
 
 void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t number_color, ofstream* out){
-	// return;
-	vector<vector<minitig>> minimizer_to_minitigs(minimizer_number.value()/number_superbuckets.value());
-	uint64_t mms=minimizer_to_minitigs.size();
+	vector<uint16_t> bit_vector(number_color,0);
+	vector<robin_hood::unordered_map<kmer,kmer_context>> min2kmer2context(minimizer_number.value()/number_superbuckets.value());
+	uint64_t mms=min2kmer2context.size();
 	vector<int32_t> minimizers(mms,-1);
 	zstr::ifstream in(input_file);
-	#pragma omp parallel num_threads(coreNumber)
+	// #pragma omp parallel num_threads(coreNumber)
 	{
 		vector<string> buffer;
 		string line;
@@ -493,20 +493,36 @@ void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t 
 				if(line.empty()){break;}
 				split(line,':',splitted);
 				minitig mini;
-				mini.color=stoi(splitted[1]);
-				mini.sequence=(splitted[2]);
-				mini.coverage=(stoi(splitted[3]));
-				uint64_t min_int(stoi(splitted[0]));
+				int32_t color=stoi(splitted[1]);
+				string  sequence=(splitted[2]);
+				uint16_t coverage=(stoi(splitted[3]));
+				uint64_t min_int=(stoi(splitted[0]));
 				uint64_t indice(min_int%mms);
 				positions_mutex[indice%4096].lock();
-				minimizer_to_minitigs[indice].push_back(mini);
+				kmer seq(str2num(sequence.substr(0,k))),rcSeq(rcb(seq)),canon(min_k(seq,rcSeq)),prev;
+				canon=(min_k(seq, rcSeq));
+				// cout<<sequence.substr(0,k)<<"	"<<color<<"	"<<coverage<<"	"<<min_int<<endl;cin.get();
+				if(min2kmer2context[indice].count(canon)==0){
+					min2kmer2context[indice][canon]={false,bit_vector};
+				}
+				min2kmer2context[indice][canon].count[color] = coverage;
+				uint64_t sks=sequence.size();
+				for(uint i(0);i+k<sks;++i){
+					prev=canon;
+					updateK(seq,sequence[i+k]);
+					updateRCK(rcSeq,sequence[i+k]);
+					canon=(min_k(seq, rcSeq));
+					if(min2kmer2context[indice].count(canon)==0){
+						min2kmer2context[indice][canon]={false,bit_vector};
+					}
+					min2kmer2context[indice][canon].count[color] = coverage;
+				}
 				positions_mutex[indice%4096].unlock();
 				minimizers[min_int%mms]=(min_int);
 			}
-			buffer.clear();
 		}
 	}
-	get_monocolor_minitigs_mem(minimizer_to_minitigs,out,minimizers,number_color);
+	get_monocolor_minitigs_mem(min2kmer2context,out,minimizers,number_color);
 }
 
 
@@ -529,13 +545,6 @@ kmer kmer_Set_Light::select_good_successor(const  robin_hood::unordered_map<kmer
 			if(kmer2context.at(targetc).count==kc.count){
 				return target;
 			}
-			// 	}
-			// }else{
-			// 	if(equal_nonull(kmer2context.at(targetc).count,kc.count)){
-			// 		return target;
-			// 	}else{
-			// 	}
-			// }
 		}
 	}
 	return -1;
@@ -543,40 +552,15 @@ kmer kmer_Set_Light::select_good_successor(const  robin_hood::unordered_map<kmer
 
 
 
-void kmer_Set_Light::get_monocolor_minitigs_mem(const  vector<vector<minitig>>& minitigs , ofstream* out, const vector<int32_t>& mini,uint64_t number_color){
+void kmer_Set_Light::get_monocolor_minitigs_mem(vector<robin_hood::unordered_map<kmer,kmer_context>>&  min2kmer2context , ofstream* out, const vector<int32_t>& mini,uint64_t number_color){
 vector<uint16_t> bit_vector(number_color,0);
 // #pragma omp parallel num_threads(coreNumber)
 {
-	robin_hood::unordered_map<kmer,kmer_context> kmer2context;
 	string sequence, buffer,seq2dump,compact;
-	uint64_t ms=minitigs.size();
-	// cout<<"ms: "<<ms<<endl;
+	uint64_t ms=min2kmer2context.size();
 	// #pragma omp for schedule(static,ms/coreNumber)
 	for(uint i_set=(0);i_set<ms;i_set++){
-		uint64_t mss=minitigs[i_set].size();
-		// cout<<"mss: "<<mss<<"	";
-		for(uint64_t i_mini=(0);i_mini<mss;++i_mini){
-			sequence=(minitigs[i_set][i_mini].sequence);
-			kmer seq(str2num(sequence.substr(0,k))),rcSeq(rcb(seq)),canon(min_k(seq,rcSeq)),prev;
-			canon=(min_k(seq, rcSeq));
-			if(kmer2context.count(canon)==0){
-				kmer2context[canon]={false,bit_vector};
-			}
-			kmer2context[canon].count[minitigs[i_set][i_mini].color]=minitigs[i_set][i_mini].coverage;
-			uint64_t sks=sequence.size();
-			for(uint i(0);i+k<sks;++i){
-				prev=canon;
-				updateK(seq,sequence[i+k]);
-				updateRCK(rcSeq,sequence[i+k]);
-				canon=(min_k(seq, rcSeq));
-				if(kmer2context.count(canon)==0){
-					kmer2context[canon]={false,bit_vector};
-				}
-				kmer2context[canon].count[minitigs[i_set][i_mini].color]=minitigs[i_set][i_mini].coverage;
-			}
-		}
-
-		for (auto& it: kmer2context){
+		for (auto& it: min2kmer2context[i_set]){
 			if(not it.second.isdump){
 				it.second.isdump=true;
 				auto colorV2dump(it.second.count);
@@ -584,12 +568,11 @@ vector<uint16_t> bit_vector(number_color,0);
 				seq2dump=kmer2str(start);
 				for(uint64_t step(0);step<2;step++){
 					while(true){
-						kmer next=select_good_successor(kmer2context,start);
-						if(next==(kmer)-1){
-							break;}
+						kmer next=select_good_successor(min2kmer2context[i_set],start);
+						if(next==(kmer)-1){break;}
 						compact=compaction(seq2dump,kmer2str(next),false);
 						if(compact.empty()){break;}
-						kmer2context.at(canonize(next,k)).isdump=true;
+						min2kmer2context[i_set].at(canonize(next,k)).isdump=true;
 						seq2dump=compact;
 						start=next;
 					}
@@ -597,7 +580,7 @@ vector<uint16_t> bit_vector(number_color,0);
 					seq2dump=revComp(seq2dump);
 				}
 				buffer+=">"+to_string(mini[i_set])+color_coverage2str(colorV2dump)+"\n"+seq2dump+"\n";
-				if(buffer.size()>80000){
+				if(buffer.size()>8000){
 					#pragma omp critical (monocolorFile)
 					{
 						*out<<buffer;
@@ -606,7 +589,7 @@ vector<uint16_t> bit_vector(number_color,0);
 				}
 			}
 		}
-		kmer2context.clear();
+		min2kmer2context[i_set].clear();
 	}
 	#pragma omp critical (monocolorFile)
 	{
