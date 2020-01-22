@@ -302,7 +302,8 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t& color_n
 			string header;
 			#pragma omp for ordered
 			for(i=(0);i<lines.size();++i){
-				cout << "-";
+				if (i%1000 == 0)
+					cout << "-";
 				string toWrite;
 				string line=lines[i];
 				if(line[0]=='A' or line[0]=='C' or line[0]=='G' or line[0]=='T')
