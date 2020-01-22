@@ -470,7 +470,7 @@ void kmer_Set_Light::construct_index_fof(const string& input_file, const string&
 
 void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t number_color, ofstream* out){
 	vector<uint16_t> bit_vector(number_color,0);
-	uint number_pass(8);
+	uint number_pass(1);
 	for(uint pass(0);pass<number_pass;++pass){
 		vector<robin_hood::unordered_map<kmer,kmer_context>> min2kmer2context(minimizer_number.value()/number_superbuckets.value());
 		uint64_t mms=min2kmer2context.size();
