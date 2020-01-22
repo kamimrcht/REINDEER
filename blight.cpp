@@ -470,59 +470,63 @@ void kmer_Set_Light::construct_index_fof(const string& input_file, const string&
 
 void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t number_color, ofstream* out){
 	vector<uint16_t> bit_vector(number_color,0);
-	vector<robin_hood::unordered_map<kmer,kmer_context>> min2kmer2context(minimizer_number.value()/number_superbuckets.value());
-	uint64_t mms=min2kmer2context.size();
-	vector<int32_t> minimizers(mms,-1);
-	zstr::ifstream in(input_file);
-	// #pragma omp parallel num_threads(coreNumber)
-	{
-		vector<string> buffer;
-		string line;
-		vector<string> splitted;
-		while(not in.eof() and in.good()){
-			#pragma omp critical
-			{
-				for(uint i(0);i<100 and not in.eof() ;++i){
-					getline(in,line);
-					buffer.push_back(line);
+	uint number_pass(8);
+	for(uint pass(0);pass<number_pass;++pass){
+		vector<robin_hood::unordered_map<kmer,kmer_context>> min2kmer2context(minimizer_number.value()/number_superbuckets.value());
+		uint64_t mms=min2kmer2context.size();
+		vector<int32_t> minimizers(mms,-1);
+		zstr::ifstream in(input_file);
+		#pragma omp parallel num_threads(coreNumber)
+		{
+			vector<string> buffer;
+			string line;
+			vector<string> splitted;
+			while(not in.eof() and in.good()){
+				#pragma omp critical
+				{
+					for(uint i(0);i<100 and not in.eof() ;++i){
+						getline(in,line);
+						buffer.push_back(line);
+					}
 				}
-			}
-			uint64_t bsize(buffer.size());
-			for(uint i(0);i<bsize;++i){
-				line=buffer[i];
-				if(line.empty()){break;}
-				split(line,':',splitted);
-				minitig mini;
-				int32_t color=stoi(splitted[1]);
-				string  sequence=(splitted[2]);
-				uint16_t coverage=(stoi(splitted[3]));
-				uint64_t min_int=(stoi(splitted[0]));
-				uint64_t indice(min_int%mms);
-				positions_mutex[indice%4096].lock();
-				kmer seq(str2num(sequence.substr(0,k))),rcSeq(rcb(seq)),canon(min_k(seq,rcSeq)),prev;
-				canon=(min_k(seq, rcSeq));
-				// cout<<sequence.substr(0,k)<<"	"<<color<<"	"<<coverage<<"	"<<min_int<<endl;cin.get();
-				if(min2kmer2context[indice].count(canon)==0){
-					min2kmer2context[indice][canon]={false,bit_vector};
-				}
-				min2kmer2context[indice][canon].count[color] = coverage;
-				uint64_t sks=sequence.size();
-				for(uint i(0);i+k<sks;++i){
-					prev=canon;
-					updateK(seq,sequence[i+k]);
-					updateRCK(rcSeq,sequence[i+k]);
+				uint64_t bsize(buffer.size());
+				for(uint i(0);i<bsize;++i){
+					line=buffer[i];
+					if(line.empty()){break;}
+					split(line,':',splitted);
+					minitig mini;
+					int32_t color=stoi(splitted[1]);
+					string  sequence=(splitted[2]);
+					uint16_t coverage=(stoi(splitted[3]));
+					uint64_t min_int=(stoi(splitted[0]));
+					uint64_t indice(min_int%mms);
+					if((indice%number_pass)!=pass){continue;}
+					positions_mutex[indice%4096].lock();
+					kmer seq(str2num(sequence.substr(0,k))),rcSeq(rcb(seq)),canon(min_k(seq,rcSeq)),prev;
 					canon=(min_k(seq, rcSeq));
+					// cout<<sequence.substr(0,k)<<"	"<<color<<"	"<<coverage<<"	"<<min_int<<endl;cin.get();
 					if(min2kmer2context[indice].count(canon)==0){
 						min2kmer2context[indice][canon]={false,bit_vector};
 					}
 					min2kmer2context[indice][canon].count[color] = coverage;
+					uint64_t sks=sequence.size();
+					for(uint i(0);i+k<sks;++i){
+						prev=canon;
+						updateK(seq,sequence[i+k]);
+						updateRCK(rcSeq,sequence[i+k]);
+						canon=(min_k(seq, rcSeq));
+						if(min2kmer2context[indice].count(canon)==0){
+							min2kmer2context[indice][canon]={false,bit_vector};
+						}
+						min2kmer2context[indice][canon].count[color] = coverage;
+					}
+					positions_mutex[indice%4096].unlock();
+					minimizers[min_int%mms]=(min_int);
 				}
-				positions_mutex[indice%4096].unlock();
-				minimizers[min_int%mms]=(min_int);
 			}
 		}
+		get_monocolor_minitigs_mem(min2kmer2context,out,minimizers,number_color);
 	}
-	get_monocolor_minitigs_mem(min2kmer2context,out,minimizers,number_color);
 }
 
 
@@ -554,11 +558,11 @@ kmer kmer_Set_Light::select_good_successor(const  robin_hood::unordered_map<kmer
 
 void kmer_Set_Light::get_monocolor_minitigs_mem(vector<robin_hood::unordered_map<kmer,kmer_context>>&  min2kmer2context , ofstream* out, const vector<int32_t>& mini,uint64_t number_color){
 vector<uint16_t> bit_vector(number_color,0);
-// #pragma omp parallel num_threads(coreNumber)
+#pragma omp parallel num_threads(coreNumber)
 {
 	string sequence, buffer,seq2dump,compact;
 	uint64_t ms=min2kmer2context.size();
-	// #pragma omp for schedule(static,ms/coreNumber)
+	#pragma omp for schedule(static,ms/coreNumber)
 	for(uint i_set=(0);i_set<ms;i_set++){
 		for (auto& it: min2kmer2context[i_set]){
 			if(not it.second.isdump){
