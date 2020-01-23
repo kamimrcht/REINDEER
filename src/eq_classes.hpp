@@ -53,13 +53,10 @@ void dump_compressed_vector_bucket_disk_query(vector<uint16_t>& counts, int64_t 
 	uint n(counts.size()*2);
 	uint nn(counts.size()*2 + 1024);
 	vector<unsigned char> comp;
-	//~ in = (unsigned char*)&counts[0];
 	unsigned compr_vector_size;
 	int64_t tw(minitig_id);
-
 	comp = RLE16C(counts); //homemade RLE with escape character 255
 	compr_vector_size = comp.size();
-	cout << comp.size() << endl;
 	uint32_t bucket_nb;
 	// hash bit from the compressed counts to choose the bucket
 	if (compr_vector_size >= 8){
@@ -148,22 +145,16 @@ void get_eq_classes(string& output, robin_hood::unordered_map<string, pair<count
 	}
 }
 
-
-void get_eq_classes_disk_query(string& output, robin_hood::unordered_map<string, pair<count_vector, vector<uint64_t>>>& bucket_class, uint64_t unitig_nb, uint64_t color_number, vector<long>& final_positions, long& prev_pos, zstr::ofstream* out)
+void get_eq_classes_disk_query(string& output, robin_hood::unordered_map<string, pair<count_vector, vector<uint64_t>>>& bucket_class, uint64_t unitig_nb, uint64_t color_number, vector<long>& final_positions, long& prev_pos, ofstream* out)
 {
 	string prev_comp("");
 	// for each representant, write the compressed size, index and compressed counts on disk
 	// write a file:  integer i at position n shows which row i of the matrix should be looked up for minitig n (surjection minitigs -> class representants)
 	for (auto rk(bucket_class.begin()); rk != bucket_class.end(); ++rk)
 	{
-		//~ ++prev_pos;
+		++prev_pos;
 		count_vector v (rk->second.first);
 		char* comp (&v.compressed[0]); //homemade RLE compression
-		//~ char* decomp = new char[color_number * 2 +1024];
-		//~ auto sz = trled(comp, v.compressed.size() , decomp, color_number * 2);
-		// 1 -decompress to compress with homemade RLE
-		// 2-compress
-		//~ vector<unsigned char> comp2 = RLE16C(counts); //homemade RLE with escape character 255 // TODO change and use homemade RLE before if disk query
 
 		unsigned compr_vector_size = v.compressed.size();
 		long position(out->tellp());
@@ -188,10 +179,19 @@ void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_
 {
 	cout << "Sorting datasets to find equivalence classes..." << endl;
 	vector<long> final_positions(nb_unitigs);
-	//todo parallel
-	//~ ofstream out(output + "/reindeer_matrix_eqc");
-	auto out = new zstr::ofstream(output + "/reindeer_matrix_eqc");
-	out->write(reinterpret_cast<char*>(&color_number),sizeof(uint64_t)); // number of colors
+	zstr::ofstream * outz;
+	ofstream *out;
+	if (do_query_on_disk)
+	{
+		out = new ofstream(output + "/reindeer_matrix_eqc");
+		out->write(reinterpret_cast<char*>(&color_number),sizeof(uint64_t)); // number of colors
+	}
+	else
+	{
+		outz = new zstr::ofstream(output + "/reindeer_matrix_eqc");
+		outz->write(reinterpret_cast<char*>(&color_number),sizeof(uint64_t)); // number of colors
+
+	}
 	long prev_pos(-1);
 	uint i(0);
 	mutex mm; 
@@ -235,7 +235,7 @@ void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_
 			if (do_query_on_disk)
 				get_eq_classes_disk_query(output, bucket_class,  nb_unitigs, color_number, final_positions, prev_pos, out);
 			else
-				get_eq_classes(output, bucket_class,  nb_unitigs, color_number, final_positions, prev_pos, out);
+				get_eq_classes(output, bucket_class,  nb_unitigs, color_number, final_positions, prev_pos, outz);
 			mm.unlock();
 		}
 		in.close();
@@ -250,12 +250,13 @@ void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_
 		++nb;
 	}
 	out_position.close();
-	//~ out.close();
-	//~ out->close();
-	delete out;
 	ofstream out_nbc(output + "/reindeer_matrix_eqc_nb_class");
 	out_nbc.write(reinterpret_cast<char*>(&nb_eq_class), sizeof(long));
 	out_nbc.close();
+	if (do_query_on_disk)
+		delete out;
+	else
+		delete outz;
 }
 
 
