@@ -28,7 +28,7 @@ void dump_compressed_vector_buff(vector<uint16_t>& counts, int64_t minitig_id, s
 vector<unsigned char*> load_compressed_vectors(const string& input_file, vector<unsigned>&vector_sizes, uint64_t& color_number, uint64_t& minitig_number, long eq_class_nb)
 {
 	ifstream in_nb(input_file + "_minitig_nb");
-	ifstream in(input_file);
+	auto in = new zstr::ifstream(input_file);
 	if(not exists_test(input_file))
 	{
 		cout<<"File problem"<<endl;
@@ -37,21 +37,22 @@ vector<unsigned char*> load_compressed_vectors(const string& input_file, vector<
 	int64_t rank;
 	unsigned line_size;
 	in_nb.read(reinterpret_cast<char *>(&minitig_number), sizeof(uint64_t));
-	in.read(reinterpret_cast<char *>(&color_number), sizeof(uint64_t));
+	in->read(reinterpret_cast<char *>(&color_number), sizeof(uint64_t));
 	vector<unsigned char*> out; //todo resize when loading eq class
 	uint t(0);
 	for (uint i(0); i < eq_class_nb; ++i) //lire le nb de classes d'eq
 	{
-		in.read(reinterpret_cast<char *>(&line_size), sizeof(unsigned));
-		in.read(reinterpret_cast<char *>(&rank), sizeof(int64_t));
+		in->read(reinterpret_cast<char *>(&line_size), sizeof(unsigned));
+		in->read(reinterpret_cast<char *>(&rank), sizeof(int64_t));
 		vector_sizes.push_back(line_size); 
 		unsigned char* c = new unsigned char[line_size];
-		in.read((char*)(c) , line_size);
+		in->read((char*)(c) , line_size);
 		out.push_back(c);
 		++t;
 	}
 	in_nb.close();
-	in.close();
+	//~ in->close();
+	delete in;
 	return out;
 }
 

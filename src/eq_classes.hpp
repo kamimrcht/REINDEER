@@ -127,7 +127,7 @@ void read_matrix_compressed_line(ifstream& in, int64_t& rank, char* comp, unsign
 
 
 // write final matrix of equivalence classes
-void get_eq_classes(string& output, robin_hood::unordered_map<string, pair<count_vector, vector<uint64_t>>>& bucket_class, uint64_t unitig_nb, uint64_t color_number, vector<long>& final_positions, long& prev_pos, ofstream& out)
+void get_eq_classes(string& output, robin_hood::unordered_map<string, pair<count_vector, vector<uint64_t>>>& bucket_class, uint64_t unitig_nb, uint64_t color_number, vector<long>& final_positions, long& prev_pos, zstr::ofstream* out)
 {
 	string prev_comp("");
 	// for each representant, write the compressed size, index and compressed counts on disk
@@ -137,9 +137,9 @@ void get_eq_classes(string& output, robin_hood::unordered_map<string, pair<count
 		++prev_pos;
 		count_vector v (rk->second.first);
 		char* comp (&v.compressed[0]);
-		out.write(reinterpret_cast<char*>(&v.compressed_size),sizeof(unsigned));
-		out.write(reinterpret_cast<char*>(&v.minitig_rank),sizeof(int64_t));
-		out.write((const char*)comp,(v.compressed_size));
+		out->write(reinterpret_cast<char*>(&v.compressed_size),sizeof(unsigned));
+		out->write(reinterpret_cast<char*>(&v.minitig_rank),sizeof(int64_t));
+		out->write((const char*)comp,(v.compressed_size));
 		for (auto && rank: rk->second.second)
 		{
 			if (rank < final_positions.size())
@@ -149,7 +149,7 @@ void get_eq_classes(string& output, robin_hood::unordered_map<string, pair<count
 }
 
 
-void get_eq_classes_disk_query(string& output, robin_hood::unordered_map<string, pair<count_vector, vector<uint64_t>>>& bucket_class, uint64_t unitig_nb, uint64_t color_number, vector<long>& final_positions, long& prev_pos, ofstream& out)
+void get_eq_classes_disk_query(string& output, robin_hood::unordered_map<string, pair<count_vector, vector<uint64_t>>>& bucket_class, uint64_t unitig_nb, uint64_t color_number, vector<long>& final_positions, long& prev_pos, zstr::ofstream* out)
 {
 	string prev_comp("");
 	// for each representant, write the compressed size, index and compressed counts on disk
@@ -166,14 +166,14 @@ void get_eq_classes_disk_query(string& output, robin_hood::unordered_map<string,
 		//~ vector<unsigned char> comp2 = RLE16C(counts); //homemade RLE with escape character 255 // TODO change and use homemade RLE before if disk query
 
 		unsigned compr_vector_size = v.compressed.size();
-		long position(out.tellp());
-		out.write(reinterpret_cast<char*>(&compr_vector_size),sizeof(unsigned));
+		long position(out->tellp());
+		out->write(reinterpret_cast<char*>(&compr_vector_size),sizeof(unsigned));
 		int64_t tw(v.minitig_rank);
-		out.write(reinterpret_cast<char*>(&tw),sizeof(int64_t));
-		out.write((const char*)&comp[0],(compr_vector_size));
+		out->write(reinterpret_cast<char*>(&tw),sizeof(int64_t));
+		out->write((const char*)&comp[0],(compr_vector_size));
 		char* returnc = new char[1];
 		returnc[0] = (uint8_t) 255;
-		out.write(&returnc[0], sizeof(char)); // line separator	
+		out->write(&returnc[0], sizeof(char)); // line separator	
 		delete [] returnc;
 		for (auto && rank: rk->second.second)
 		{
@@ -189,8 +189,9 @@ void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_
 	cout << "Sorting datasets to find equivalence classes..." << endl;
 	vector<long> final_positions(nb_unitigs);
 	//todo parallel
-	ofstream out(output + "/reindeer_matrix_eqc");
-	out.write(reinterpret_cast<char*>(&color_number),sizeof(uint64_t)); // number of colors
+	//~ ofstream out(output + "/reindeer_matrix_eqc");
+	auto out = new zstr::ofstream(output + "/reindeer_matrix_eqc");
+	out->write(reinterpret_cast<char*>(&color_number),sizeof(uint64_t)); // number of colors
 	long prev_pos(-1);
 	uint i(0);
 	mutex mm; 
@@ -249,7 +250,9 @@ void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_
 		++nb;
 	}
 	out_position.close();
-	out.close();
+	//~ out.close();
+	//~ out->close();
+	delete out;
 	ofstream out_nbc(output + "/reindeer_matrix_eqc_nb_class");
 	out_nbc.write(reinterpret_cast<char*>(&nb_eq_class), sizeof(long));
 	out_nbc.close();
