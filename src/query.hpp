@@ -185,7 +185,17 @@ void get_colors_counts_query_eq_classes(vector<int64_t>& kmer_ids,   uint64_t co
 				else
 				{
 					lo = decode_vector((unsigned char*)&compr_minitig_color[pos][0], compr_minitig_color_size[pos], color_number, record_counts);
-					qcounts = count_string_to_count_vector(lo, compr_minitig_color_size[pos]);
+					if (record_counts)
+					{
+						qcounts = count_string_to_count_vector(lo, compr_minitig_color_size[pos]);
+					}
+					else
+					{
+						qcounts = {};
+						vector<uint8_t> qcounts8 = count_string_to_count_vector8(lo, compr_minitig_color_size[pos]);
+						copy(qcounts8.begin(), qcounts8.end(), back_inserter(qcounts));
+					}
+						//~ qcounts = count_string_to_count_vector8(lo, compr_minitig_color_size[pos]);
 				}
 				lastV = qcounts;
 				if (not qcounts.empty())
@@ -231,7 +241,6 @@ void write_count_output(bool record_counts, vector<vector<uint16_t>>& query_coun
 {
 	string nc("*");
 	vector<string> last(color_number,"*");
-
 	for (auto&& c: query_counts)
 	{
 		for (uint color(0); color < c.size(); ++color)
@@ -343,9 +352,9 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t& color_n
 					kmer_ids=ksl.get_rank_query(line);
 					vector<vector<uint16_t>> query_counts;
 					vector<vector<uint8_t>> query_colors;
-					if (do_query_on_disk)
-						get_colors_counts_query_on_disk(kmer_ids, rd_file,  position_in_file, color_number, query_counts, record_counts);
-					else
+					//~ if (do_query_on_disk)
+						//~ get_colors_counts_query_on_disk(kmer_ids, rd_file,  position_in_file, color_number, query_counts, record_counts);
+					//~ else
 						get_colors_counts_query_eq_classes( kmer_ids, color_number, query_counts,  compr_minitig_color, compr_minitig_color_size, position_in_file, record_counts, query_colors, do_query_on_disk);
 					write_output( kmers_colors, toWrite,  record_reads,  record_counts,  query_unitigID,query_unitigID_tmp,  color_number, header, line, k, threshold, query_counts, query_colors);
 				} else {
