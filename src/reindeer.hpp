@@ -72,6 +72,8 @@ void reindeer_index(uint k, string& fof,  string& color_dump_file, bool record_c
 void reindeer_query(uint k, string& output,string& output_query, bool record_counts, bool record_reads, uint threshold, string& bgreat_paths_fof, string& query, uint threads, bool exact, bool do_query_on_disk)
 {
 	// QUERY //
+	high_resolution_clock::time_point t1 = high_resolution_clock::now();
+
 	string fof( getRealPath("graphs.lst", output));
 	string color_dump_file("");
 	string color_load_file(getRealPath("reindeer_matrix_eqc", output));
@@ -79,12 +81,20 @@ void reindeer_query(uint k, string& output,string& output_query, bool record_cou
 	uint64_t color_number(get_color_number(fof));
 	vector<unsigned char*> compr_minitig_color;
 	vector<unsigned> compr_minitig_color_sizes;
+
 	cout << "\nLoading index.." << endl;
 	long eq_class_nb(0);
 	kmer_Set_Light* ksl = load_rle_index(k, color_load_file, color_dump_file, fof, record_counts, record_reads, color_number, threads, exact, output, compr_minitig_color, compr_minitig_color_sizes, do_query_on_disk, nb_eq_class_file,eq_class_nb);
-	cout << "\nAll informations loaded. " << endl;
+	high_resolution_clock::time_point t12 = high_resolution_clock::now();
+	duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
+	cout<<"Index loading total: "<< time_span12.count() << " seconds."<<endl;
+	
 	cout << "\nComputing query..." << endl;
+	high_resolution_clock::time_point tnew = high_resolution_clock::now();
 	perform_query(*ksl, color_number, k, record_counts,  record_reads,  threshold, bgreat_paths_fof, query, output_query, threads, exact, compr_minitig_color, compr_minitig_color_sizes, do_query_on_disk, color_load_file, eq_class_nb);
+	high_resolution_clock::time_point tnew2 = high_resolution_clock::now();
+	duration<double> time_spannew2 = duration_cast<duration<double>>(tnew2 - tnew);
+	cout<<"Querying sequence took "<< time_spannew2.count() << " seconds."<<endl;
 }
 
 
