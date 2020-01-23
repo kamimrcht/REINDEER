@@ -47,15 +47,22 @@ void sort_vectors(vector<count_vector>& matrix_lines)
 }
 
 
-void dump_compressed_vector_bucket_disk_query(vector<uint16_t>& counts, int64_t minitig_id, unsigned char *in, ofstream& out_positions, vector<ofstream*>& bucket_files)
+void dump_compressed_vector_bucket_disk_query(vector<uint16_t>& counts, int64_t minitig_id, unsigned char *in, ofstream& out_positions, vector<ofstream*>& bucket_files,  vector<uint8_t>& colors, bool record_counts)
 {
 
-	uint n(counts.size()*2);
-	uint nn(counts.size()*2 + 1024);
 	vector<unsigned char> comp;
 	unsigned compr_vector_size;
 	int64_t tw(minitig_id);
-	comp = RLE16C(counts); //homemade RLE with escape character 255
+	if (record_counts)
+	{
+		uint n(counts.size()*2);
+		uint nn(counts.size()*2 + 1024);
+		comp = RLE16C(counts); //homemade RLE with escape character 255
+	}
+	else
+	{
+		comp = RLE8C(colors);
+	}
 	compr_vector_size = comp.size();
 	uint32_t bucket_nb;
 	// hash bit from the compressed counts to choose the bucket

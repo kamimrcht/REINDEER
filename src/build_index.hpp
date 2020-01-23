@@ -212,7 +212,7 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 
 					//write count vector
 					if (do_query_on_disk)
-						dump_compressed_vector_bucket_disk_query(counts, minitig_id.back(), in, out_position, all_files);
+						dump_compressed_vector_bucket_disk_query(counts, minitig_id.back(), in, out_position, all_files,  colors, record_counts);
 					else
 						dump_compressed_vector_bucket(counts, minitig_id.back(), in, out_position, all_files,  colors, record_counts);
 

@@ -182,7 +182,16 @@ void get_colors_counts_query_eq_classes(vector<int64_t>& kmer_ids,   uint64_t co
 					int64_t rank;
 					get_matrix_line_query_disk(rank, color, size, pos, in);
 					vector<uint8_t> count_int = count_string_to_count_vector8(color, size);
-					qcounts = RLE16D(count_int);
+					if (record_counts)
+					{
+						qcounts = RLE16D(count_int);
+					}
+					else
+					{
+						qcounts = {};
+						vector<uint8_t> qcounts8 = RLE8D(count_int);
+						copy(qcounts8.begin(), qcounts8.end(), back_inserter(qcounts));
+					}
 				}
 				else
 				{
