@@ -136,7 +136,7 @@ void parse_bgreat_output(string& input, vector<vector<uint64_t>>& unitigs_to_nod
 
 //~ vector<uint8_t> RLE16C(const vector<uint16_t>&V){
 vector<unsigned char> RLE16C(const vector<uint16_t>&V){
-	vector<uint8_t> res;
+	vector<unsigned char> res;
 	if(V.empty()){return res;}
 	uint16_t pred(V[0]);
 
@@ -152,8 +152,8 @@ vector<unsigned char> RLE16C(const vector<uint16_t>&V){
 			}
 		}else{
 			res.push_back(min(pred/256,254));
-				res.push_back(min(pred%256,254));
-				res.push_back(count);
+			res.push_back(min(pred%256,254));
+			res.push_back(count);
 			count=1;
 			pred=V[i];
 		}
@@ -161,10 +161,10 @@ vector<unsigned char> RLE16C(const vector<uint16_t>&V){
 	res.push_back(min(pred/256,254));
 	res.push_back(min(pred%256,254));
 	res.push_back(count);
-	vector<unsigned char> res_ca;
-	transform(begin(res), end(res), begin(res_ca), [](uint8_t i) { return '0' + i; });
+	//~ vector<unsigned char> res_ca;
+	//~ transform(begin(res), end(res), begin(res_ca), [](uint8_t i) { return '0' + i; });
 
-	return res_ca;
+	return res;
 }
 
 

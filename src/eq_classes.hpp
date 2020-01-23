@@ -78,17 +78,22 @@ void dump_compressed_vector_bucket_disk_query(vector<uint16_t>& counts, int64_t 
 	out_positions.write(reinterpret_cast<char*>(&position), sizeof(long)); //position in vector of count vectors
 }
 
-void dump_compressed_vector_bucket(vector<uint16_t>& counts, int64_t minitig_id, unsigned char *in, ofstream& out_positions, vector<ofstream*>& bucket_files )
+void dump_compressed_vector_bucket(vector<uint16_t>& counts, int64_t minitig_id, unsigned char *in, ofstream& out_positions, vector<ofstream*>& bucket_files, vector<uint8_t>& colors, bool record_counts )
 {
 	//get the bucket number
-	uint n(counts.size()*2);
-	uint nn(counts.size()*2 + 1024);
+	uint n;
+	if (record_counts)
+		n = counts.size()*2;
+	else
+		n = colors.size();
+	uint nn(n  + 1024);
 	unsigned char comp[nn];
-	in = (unsigned char*)&counts[0];
+	if (record_counts)
+		in = (unsigned char*)&counts[0];
+	else
+		in = (unsigned char*)&colors[0];
 	unsigned compr_vector_size;
-
 	compr_vector_size = trlec(in, n, comp) ;
-
 
 	uint32_t bucket_nb;
 	// hash bit from the compressed counts to choose the bucket

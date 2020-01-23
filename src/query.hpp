@@ -40,10 +40,19 @@ using namespace chrono;
 
 
 // decode rl encoded vector (color/count of ONE minitig)
-unsigned char* decode_vector(unsigned char* minitig_counts, unsigned vector_size, uint64_t color_number)
+unsigned char* decode_vector(unsigned char* minitig_counts, unsigned vector_size, uint64_t color_number, bool record_counts)
 {
-	auto decoded_vector= new unsigned char[color_number*2 + 1024];
-	auto sz = trled(minitig_counts, vector_size, decoded_vector, color_number*2);
+	unsigned char* decoded_vector;
+	if (record_counts)
+	{
+		decoded_vector= new unsigned char[color_number*2 + 1024];
+		auto sz = trled(minitig_counts, vector_size, decoded_vector, color_number*2);
+	}
+	else
+	{
+		decoded_vector= new unsigned char[color_number + 1024];
+		auto sz = trled(minitig_counts, vector_size, decoded_vector, color_number);
+	}
 	return decoded_vector;
 }
 
@@ -57,11 +66,21 @@ vector<uint16_t> count_string_to_count_vector(unsigned char* count_char_minitig,
 	}
 return counts;
 }
+// convert char [] counts/colors to uint
+vector<uint8_t> count_string_to_count_vector8(unsigned char* count_char_minitig, unsigned size)
+{
+	vector<uint8_t> counts;
+	for (uint i(0); i < size  ; i++)
+	{
+		counts.push_back((uint8_t)count_char_minitig[i]);
+	}
+return counts;
+}
 
 // for ONE minitig, get a vector of its counts/colors (uint) from the rle encoded matrix
-vector<uint16_t> get_count_minitig(unsigned char* minitig_counts, unsigned vector_size, uint64_t color_number)
+vector<uint16_t> get_count_minitig(unsigned char* minitig_counts, unsigned vector_size, uint64_t color_number, bool record_counts)
 {
-	unsigned char* decoded(decode_vector(minitig_counts, vector_size,color_number));
+	unsigned char* decoded(decode_vector(minitig_counts, vector_size,color_number, record_counts));
 	vector<uint16_t> counts (count_string_to_count_vector(decoded, color_number*2));
 	delete [] decoded;
 	return counts;
@@ -102,7 +121,7 @@ long get_matrix_line_query(int64_t	rank, unsigned char* color, unsigned& line_si
 }
 
 
-void get_colors_counts_query_on_disk(vector<int64_t>& kmer_ids, string& matrix_file, vector<long>& position_in_file, uint64_t color_number, vector<vector<uint16_t>>& query_counts)
+void get_colors_counts_query_on_disk(vector<int64_t>& kmer_ids, string& matrix_file, vector<long>& position_in_file, uint64_t color_number, vector<vector<uint16_t>>& query_counts, bool record_counts)
 {
 	ifstream in(matrix_file);
 	in.read(reinterpret_cast<char *>(&color_number), sizeof(uint64_t));
@@ -125,7 +144,7 @@ void get_colors_counts_query_on_disk(vector<int64_t>& kmer_ids, string& matrix_f
 			else
 			{
 				get_matrix_line_query_disk(kmer_ids[i], color, size, position_in_file, in);
-				qcounts = get_count_minitig(color, size, color_number);
+				qcounts = get_count_minitig(color, size, color_number, record_counts);
 				lastV = qcounts;
 				if (not qcounts.empty())
 					query_counts.push_back( qcounts );
@@ -134,14 +153,16 @@ void get_colors_counts_query_on_disk(vector<int64_t>& kmer_ids, string& matrix_f
 	}
 	delete [] color;
 }
-void get_colors_counts_query_eq_classes(vector<int64_t>& kmer_ids,   uint64_t color_number, vector<vector<uint16_t>>& query_counts,  vector<unsigned char*>& compr_minitig_color, vector<unsigned>&compr_minitig_color_size,vector<long>& position_in_file)
+void get_colors_counts_query_eq_classes(vector<int64_t>& kmer_ids,   uint64_t color_number, vector<vector<uint16_t>>& query_counts,  vector<unsigned char*>& compr_minitig_color, vector<unsigned>&compr_minitig_color_size,vector<long>& position_in_file, bool record_counts, vector<vector<uint8_t>>& query_colors, bool do_query_on_disk)
 {
 	unsigned char* color;
 	color = new unsigned char[2*color_number+1204];
 	unsigned size;
-	vector<uint16_t> counts;
+	//~ vector<uint16_t> counts;
+	//~ vector<uint8_t> colors;
 	int64_t lastId(-1);
 	vector<uint16_t> qcounts, lastV;
+	vector<uint8_t> qcolors;
 	for(uint64_t i(0);i<kmer_ids.size();++i)
 	{
 		if(kmer_ids[i]>=0)
@@ -155,9 +176,17 @@ void get_colors_counts_query_eq_classes(vector<int64_t>& kmer_ids,   uint64_t co
 			else
 			{
 				long pos = get_matrix_line_query(kmer_ids[i], color, size, position_in_file, compr_minitig_color);
-				unsigned char* lo = decode_vector((unsigned char*)&compr_minitig_color[pos][0], compr_minitig_color_size[pos], color_number);
-				vector<uint16_t> cc = count_string_to_count_vector(lo, compr_minitig_color_size[pos]);
-				qcounts = get_count_minitig(compr_minitig_color[pos], compr_minitig_color_size[pos], color_number);
+				unsigned char* lo;
+				if (do_query_on_disk)
+				{
+					vector<uint8_t> count_int = count_string_to_count_vector8(compr_minitig_color[pos], compr_minitig_color_size[pos]);
+					qcounts = RLE16D(count_int);  //TODO
+				}
+				else
+				{
+					lo = decode_vector((unsigned char*)&compr_minitig_color[pos][0], compr_minitig_color_size[pos], color_number, record_counts);
+					qcounts = count_string_to_count_vector(lo, compr_minitig_color_size[pos]);
+				}
 				lastV = qcounts;
 				if (not qcounts.empty())
 					query_counts.push_back( qcounts );
@@ -187,7 +216,7 @@ void get_colors_counts(vector<int64_t>& kmer_ids, bool record_counts, uint64_t c
 			}
 			else
 			{
-				qcounts = get_count_minitig(compr_minitig_color[kmer_ids[i]], compr_minitig_color_size[kmer_ids[i]], color_number);
+				qcounts = get_count_minitig(compr_minitig_color[kmer_ids[i]], compr_minitig_color_size[kmer_ids[i]], color_number, record_counts);
 				lastV = qcounts;
 				if (not qcounts.empty())
 					query_counts.push_back( qcounts );
@@ -267,7 +296,7 @@ void write_results_below_threshold(string& toWrite, vector<vector<uint16_t>>& qu
 	toWrite += "\n";
 }
 
-void write_output(vector<int64_t>& kmers_colors, string& toWrite, bool record_reads, bool record_counts, vector<vector<uint32_t>>& query_unitigID,vector<vector<uint32_t>>& query_unitigID_tmp,  uint64_t& color_number, string& header, string& line, uint k, uint threshold, vector<vector<uint16_t>>& query_counts)
+void write_output(vector<int64_t>& kmers_colors, string& toWrite, bool record_reads, bool record_counts, vector<vector<uint32_t>>& query_unitigID,vector<vector<uint32_t>>& query_unitigID_tmp,  uint64_t& color_number, string& header, string& line, uint k, uint threshold,  vector<vector<uint16_t>>& query_counts, vector<vector<uint8_t>>& query_colors)
 {
 	vector<string> color_counts;
 	vector<string> toW(color_number,"");
@@ -313,11 +342,12 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t& color_n
 					vector<int64_t> kmer_ids;
 					kmer_ids=ksl.get_rank_query(line);
 					vector<vector<uint16_t>> query_counts;
+					vector<vector<uint8_t>> query_colors;
 					if (do_query_on_disk)
-						get_colors_counts_query_on_disk(kmer_ids, rd_file,  position_in_file, color_number, query_counts);
+						get_colors_counts_query_on_disk(kmer_ids, rd_file,  position_in_file, color_number, query_counts, record_counts);
 					else
-						get_colors_counts_query_eq_classes( kmer_ids, color_number, query_counts,  compr_minitig_color, compr_minitig_color_size, position_in_file);
-					write_output( kmers_colors, toWrite,  record_reads,  record_counts,  query_unitigID,query_unitigID_tmp,  color_number, header, line, k, threshold, query_counts);
+						get_colors_counts_query_eq_classes( kmer_ids, color_number, query_counts,  compr_minitig_color, compr_minitig_color_size, position_in_file, record_counts, query_colors, do_query_on_disk);
+					write_output( kmers_colors, toWrite,  record_reads,  record_counts,  query_unitigID,query_unitigID_tmp,  color_number, header, line, k, threshold, query_counts, query_colors);
 				} else {
 					if (line[0]=='@' or line[0]=='>')
 						header = line;

@@ -7,13 +7,13 @@
 using namespace std;
 
 // read colors from bcalm headers
-vector<bool>  get_colors_minitigs(string& line)
+vector<uint8_t>  get_colors_minitigs(string& line)
 {
-	vector<bool> colors;
+	vector<uint8_t> colors;
 	vector<string> colors_minitig = split_utils(line,':');
 	for (uint c(1); c < colors_minitig.size(); ++c) // convert the bit string to a bit vector
 	{
-		colors.push_back(stoi(colors_minitig[c]) > 0);
+		colors.push_back((uint8_t) (stoi(colors_minitig[c]) > 0));
 	}
 	
 	return colors;
@@ -184,6 +184,7 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 	{
 		vector<int64_t> minitig_id;
 		vector<uint16_t> counts;
+		vector<uint8_t> colors;
 		string header,minitig, buffer;
 		unsigned char *in;
 		// record count vector for each minitig at index given by the mphf
@@ -192,7 +193,11 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 			getline(minitigs_file, header);
 			getline(minitigs_file, minitig);
 			if(minitig.empty() or header.empty()){continue;}
-			counts = get_counts_minitigs(header);
+			//read bcalm header to get colors or counts
+			if (record_counts)
+				counts = get_counts_minitigs(header);
+			else
+				colors = get_colors_minitigs(header);
 			minitig_id.clear();
 			if (minitig[0] == 'A' or minitig[0] == 'C' or minitig[0] == 'G' or minitig[0] == 'T')
 			{
@@ -204,11 +209,13 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 				if((not minitig_id.empty()) and minitig_id.back()>=0)
 				{
 					mm.lock();
+
 					//write count vector
 					if (do_query_on_disk)
 						dump_compressed_vector_bucket_disk_query(counts, minitig_id.back(), in, out_position, all_files);
 					else
-						dump_compressed_vector_bucket(counts, minitig_id.back(), in, out_position, all_files);
+						dump_compressed_vector_bucket(counts, minitig_id.back(), in, out_position, all_files,  colors, record_counts);
+
 					nb_treated_minitigs++;
 					mm.unlock();
 				}
