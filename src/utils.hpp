@@ -139,6 +139,7 @@ vector<unsigned char> RLE16C(const vector<uint16_t>&V){
 	vector<uint8_t> res;
 	if(V.empty()){return res;}
 	uint16_t pred(V[0]);
+
 	uint8_t count(1);
 	for(uint64_t i(1);i<V.size();++i){
 		if(V[i]==pred){
@@ -162,6 +163,7 @@ vector<unsigned char> RLE16C(const vector<uint16_t>&V){
 	res.push_back(count);
 	vector<unsigned char> res_ca;
 	transform(begin(res), end(res), begin(res_ca), [](uint8_t i) { return '0' + i; });
+
 	return res_ca;
 }
 

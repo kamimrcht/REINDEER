@@ -163,17 +163,17 @@ void build_matrix_for_disk_query(string& color_load_file, string& color_dump_fil
 
 
 // dispatch count vectors in files. Similar counts go in similar files
-void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_file, string& fof, kmer_Set_Light* ksl, bool record_counts, bool record_reads, uint k, uint64_t& color_number, uint nb_threads, bool exact, string& output, vector <unsigned char*>& compressed_colors, vector <unsigned>& compressed_colors_size, string& output_file )
+void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_file, string& fof, kmer_Set_Light* ksl, bool record_counts, bool record_reads, uint k, uint64_t& color_number, uint nb_threads, bool exact, string& output, vector <unsigned char*>& compressed_colors, vector <unsigned>& compressed_colors_size, string& output_file, bool do_query_on_disk )
 {
-
-	vector<ofstream*> all_files;// todo move outside
+	//create bucket files for partitionning the compressed counts -> finding eq classes
+	vector<ofstream*> all_files;
 	for (uint i(0); i <1000; ++i)
 	{
 		ofstream* out = new ofstream(output + "/matrix_bucket_"+ to_string(i)); //TODO zstr??
 		all_files.push_back(out); 
 	}
 	string output_file_name;
-	string minitigs_fn(output +"/_blmonocolor.fa");
+	string minitigs_fn(output +"/_blmonocolor.fa"); //minitigs
 	ifstream minitigs_file(minitigs_fn);
 	uint64_t nb_minitigs(0);
 	ofstream out_nb(output_file+"_eqc_minitig_nb");
@@ -186,6 +186,7 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 		vector<uint16_t> counts;
 		string header,minitig, buffer;
 		unsigned char *in;
+		// record count vector for each minitig at index given by the mphf
 		while(not minitigs_file.eof())
 		{
 			getline(minitigs_file, header);
@@ -197,12 +198,17 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 			{
 				mm.lock();
 				++nb_minitigs;
+				// get index form MPHF
 				minitig_id=ksl->get_rank_query(minitig.substr(0,k)); // all kmers have the same id so we only query one
 				mm.unlock();
 				if((not minitig_id.empty()) and minitig_id.back()>=0)
 				{
 					mm.lock();
-					dump_compressed_vector_bucket(counts, minitig_id.back(), in, out_position, all_files);
+					//write count vector
+					if (do_query_on_disk)
+						dump_compressed_vector_bucket_disk_query(counts, minitig_id.back(), in, out_position, all_files);
+					else
+						dump_compressed_vector_bucket(counts, minitig_id.back(), in, out_position, all_files);
 					nb_treated_minitigs++;
 					mm.unlock();
 				}
@@ -211,13 +217,16 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 		delete(in);
 	}
 	out_nb.write(reinterpret_cast<char*>(&nb_minitigs),sizeof(uint64_t)); //TODO NB COLOR + /!\ relecture
+	//close files
 	out_nb.close();
 	out_position.close();
 	for (uint i(0); i < all_files.size(); ++i)
 	{
 		all_files[i]->close();
 	}
-	write_eq_class_matrix(output, all_files, nb_minitigs, color_number);
+	// compute final equivalence class and write them
+	write_eq_class_matrix(output, all_files, nb_minitigs, color_number, do_query_on_disk);
+	// remove bucket files
 	for (uint i(0); i < all_files.size(); ++i)
 	{
 		all_files[i]->close();
@@ -268,10 +277,10 @@ void do_coloring(string& color_load_file, string& color_dump_file, string& fof, 
 	} 
 	else  //indexing
 	{
-		if (do_query_on_disk)
-			build_matrix_for_disk_query(color_load_file,  color_dump_file,  fof,  ksl,  record_counts, record_reads,  k, color_number, nb_threads,  exact, output, compr_minitig_color, compr_minitig_color_size, color_dump_file);
-		else 
-			write_matrix_in_bucket_files(color_load_file,  color_dump_file,  fof,  ksl,  record_counts, record_reads,  k, color_number, nb_threads,  exact, output, compr_minitig_color, compr_minitig_color_size, color_dump_file);
+		//~ if (do_query_on_disk)
+			//~ build_matrix_for_disk_query(color_load_file,  color_dump_file,  fof,  ksl,  record_counts, record_reads,  k, color_number, nb_threads,  exact, output, compr_minitig_color, compr_minitig_color_size, color_dump_file);
+		//~ else 
+			write_matrix_in_bucket_files(color_load_file,  color_dump_file,  fof,  ksl,  record_counts, record_reads,  k, color_number, nb_threads,  exact, output, compr_minitig_color, compr_minitig_color_size, color_dump_file, do_query_on_disk);
 	}
 }
 
