@@ -90,15 +90,17 @@ vector<uint16_t> get_count_minitig(unsigned char* minitig_counts, unsigned vecto
 
 void get_position_vector_query_disk(vector<long>& position_in_file, string& position_file_name, uint64_t nb_minitig)
 {
-	ifstream in(position_file_name); //positions file
+	//~ ifstream in(position_file_name); //positions file
+	zstr::ifstream * in = new zstr::ifstream(position_file_name); //positions file
 	long position;
 	uint nb(0);
 	while (nb < nb_minitig)
 	{
-		in.read(reinterpret_cast<char*>(&position), sizeof(long));
+		in->read(reinterpret_cast<char*>(&position), sizeof(long));
 		position_in_file.push_back(position);
 		++nb;
 	}
+	delete in;
 }
 
 void get_matrix_line_query_disk(int64_t rank, unsigned char* color, unsigned& line_size, long position_in_matrix, ifstream& in )
