@@ -144,7 +144,7 @@ vector<unsigned char> RLE16C(const vector<uint16_t>&V){
 	for(uint64_t i(1);i<V.size();++i){
 		if(V[i]==pred){
 			count++;
-			if(count=254){
+			if(count==254){
 				res.push_back(min(pred/256,254));
 				res.push_back(min(pred%256,254));
 				res.push_back(count);
