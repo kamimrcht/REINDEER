@@ -26,7 +26,7 @@ while read -r filename threshold; do
     echo "$loc.fastq.gz" > $filename.in
     bcalm -in $filename.in -kmer-size 21 -abundance-min "$threshold" -out-dir bcalm2 -out-tmp bcalm2 -nb-cores 20
     mv $filename.unitigs.fa bcalm_results
-    echo "bcalm_results/$filename.unitigs.fa" >> fof_reindeer.lst
+    ls $PWD/bcalm_results/$filename.unitigs.fa >> fof_reindeer.lst
 done < file_list
 
 
