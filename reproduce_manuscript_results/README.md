@@ -2,9 +2,9 @@ Reproduce the results presented in REINDEER's manuscript
 ========================================================
 
 # Pre-requisites
-* BCALM2
-* parallel-fastq-dump
-* seqkit
+* [BCALM2](https://github.com/GATB/bcalm)
+* [parallel-fastq-dump](https://github.com/rvalieris/parallel-fastq-dump)
+* [seqkit](https://bioinf.shenwei.me/seqkit/download/)
 
 # Install REINDEER
 `git clone --recursive https://github.com/kamimrcht/REINDEER.git`
