@@ -132,6 +132,6 @@ In the third column, we observe that two numbers were given, separated by a `:` 
 
 # Reproduce the manuscript's results
 
-We provide a page with scripts to reproduce the results we show in our manuscript, link here.
+We provide a page with scripts to reproduce the results we show in our manuscript, link [here](https://github.com/kamimrcht/REINDEER/tree/master/reproduce_manuscript_results).
 
 
