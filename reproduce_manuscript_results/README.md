@@ -42,3 +42,13 @@ We got transcripts sequences by downloading Refseq transcripts from UCSC's hg38,
 
 Results will be available in `results_query_1000_on_2585/query_results/out_query_Reindeer0.out`
 
+# Query of oncogenes
+
+We will use the metadata associated with each sample as a proxy to determine if the sample is a cancer sample or not. Unfortunately as those metadata are not defined in a normalised way, we can only perform rudimentary full-text search. Such a search will also retrieve control samples that belong to a cancer experiment. Also, some experiments are small RNA-seq sequencing runs, in which our selected oncogenes won't be found.
+In spite of those limitations our expectations are that the ''cancer-related'' group of datasets will contain a higher proportion of true RNA-seq cancer datasets than the ''non cancer-related'' group.
+
+We systematically searched the term ''cancer'' or ''carcinogen'' in the metadata of the 2,585 RNA-seq and found it in 1,185 samples. Most of the time (1,112 samples) those samples' metadata also contained the term ''breast''. Thus 43% of the samples are cancer-related. We expect to find an over expression of oncogenes in those 1,185 samples compared to the ''`non cancer-related'' ones.
+
+We selected four oncogenes well known for their role in breast cancers [Perera et l. 2012, Song et al. 2017]: ERBB2, FOXM1, MYC, and PIK3CA.
+We launched REINDEER on the longest transcript of those genes. The transcript was split in 100bp long sequences, to be able to take into account matches on a few exons.
+We required at least 78% of the k-mers to be found in the split sequences. Among the sequences we kept the maximal count returned by REINDEER.
