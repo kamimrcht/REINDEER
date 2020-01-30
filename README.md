@@ -19,17 +19,21 @@ Then:
 
 `sh install.sh`
 
+Test can be run:
+
+`sh test.sh`
+
 ## Quick start
-Have a look at the file of file format in `test/fof.txt`.
+Have a look at the file of file format in `test/fof_unitigs.txt`.
 Then build the index:
 
-`./Reindeer --index -f test/fof.txt --bcalm`
+`./Reindeer --index -f test/fof_unitigs.txt --count -o quick_out`
 
 and query:
 
-`./Reindeer --query -q test/query_test.fa -l output_reindeer`
+`./Reindeer --query --count -q test/query_test.fa -l quick_out -o quick_query`
 
-Results should be in `output_reindeer/query_results`.
+Results should be in `quick_query/query_results/out_query_Reindeer0.out`.
 
 Help:
 
@@ -59,34 +63,20 @@ This allows to skip the first Bcalm step.
 
 `./Reindeer --index -f test/fof_unitigs.txt`
 
-Now if you have also previously built the main graph from all unitigs' k-mers, you can provide it as well. This allows to skip all Bcalm steps.
 
-`./Reindeer --index -f test/fof_unitigs.txt -g test/output_bcalm/union_graph.unitigs.fa`
+# Query
 
-# Index query
-
-* Use case 1: queries are in a fasta/fastq file.
-
-Simply provide the fasta query file to Reindeer using `-q`, along with the directory of index files that were generated during index construction (`output_reindeer` by default), using `-l':
+Simply provide the fasta query file (**single line**) to Reindeer using `-q`, along with the directory of index files that were generated during index construction (`output_reindeer` by default, can changed with `-o`), using `-l':
 
 `./Reindeer --query -q test/query_test.fa -l output_reindeer`
 
-* Use case 2: you'd like an interactive query, for instance for a web-service.
-
-In this case do not provide the query file, and Reindeer will automatically request one.
-
-Results are written in `out_query_BLight*.out`.
-
-When a query file is provided, * is replaced by 0.
-
-In interactive mode, if n queries are made, * equals 0 to n-1.
 
 # Index and query k-mers abundances
 
 In order to have k-mer abundances instead of presence/absence per indexed dataset, use `--count` option.
 
-`./Reindeer --index -f test/fof.txt --bcalm --count`
-` ./Reindeer --query -l output_reindeer -q test/query_test.fa --bcalm --count`
+`./Reindeer --index -f test/fof_unitigs.txt --count`
+`./Reindeer --query -l output_reindeer -q test/query_test.fa --count`
 
 
 
@@ -113,8 +103,35 @@ Finally, we can see that 100% of the k-mers from the queried sequence appear in 
 
 The output changes slightly:
 
->    >SRR10092187.6 HISEQ:815:HK2NNBCXY:1:1101:1224:2136 length=51 dataset1:66 dataset2:4
+>    >SRR10092187.6 HISEQ:815:HK2NNBCXY:1:1101:1224:2136 length=51 66 2:4
 
 This time, instead of percentages of present k-mers, the query counts per datasets are indicated.
-In this example, `dataset1:66` means that the queried k-mers correspond to a region which abundance is 66 in dataset 1.
+In this example, `66` means that the queried k-mers correspond to a region which abundance is 66 in dataset 1.
+
+In the third column, we observe that two numbers were given, separated by a `:` It means that the sequence spans 2 unitigs in the graph of dataset 2, so REINDEER reported the counts in these 2 unitigs.
+
+
+# Beta options
+
+## log counts/quantized counts
+
+
+`./Reindeer --index --count --log-count -f fof_unitigs.txt`
+
+`./Reindeer --index --count --quantization -f test/fof_unitigs.txt `
+
+
+## disk query
+
+`./Reindeer --index --count --disk-query -f fof_unitigs.txt`
+
+## input paired-end reads (to bcalm)
+
+
+`./Reindeer --index --count --paired-end --bcalm  -f fof.txt`
+
+# Reproduce the manuscript's results
+
+We provide a page with scripts to reproduce the results we show in our manuscript, link here.
+
 
