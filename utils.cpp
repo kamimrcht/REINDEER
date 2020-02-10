@@ -499,7 +499,7 @@ vector<string> split(const string &s, char delim){
 }
 
 
-void split(const string &s, char delim,vector<string>& res){
+void split(const string &s, char delim, vector<string>& res){
 	res.clear();
 	uint pred(0);
 	for(uint i(0);i<s.size();++i){
@@ -509,6 +509,24 @@ void split(const string &s, char delim,vector<string>& res){
 		}
 	}
 	res.push_back(s.substr(pred));
+}
+
+
+void split2(const string &s, char delim, vector<string>& res){
+	res.clear();
+	string word;
+	uint siz(s.size());
+	for(uint i(0);i<siz;++i){
+		if(s[i]==delim){
+			res.push_back(word);
+			word.clear();
+		}else{
+			word.push_back(s[i]);
+		}
+	}
+	if(word.size()>0){
+		res.push_back((word));
+	}
 }
 
 
