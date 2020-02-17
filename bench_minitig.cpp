@@ -92,7 +92,7 @@ int main(int argc, char ** argv){
 	if((input=="" and inputfof=="") or k==0){
 		cout
 		<<"Core arguments:"<<endl
-		<<"	-g graph file"<<endl
+		<<"	-f file of  file"<<endl
 		<<"	-q query file"<<endl
 		<<"	-k k value used for graph (31) "<<endl
 		<<"By default only presence benchmark is performed \nUse -h for hash benchmark or -a for a complete test and verification"<<endl
@@ -108,9 +108,14 @@ int main(int argc, char ** argv){
 	{
 		cout<<"I use -k "+to_string(k)+" -m  "+to_string(m1)+" -n  "+to_string(m2)+" -s  "+to_string(m3)+" -t "+to_string(c)+" -b "+to_string(bit)<<endl;
 		kmer_Set_Light ksl(k,m1,m2,m3,c,bit);
-		if(input!=""){
-			cout<<"Build index from file "<<input<<"in directory wdir (if it does not exists please create it)"<<endl;
-			ksl.construct_index(input,"wdir");
+		if(inputfof!=""){
+			cout<<"Build index from list of file "<<inputfof<<" in folder wdir (if it does not exist please create it) "<<endl;
+			//~ ksl.construct_index_fof(inputfof);
+			ksl.construct_index_fof(inputfof,"wdir",0,0);
+			//0 for colors
+			//1 for exact counts
+			//2 for binned counts
+			//3 for log counts
 		}
 
 		if(not query.empty()){

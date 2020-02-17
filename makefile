@@ -13,19 +13,10 @@ endif
 
 CFLAGS+=-std=c++11 -pipe -lz -fopenmp -msse4 ${WARNS}
 INC=blight.h bbhash.h common.h
-EXEC=bench_blight
+EXEC= bench_minitig bench_blight
 
 
 all: $(EXEC)
-
-Colored_De_Bruijn_graph_snippet: Colored_De_Bruijn_graph_snippet.o blight.o
-	$(CC) -o $@ $^ $(CFLAGS)
-
-interactive: interactive.o blight.o
-	$(CC) -o $@ $^ $(CFLAGS)
-
-Abundance_De_Bruijn_graph_snippet: Abundance_De_Bruijn_graph_snippet.o blight.o
-	$(CC) -o $@ $^ $(CFLAGS)
 
 bench_blight: bench_blight.o blight.o utils.o
 	$(CC) -o $@ $^ $(CFLAGS)
@@ -33,8 +24,11 @@ bench_blight: bench_blight.o blight.o utils.o
 bench_blight.o: bench_blight.cpp $(INC)
 	$(CC) -o $@ -c $< $(CFLAGS)
 
-merge: merge.o merge.o
+bench_minitig: bench_minitig.o blight.h minitig.o    blight.o    utils.o
 	$(CC) -o $@ $^ $(CFLAGS)
+
+bench_minitig.o: bench_minitig.cpp $(INC)
+	$(CC) -o $@ -c $< $(CFLAGS)
 
 split: split.o blight.o
 	$(CC) -o $@ $^ $(CFLAGS)
@@ -45,19 +39,10 @@ split.o: split.cpp $(INC)
 utils.o: utils.cpp $(INC)
 	$(CC) -o $@ -c $< $(CFLAGS)
 
-merge.o: merge.cpp $(INC)
-	$(CC) -o $@ -c $< $(CFLAGS)
-
-Colored_De_Bruijn_graph_snippet.o: Colored_De_Bruijn_graph_snippet.cpp $(INC)
-	$(CC) -o $@ -c $< $(CFLAGS)
-
-interactive.o: interactive.cpp $(INC)
-	$(CC) -o $@ -c $< $(CFLAGS)
-
-Abundance_De_Bruijn_graph_snippet.o: Abundance_De_Bruijn_graph_snippet.cpp $(INC)
-	$(CC) -o $@ -c $< $(CFLAGS)
-
 blight.o: blight.cpp $(INC)
+	$(CC) -o $@ -c $< $(CFLAGS)
+
+minitig.o: minitig.cpp  $(INC)
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 
