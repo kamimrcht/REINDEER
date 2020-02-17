@@ -49,12 +49,8 @@ struct KmerHasher
 
 struct kmer_context{
 	bool isdump;
-	// bool nextOK;
-	// bool prevOK;
-	// vector<kmer> next_kmers;
-	// vector<kmer> previous_kmers;
 	vector<uint16_t> count;
-	kmer minimizer;
+    string  RLE;
 };
 
 

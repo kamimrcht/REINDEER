@@ -21,6 +21,7 @@
 #include "zstr.hpp"
 #include "common.h"
 #include "robin_hood.h"
+#include "trle.h"
 
 
 using namespace std;
@@ -130,19 +131,12 @@ uint16_t kmer_Set_Light::parseCoverage_bin(const string& str){
 	while(str[i+pos+5]!=' '){
 		++i;
 	}
-	// cout<<"bin"<<(int) return_count_bin((uint16_t)stof(str.substr(pos+5,i)))<<endl;cin.get ();
 	return return_count_bin((uint16_t)stof(str.substr(pos+5,i)));
 }
 
 
 
-
-
-
-
-
 bool equal_nonull(const vector<uint16_t>& V1,const vector<uint16_t>& V2){
-	//~ return true;
 	if(V1.empty()){return false;}
 	if(V2.size()!=V1.size()){return false;}
 	for(uint i(0);i<V1.size();++i){
@@ -164,6 +158,15 @@ bool kmer_Set_Light::similar_count(const vector<uint16_t>& V1,const vector<uint1
 		}
 	}
 	return true;
+}
+
+
+
+void compress_kmer_context(kmer_context& kmc){
+    unsigned char comp[kmc.count.size()*2+1024];
+    uint32_t rle_length=trlec((unsigned char*)&kmc.count[0],kmc.count.size()*2,comp);
+    kmc.RLE.assign((const char*)comp,rle_length);
+    // kmc.count.clear();
 }
 
 
@@ -281,7 +284,7 @@ void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t 
 					kmer seq(str2num(sequence.substr(0,k))),rcSeq(rcb(seq)),canon(min_k(seq,rcSeq));
 					canon=(min_k(seq, rcSeq));
 					if(min2kmer2context[indice].count(canon)==0){
-						min2kmer2context[indice][canon]={false,bit_vector};
+						min2kmer2context[indice][canon]={false,bit_vector,""};
 					}
 					min2kmer2context[indice][canon].count[color] = coverage;
 					uint64_t sks=sequence.size();
@@ -290,7 +293,7 @@ void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t 
 						updateRCK(rcSeq,sequence[i+k]);
 						canon=(min_k(seq, rcSeq));
 						if(min2kmer2context[indice].count(canon)==0){
-							min2kmer2context[indice][canon]={false,bit_vector};
+							min2kmer2context[indice][canon]={false,bit_vector,""};
 						}
 						min2kmer2context[indice][canon].count[color] = coverage;
 					}
@@ -318,9 +321,9 @@ kmer kmer_Set_Light::select_good_successor(const  robin_hood::unordered_node_map
 		kmer targetc=canonize(target,k);
 		if(kmer2context.count(targetc)!=0){
 			if(kmer2context.at(targetc).isdump){continue;}
-			if(kmer2context.at(targetc).count==kc.count){
-				return target;
-			}
+            if(kmer2context.at(targetc).RLE==kc.RLE){
+                return target;
+            }
 		}
 	}
 	return -1;
@@ -336,6 +339,9 @@ vector<uint16_t> bit_vector(number_color,0);
 	uint64_t ms=min2kmer2context.size();
 	#pragma omp for schedule(static,ms/coreNumber)
 	for(uint i_set=(0);i_set<ms;i_set++){
+        for (auto& it: min2kmer2context[i_set]){
+            compress_kmer_context(it.second);
+        }
 		for (auto& it: min2kmer2context[i_set]){
 			if(not it.second.isdump){
 				it.second.isdump=true;

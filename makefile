@@ -1,4 +1,5 @@
-CC=g++
+CXX=g++
+CC=gcc
 
 DEBUG ?= 0
 ifeq ($(DEBUG), 1)
@@ -10,7 +11,7 @@ else
 	WARNS=
 endif
 
-
+CFLAGS2+= -w -Wall -std=gnu99 -DUSE_THREADS  -fstrict-aliasing -Iext $(DEFS)
 CFLAGS+=-std=c++11 -pipe -lz -fopenmp -msse4 ${WARNS}
 INC=blight.h bbhash.h common.h
 EXEC= bench_minitig bench_blight
@@ -19,31 +20,37 @@ EXEC= bench_minitig bench_blight
 all: $(EXEC)
 
 bench_blight: bench_blight.o blight.o utils.o
-	$(CC) -o $@ $^ $(CFLAGS)
+	$(CXX) -o $@ $^ $(CFLAGS)
 
 bench_blight.o: bench_blight.cpp $(INC)
-	$(CC) -o $@ -c $< $(CFLAGS)
+	$(CXX) -o $@ -c $< $(CFLAGS)
 
-bench_minitig: bench_minitig.o blight.h minitig.o    blight.o    utils.o
-	$(CC) -o $@ $^ $(CFLAGS)
+bench_minitig: bench_minitig.o blight.h minitig.o    blight.o    utils.o trlec.o
+	$(CXX) -o $@ $^ $(CFLAGS)
 
 bench_minitig.o: bench_minitig.cpp $(INC)
-	$(CC) -o $@ -c $< $(CFLAGS)
+	$(CXX) -o $@ -c $< $(CFLAGS)
 
 split: split.o blight.o
-	$(CC) -o $@ $^ $(CFLAGS)
+	$(CXX) -o $@ $^ $(CFLAGS)
 
 split.o: split.cpp $(INC)
-	$(CC) -o $@ -c $< $(CFLAGS)
+	$(CXX) -o $@ -c $< $(CFLAGS)
 
 utils.o: utils.cpp $(INC)
-	$(CC) -o $@ -c $< $(CFLAGS)
+	$(CXX) -o $@ -c $< $(CFLAGS)
 
 blight.o: blight.cpp $(INC)
-	$(CC) -o $@ -c $< $(CFLAGS)
+	$(CXX) -o $@ -c $< $(CFLAGS)
 
 minitig.o: minitig.cpp  $(INC)
-	$(CC) -o $@ -c $< $(CFLAGS)
+	$(CXX) -o $@ -c $< $(CFLAGS)
+
+trlec.o: trlec.c $(INC)
+	$(CC) -o $@ -c $< $(CFLAGS2)
+
+trled.o: trled.c $(INC)
+	$(CC) -o $@ -c $< $(CFLAGS2)
 
 
 clean:
