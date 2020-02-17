@@ -308,15 +308,15 @@ public:
 	uint64_t canonize(uint64_t x,uint64_t n);
 	kmer get_kmer(uint64_t pos);
 	void merge_super_buckets_mem(const string& input_file, uint64_t number_color, ofstream* out);
-    void get_monocolor_minitigs_mem(vector<robin_hood::unordered_flat_map<kmer,kmer_context>>&  min2kmer2context , ofstream* out, const vector<int32_t>& mini,uint64_t number_color);
+    void get_monocolor_minitigs_mem(vector<robin_hood::unordered_node_map<kmer,kmer_context>>&  min2kmer2context , ofstream* out, const vector<int32_t>& mini,uint64_t number_color);
 	void str2bool(const string& str,uint64_t mini);
 	void dump_and_destroy(const string& output_file);
 	bool similar_count(const vector<uint16_t>& V1,const vector<uint16_t>& V2);
 	void chd(const string& dir);
 	void merge_super_buckets_direct(const string& input_file, uint64_t number_color, ofstream* out);
   kmer regular_minimizer_pos(kmer seq,uint64_t& position);
-  kmer select_good_successor(const robin_hood::unordered_flat_map<kmer,kmer_context>& kmer2context,const kmer& canon);
-  kmer select_good_predecessor(robin_hood::unordered_flat_map<kmer,kmer_context>& kmer2context,const kmer& canon);
+  kmer select_good_successor(const robin_hood::unordered_node_map<kmer,kmer_context>& kmer2context,const kmer& canon);
+  kmer select_good_predecessor(robin_hood::unordered_node_map<kmer,kmer_context>& kmer2context,const kmer& canon);
   uint16_t parseCoverage(const string& str);
   void init_discretization_scheme();
   uint16_t parseCoverage_bin(const string& str);

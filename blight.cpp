@@ -471,7 +471,7 @@ void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t 
 	vector<uint16_t> bit_vector(number_color,0);
 	uint number_pass(1);
 	for(uint pass(0);pass<number_pass;++pass){
-		vector<robin_hood::unordered_flat_map<kmer,kmer_context>> min2kmer2context(minimizer_number.value()/number_superbuckets.value());
+		vector<robin_hood::unordered_node_map<kmer,kmer_context>> min2kmer2context(minimizer_number.value()/number_superbuckets.value());
 		uint64_t mms=min2kmer2context.size();
 		vector<int32_t> minimizers(mms,-1);
 		ifstream in(input_file);
@@ -482,7 +482,6 @@ void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t 
 			uint16_t coverage;
 			uint32_t min_int;
 			uint8_t sizel;
-			vector<string> splitted;
 			while(not in.eof() and in.good()){
 				#pragma omp critical
 				{
@@ -527,7 +526,7 @@ string nucleotides("ACGT");
 
 
 
-kmer kmer_Set_Light::select_good_successor(const  robin_hood::unordered_flat_map<kmer,kmer_context>& kmer2context,const kmer& start){
+kmer kmer_Set_Light::select_good_successor(const  robin_hood::unordered_node_map<kmer,kmer_context>& kmer2context,const kmer& start){
 	kmer canon=canonize(start,k);
 	if(kmer2context.count(canon)==0){return -1;}
 	kmer_context kc(kmer2context.at(canon));
@@ -537,7 +536,6 @@ kmer kmer_Set_Light::select_good_successor(const  robin_hood::unordered_flat_map
 		kmer targetc=canonize(target,k);
 		if(kmer2context.count(targetc)!=0){
 			if(kmer2context.at(targetc).isdump){continue;}
-			// if(color_mode!=0){
 			if(kmer2context.at(targetc).count==kc.count){
 				return target;
 			}
@@ -548,7 +546,7 @@ kmer kmer_Set_Light::select_good_successor(const  robin_hood::unordered_flat_map
 
 
 
-void kmer_Set_Light::get_monocolor_minitigs_mem(vector<robin_hood::unordered_flat_map<kmer,kmer_context>>&  min2kmer2context , ofstream* out, const vector<int32_t>& mini,uint64_t number_color){
+void kmer_Set_Light::get_monocolor_minitigs_mem(vector<robin_hood::unordered_node_map<kmer,kmer_context>>&  min2kmer2context , ofstream* out, const vector<int32_t>& mini,uint64_t number_color){
 vector<uint16_t> bit_vector(number_color,0);
 #pragma omp parallel num_threads(coreNumber)
 {
