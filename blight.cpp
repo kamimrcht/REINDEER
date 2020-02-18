@@ -779,10 +779,10 @@ int64_t kmer_Set_Light::kmer_to_hash(const kmer canon,kmer minimizer){
 	if(unlikely(all_mphf[minimizer/number_bucket_per_mphf].empty)){return -1;}
 	uint64_t hash=(all_mphf[minimizer/number_bucket_per_mphf].kmer_MPHF->lookup(canon));
 	uint64_t pos;
-	if(minimizer!=revhash(regular_minimizer_pos(canon,pos))%minimizer_number){
-		cout<<minimizer<<" "<<revhash(regular_minimizer_pos(canon,pos))%minimizer_number<<endl;
-			cout<<"NOP"<<endl;cin.get();
-	}
+	// if(minimizer!=revhash(regular_minimizer_pos(canon,pos))%minimizer_number){
+	// 	cout<<minimizer<<" "<<revhash(regular_minimizer_pos(canon,pos))%minimizer_number<<endl;
+	// 		cout<<"NOP"<<endl;cin.get();
+	// }
 	if(unlikely(hash == ULLONG_MAX)){
 		return -1;
 	}else{

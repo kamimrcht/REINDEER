@@ -186,7 +186,7 @@ public:
 		, m1(m1_val)
 		, m2(m1_val)
 		, m3(m3_val)
-		, minimizer_size_graph(m1+2)
+		, minimizer_size_graph(m1+3)
 		, coreNumber(coreNumber_val)
 		, bit_saved_sub(bit_to_save)
 
@@ -200,7 +200,7 @@ public:
 		, bucket_per_superBuckets(2*(m1-m3))
 		, positions_to_check(bit_to_save)
 	{
-    
+
 		all_buckets=new bucket_minimizer[minimizer_number.value()]();
 		all_mphf=new info_mphf[mphf_number.value()];
 		for(uint64_t i(0);i<mphf_number;++i){

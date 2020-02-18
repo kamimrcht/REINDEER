@@ -88,6 +88,7 @@ kmer nuc2intrc(char c){
 
 
   uint32_t revhash ( uint32_t x ) {
+	x+=1234567890;
 	x = ( ( x >> 16 ) ^ x ) * 0x2c1b3c6d;
 	x = ( ( x >> 16 ) ^ x ) * 0x297a2d39;
 	x = ( ( x >> 16 ) ^ x );
@@ -97,7 +98,7 @@ kmer nuc2intrc(char c){
 
 
   uint32_t unrevhash ( uint32_t x ) {
-				x+=1234567890;
+	x+=1234567890;
 	x = ( ( x >> 16 ) ^ x ) * 0x0cf0b109; // PowerMod[0x297a2d39, -1, 2^32]
 	x = ( ( x >> 16 ) ^ x ) * 0x64ea2d65;
 	x = ( ( x >> 16 ) ^ x );
@@ -107,6 +108,7 @@ kmer nuc2intrc(char c){
 
 
   uint64_t revhash ( uint64_t x ) {
+	x+=1234567890;
 	x = ( ( x >> 32 ) ^ x ) * 0xD6E8FEB86659FD93;
 	x = ( ( x >> 32 ) ^ x ) * 0xD6E8FEB86659FD93;
 	x = ( ( x >> 32 ) ^ x );
@@ -116,7 +118,7 @@ kmer nuc2intrc(char c){
 
 
   uint64_t unrevhash ( uint64_t x ) {
-				x+=1234567890;
+	x+=1234567890;
 	x = ( ( x >> 32 ) ^ x ) * 0xCFEE444D8B59A89B;
 	x = ( ( x >> 32 ) ^ x ) * 0xCFEE444D8B59A89B;
 	x = ( ( x >> 32 ) ^ x );
