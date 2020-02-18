@@ -168,6 +168,8 @@ void compress_kmer_context(kmer_context& kmc){
     kmc.RLE.assign((const char*)comp,rle_length);
     // kmc.count.clear();
 }
+uint64_t max_size_bucket(0);
+uint64_t min_size_bucket(10000000000);
 
 
 
@@ -223,6 +225,8 @@ void kmer_Set_Light::construct_index_fof(const string& input_file, const string&
 			cout<<"-"<<flush;
 		}
 	}
+	cout<<max_size_bucket<<endl;
+	cout<<min_size_bucket<<endl;
 	cout<<endl;
 	reset();
 
@@ -338,7 +342,6 @@ kmer kmer_Set_Light::select_good_successor(const  robin_hood::unordered_node_map
 }
 
 
-
 void kmer_Set_Light::get_monocolor_minitigs_mem(vector<robin_hood::unordered_node_map<kmer,kmer_context>>&  min2kmer2context , ofstream* out, const vector<int32_t>& mini,uint64_t number_color){
     vector<uint16_t> bit_vector(number_color,0);
     uint64_t size_bucket(0);
@@ -390,7 +393,13 @@ void kmer_Set_Light::get_monocolor_minitigs_mem(vector<robin_hood::unordered_nod
     	}
     	buffer.clear();
     }
-    cout<<size_bucket/1000  <<' ';
+	if(size_bucket>max_size_bucket){
+		max_size_bucket=size_bucket;
+	}
+	if(size_bucket<min_size_bucket){
+		min_size_bucket=size_bucket;
+	}
+	    cout<<size_bucket/1000  <<' ';
 }
 
 
