@@ -267,6 +267,7 @@ void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t 
 			uint16_t coverage;
 			uint32_t min_int;
 			uint8_t sizel;
+            bool stop(false);
 			while(not in.eof() and in.good()){
 				#pragma omp critical
 				{
@@ -276,13 +277,16 @@ void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t 
 					in.read(reinterpret_cast<char *>(&sizel), 1);
 					sequence.resize(sizel);
 					in.read(reinterpret_cast<char *>(&sequence[0]), sizel);
+                    minimizers[min_int%mms]=(min_int);
+                    if(in.eof()){stop=true;}
 				}
-					if(in.eof()){break;}
+                if(not stop){
 					uint64_t indice(min_int%mms);
 					if( (number_pass!=1) and (indice%number_pass)!=pass){continue;}
-					positions_mutex[indice%4096].lock();
+
 					kmer seq(str2num(sequence.substr(0,k))),rcSeq(rcb(seq)),canon(min_k(seq,rcSeq));
 					canon=(min_k(seq, rcSeq));
+                    positions_mutex[indice%4096].lock();
 					if(min2kmer2context[indice].count(canon)==0){
 						min2kmer2context[indice][canon]={false,bit_vector,""};
 					}
@@ -298,7 +302,8 @@ void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t 
 						min2kmer2context[indice][canon].count[color] = coverage;
 					}
 					positions_mutex[indice%4096].unlock();
-					minimizers[min_int%mms]=(min_int);
+                }
+
 			}
 		}
 		get_monocolor_minitigs_mem(min2kmer2context,out,minimizers,number_color);
