@@ -266,7 +266,7 @@ void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t 
 			uint32_t color;
 			uint16_t coverage;
 			uint32_t min_int;
-			uint8_t sizel;
+			uint8_t sizel(0);
             bool stop(false);
 			while(not in.eof() and in.good()){
 				#pragma omp critical
@@ -277,13 +277,16 @@ void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t 
 					in.read(reinterpret_cast<char *>(&sizel), 1);
 					sequence.resize(sizel);
 					in.read(reinterpret_cast<char *>(&sequence[0]), sizel);
-                    minimizers[min_int%mms]=(min_int);
-                    if(in.eof()){stop=true;}
+                    if(in.eof()){
+                        stop=true;
+                    }else{
+                        minimizers[min_int%mms]=(min_int);
+                    }
+
 				}
                 if(not stop){
 					uint64_t indice(min_int%mms);
 					if( (number_pass!=1) and (indice%number_pass)!=pass){continue;}
-
 					kmer seq(str2num(sequence.substr(0,k))),rcSeq(rcb(seq)),canon(min_k(seq,rcSeq));
 					canon=(min_k(seq, rcSeq));
                     positions_mutex[indice%4096].lock();
@@ -337,53 +340,57 @@ kmer kmer_Set_Light::select_good_successor(const  robin_hood::unordered_node_map
 
 
 void kmer_Set_Light::get_monocolor_minitigs_mem(vector<robin_hood::unordered_node_map<kmer,kmer_context>>&  min2kmer2context , ofstream* out, const vector<int32_t>& mini,uint64_t number_color){
-vector<uint16_t> bit_vector(number_color,0);
-#pragma omp parallel num_threads(coreNumber)
-{
-	string sequence, buffer,seq2dump,compact;
-	uint64_t ms=min2kmer2context.size();
-	#pragma omp for schedule(static,ms/coreNumber)
-	for(uint i_set=(0);i_set<ms;i_set++){
-        for (auto& it: min2kmer2context[i_set]){
-            compress_kmer_context(it.second);
-        }
-		for (auto& it: min2kmer2context[i_set]){
-			if(not it.second.isdump){
-				it.second.isdump=true;
-				auto colorV2dump(it.second.count);
-				kmer start=it.first;
-				seq2dump=kmer2str(start);
-				for(uint64_t step(0);step<2;step++){
-					while(true){
-						kmer next=select_good_successor(min2kmer2context[i_set],start);
-						if(next==(kmer)-1){break;}
-						compact=compaction(seq2dump,kmer2str(next),false);
-						if(compact.empty()){break;}
-						min2kmer2context[i_set].at(canonize(next,k)).isdump=true;
-						seq2dump=compact;
-						start=next;
-					}
-					start=rcb(it.first);
-					seq2dump=revComp(seq2dump);
-				}
-				buffer+=">"+to_string(mini[i_set])+color_coverage2str(colorV2dump)+"\n"+seq2dump+"\n";
-				if(buffer.size()>8000){
-					#pragma omp critical (monocolorFile)
-					{
-						*out<<buffer;
-					}
-					buffer.clear();
-				}
-			}
-		}
-		min2kmer2context[i_set].clear();
-	}
-	#pragma omp critical (monocolorFile)
-	{
-		*out<<buffer;
-	}
-	buffer.clear();
-}
+    vector<uint16_t> bit_vector(number_color,0);
+    uint64_t size_bucket(0);
+    #pragma omp parallel num_threads(coreNumber)
+    {
+    	string sequence, buffer,seq2dump,compact;
+    	uint64_t ms=min2kmer2context.size();
+    	#pragma omp for schedule(static,ms/coreNumber)
+    	for(uint i_set=(0);i_set<ms;i_set++){
+            for (auto& it: min2kmer2context[i_set]){
+                compress_kmer_context(it.second);
+            }
+    		for (auto& it: min2kmer2context[i_set]){
+    			if(not it.second.isdump){
+    				it.second.isdump=true;
+    				auto colorV2dump(it.second.count);
+    				kmer start=it.first;
+    				seq2dump=kmer2str(start);
+    				for(uint64_t step(0);step<2;step++){
+    					while(true){
+    						kmer next=select_good_successor(min2kmer2context[i_set],start);
+    						if(next==(kmer)-1){break;}
+    						compact=compaction(seq2dump,kmer2str(next),false);
+    						if(compact.empty()){break;}
+    						min2kmer2context[i_set].at(canonize(next,k)).isdump=true;
+    						seq2dump=compact;
+    						start=next;
+    					}
+    					start=rcb(it.first);
+    					seq2dump=revComp(seq2dump);
+    				}
+    				buffer+=">"+to_string(mini[i_set])+color_coverage2str(colorV2dump)+"\n"+seq2dump+"\n";
+    				if(buffer.size()>8000){
+    					#pragma omp critical (monocolorFile)
+    					{
+    						*out<<buffer;
+    					}
+    					buffer.clear();
+    				}
+    			}
+    		}
+            #pragma omp atomic
+            size_bucket+=min2kmer2context[i_set].size();
+    		min2kmer2context[i_set].clear();
+    	}
+    	#pragma omp critical (monocolorFile)
+    	{
+    		*out<<buffer;
+    	}
+    	buffer.clear();
+    }
+    cout<<size_bucket/1000  <<' ';
 }
 
 
@@ -413,106 +420,109 @@ void kmer_Set_Light::create_super_buckets_list(const vector<string>& input_files
 		omp_init_lock(&(lock[i]));
 	}
 
-	#pragma omp parallel for num_threads(coreNumber)
-	for(uint32_t i_file=0;i_file<input_files.size();++i_file){
-		auto inUnitigsread=new zstr::ifstream(input_files[i_file]);
-		if(not inUnitigsread->good()){
-			cout<<"Problem with files opening"<<endl;
-			continue;
-		}
+	#pragma omp parallel num_threads(coreNumber)
+    {
+        #pragma omp for
+    	for(uint32_t i_file=0;i_file<input_files.size();++i_file){
+    		auto inUnitigsread=new zstr::ifstream(input_files[i_file]);
+    		if(not inUnitigsread->good()){
+    			cout<<"Problem with files opening"<<endl;
+                delete inUnitigsread;
+    			continue;
+    		}
 
-		string ref,useless;
-		vector<string> buffer(number_superbuckets.value());
-		minimizer_type old_minimizer,minimizer;
-		while(not inUnitigsread->eof()){
-			ref=useless="";
-			getline(*inUnitigsread,useless);
-			getline(*inUnitigsread,ref);
-			if(ref.size()<k){
-				ref="";
-			}else{
-				#pragma omp atomic
-				read_kmer+=ref.size()-k+1;
-			}
-			//FOREACH UNITIG
-			if(not ref.empty() and not useless.empty()){
-				old_minimizer=minimizer=minimizer_number.value();
-				uint64_t last_position(0);
-				//FOREACH KMER
-				kmer seq(str2num(ref.substr(0,k)));
-				uint64_t position_min;
-				uint64_t min_seq=(str2num(ref.substr(k-minimizer_size_graph,minimizer_size_graph))),min_rcseq(rcbc(min_seq,minimizer_size_graph)),min_canon(min(min_seq,min_rcseq));
-				minimizer=regular_minimizer_pos(seq,position_min);
-				old_minimizer=minimizer;
-				uint64_t hash_min=unrevhash(minimizer);
-				uint64_t i(0);
-				for(;i+k<ref.size();++i){
-					updateK(seq,ref[i+k]);
-					updateM(min_seq,ref[i+k]);
-					updateRCM(min_rcseq,ref[i+k]);
-					min_canon=(min(min_seq,min_rcseq));
-					uint64_t new_h=unrevhash(min_canon);
-						//THE NEW mmer is a MINIMIZor
-					if(new_h<hash_min){
-						minimizer=(min_canon);
-						hash_min=new_h;
-						position_min=i+k-minimizer_size_graph+1;
-					}else{
-						//the previous minimizer is outdated
-						if(i>=position_min){
-							minimizer=regular_minimizer_pos(seq,position_min);
-							hash_min=unrevhash(minimizer);
-							position_min+=(i+1);
-						}else{
-						}
-					}
-					if(old_minimizer!=minimizer){
-						old_minimizer=(revhash(old_minimizer)%minimizer_number);
-						uint16_t cov(parseCoverage(useless));
-						uint8_t size_sk(i-last_position+k);
-						buffer[old_minimizer/bucket_per_superBuckets.value()].append(reinterpret_cast<char *> (&old_minimizer), 4);
-						buffer[old_minimizer/bucket_per_superBuckets.value()].append(reinterpret_cast<char *>(&i_file), 4);
-						buffer[old_minimizer/bucket_per_superBuckets.value()].append(reinterpret_cast<char *> (&cov), 2);
-						buffer[old_minimizer/bucket_per_superBuckets.value()].append(reinterpret_cast<char *> (&size_sk), 1);
-						buffer[old_minimizer/bucket_per_superBuckets.value()]+=ref.substr(last_position,i-last_position+k);
-						if(buffer[old_minimizer/bucket_per_superBuckets.value()].size()>80000){
-							omp_set_lock(&(lock[((old_minimizer))/bucket_per_superBuckets.value()]));
-							*(out_files[((old_minimizer))/bucket_per_superBuckets.value()])<<buffer[old_minimizer/bucket_per_superBuckets.value()];
-							omp_unset_lock(&(lock[((old_minimizer))/bucket_per_superBuckets.value()]));
-							buffer[old_minimizer/bucket_per_superBuckets.value()].clear();
-						}
-						last_position=i+1;
-						old_minimizer=minimizer;
-					}
-				}
-				if(ref.size()-last_position>k-1){
-					old_minimizer=(revhash(old_minimizer)%minimizer_number);
-					uint16_t cov(parseCoverage(useless));
-					uint8_t size_sk(ref.size()-last_position);
-					buffer[old_minimizer/bucket_per_superBuckets.value()].append((char *) &old_minimizer, 4);
-					buffer[old_minimizer/bucket_per_superBuckets.value()].append((char *) &i_file, 4);
-					buffer[old_minimizer/bucket_per_superBuckets.value()].append((char *) &cov, 2);
-					buffer[old_minimizer/bucket_per_superBuckets.value()].append((char *) &size_sk, 1);
-					buffer[old_minimizer/bucket_per_superBuckets.value()]+=ref.substr(last_position);
-					if(buffer[old_minimizer/bucket_per_superBuckets.value()].size()>80000){
-						omp_set_lock(&(lock[((old_minimizer))/bucket_per_superBuckets.value()]));
-						*(out_files[((old_minimizer))/bucket_per_superBuckets.value()])<<buffer[old_minimizer/bucket_per_superBuckets.value()];
-						omp_unset_lock(&(lock[((old_minimizer))/bucket_per_superBuckets.value()]));
-						buffer[old_minimizer/bucket_per_superBuckets.value()].clear();
-					}
-				}
-			}
-		}
-		for(uint64_t i(0);i<number_superbuckets.value();++i){
-			if(not buffer[i].empty()){
-				omp_set_lock(&(lock[i]));
-				*(out_files[i])<<buffer[i];
-				omp_unset_lock(&(lock[i]));
-			}
-		}
-		delete inUnitigsread;
-	}
-
+    		string ref,useless;
+    		vector<string> buffer(number_superbuckets.value());
+    		minimizer_type old_minimizer,minimizer;
+    		while(not inUnitigsread->eof()){
+    			ref=useless="";
+    			getline(*inUnitigsread,useless);
+    			getline(*inUnitigsread,ref);
+    			if(ref.size()<k){
+    				ref="";
+    			}else{
+    				#pragma omp atomic
+    				read_kmer+=ref.size()-k+1;
+    			}
+    			//FOREACH UNITIG
+    			if(not ref.empty() and not useless.empty()){
+    				old_minimizer=minimizer=minimizer_number.value();
+    				uint64_t last_position(0);
+    				//FOREACH KMER
+    				kmer seq(str2num(ref.substr(0,k)));
+    				uint64_t position_min;
+    				uint64_t min_seq=(str2num(ref.substr(k-minimizer_size_graph,minimizer_size_graph))),min_rcseq(rcbc(min_seq,minimizer_size_graph)),min_canon(min(min_seq,min_rcseq));
+    				minimizer=regular_minimizer_pos(seq,position_min);
+    				old_minimizer=minimizer;
+    				uint64_t hash_min=unrevhash(minimizer);
+    				uint64_t i(0);
+    				for(;i+k<ref.size();++i){
+    					updateK(seq,ref[i+k]);
+    					updateM(min_seq,ref[i+k]);
+    					updateRCM(min_rcseq,ref[i+k]);
+    					min_canon=(min(min_seq,min_rcseq));
+    					uint64_t new_h=unrevhash(min_canon);
+    						//THE NEW mmer is a MINIMIZER
+    					if(new_h<hash_min){
+    						minimizer=(min_canon);
+    						hash_min=new_h;
+    						position_min=i+k-minimizer_size_graph+1;
+    					}else{
+    						//the previous minimizer is outdated
+    						if(i>=position_min){
+    							minimizer=regular_minimizer_pos(seq,position_min);
+    							hash_min=unrevhash(minimizer);
+    							position_min+=(i+1);
+    						}else{
+    						}
+    					}
+    					if(old_minimizer!=minimizer){
+    						old_minimizer=(revhash(old_minimizer)%minimizer_number);
+    						uint16_t cov(parseCoverage(useless));
+    						uint8_t size_sk(i-last_position+k);
+    						buffer[old_minimizer/bucket_per_superBuckets.value()].append(reinterpret_cast<char *> (&old_minimizer), 4);
+    						buffer[old_minimizer/bucket_per_superBuckets.value()].append(reinterpret_cast<char *>(&i_file), 4);
+    						buffer[old_minimizer/bucket_per_superBuckets.value()].append(reinterpret_cast<char *> (&cov), 2);
+    						buffer[old_minimizer/bucket_per_superBuckets.value()].append(reinterpret_cast<char *> (&size_sk), 1);
+    						buffer[old_minimizer/bucket_per_superBuckets.value()]+=ref.substr(last_position,i-last_position+k);
+    						if(buffer[old_minimizer/bucket_per_superBuckets.value()].size()>80000){
+    							omp_set_lock(&(lock[((old_minimizer))/bucket_per_superBuckets.value()]));
+    							*(out_files[((old_minimizer))/bucket_per_superBuckets.value()])<<buffer[old_minimizer/bucket_per_superBuckets.value()];
+    							omp_unset_lock(&(lock[((old_minimizer))/bucket_per_superBuckets.value()]));
+    							buffer[old_minimizer/bucket_per_superBuckets.value()].clear();
+    						}
+    						last_position=i+1;
+    						old_minimizer=minimizer;
+    					}
+    				}
+    				if(ref.size()-last_position>k-1){
+    					old_minimizer=(revhash(old_minimizer)%minimizer_number);
+    					uint16_t cov(parseCoverage(useless));
+    					uint8_t size_sk(ref.size()-last_position);
+    					buffer[old_minimizer/bucket_per_superBuckets.value()].append((char *) &old_minimizer, 4);
+    					buffer[old_minimizer/bucket_per_superBuckets.value()].append((char *) &i_file, 4);
+    					buffer[old_minimizer/bucket_per_superBuckets.value()].append((char *) &cov, 2);
+    					buffer[old_minimizer/bucket_per_superBuckets.value()].append((char *) &size_sk, 1);
+    					buffer[old_minimizer/bucket_per_superBuckets.value()]+=ref.substr(last_position);
+    					if(buffer[old_minimizer/bucket_per_superBuckets.value()].size()>80000){
+    						omp_set_lock(&(lock[((old_minimizer))/bucket_per_superBuckets.value()]));
+    						*(out_files[((old_minimizer))/bucket_per_superBuckets.value()])<<buffer[old_minimizer/bucket_per_superBuckets.value()];
+    						omp_unset_lock(&(lock[((old_minimizer))/bucket_per_superBuckets.value()]));
+    						buffer[old_minimizer/bucket_per_superBuckets.value()].clear();
+    					}
+    				}
+    			}
+    		}
+    		for(uint64_t i(0);i<number_superbuckets.value();++i){
+    			if(not buffer[i].empty()){
+    				omp_set_lock(&(lock[i]));
+    				*(out_files[i])<<buffer[i];
+    				omp_unset_lock(&(lock[i]));
+    			}
+    		}
+    		delete inUnitigsread;
+    	}
+    }
 	for(uint64_t i(0);i<number_superbuckets;++i){
 		*out_files[i]<<flush;
 		delete(out_files[i]);
