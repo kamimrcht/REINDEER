@@ -328,7 +328,7 @@ void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t 
 						}
 						min2kmer2context[indice][canon].count.push_back({color,coverage});
 					}
-					if(inserted_elements>10000000){
+					if(inserted_elements>100000000){
 						#pragma omp critical
 						toobig=true;
 					}
