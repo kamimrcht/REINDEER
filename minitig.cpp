@@ -168,9 +168,12 @@ void compress_kmer_context(kmer_context& kmc){
     kmc.RLE.assign((const char*)comp,rle_length);
     // kmc.count.clear();
 }
+
+
 uint64_t max_size_bucket(0);
 uint64_t min_size_bucket(10000000000);
-
+uint64_t max_size_superbucket(0);
+uint64_t min_size_superbucket(10000000000);
 
 
 
@@ -225,9 +228,11 @@ void kmer_Set_Light::construct_index_fof(const string& input_file, const string&
 			cout<<"-"<<flush;
 		}
 	}
-	cout<<max_size_bucket<<endl;
-	cout<<min_size_bucket<<endl;
 	cout<<endl;
+	cout<<"max size bucket:	"<<max_size_bucket<<endl;
+	cout<<"min size bucket:	"<<min_size_bucket<<endl;
+	cout<<"max size superbucket:	"<<max_size_superbucket<<endl;
+	cout<<"min size superbucket:	"<<min_size_superbucket<<endl;
 	reset();
 
 
@@ -342,9 +347,10 @@ kmer kmer_Set_Light::select_good_successor(const  robin_hood::unordered_node_map
 }
 
 
+
 void kmer_Set_Light::get_monocolor_minitigs_mem(vector<robin_hood::unordered_node_map<kmer,kmer_context>>&  min2kmer2context , ofstream* out, const vector<int32_t>& mini,uint64_t number_color){
     vector<uint16_t> bit_vector(number_color,0);
-    uint64_t size_bucket(0);
+    uint64_t size_superbucket(0);
     #pragma omp parallel num_threads(coreNumber)
     {
     	string sequence, buffer,seq2dump,compact;
@@ -383,8 +389,17 @@ void kmer_Set_Light::get_monocolor_minitigs_mem(vector<robin_hood::unordered_nod
     				}
     			}
     		}
+			uint64_t size_bucket=min2kmer2context[i_set].size();
             #pragma omp atomic
-            size_bucket+=min2kmer2context[i_set].size();
+            size_superbucket+=size_bucket;
+			if(size_bucket>max_size_bucket){
+				// #pragma omp atomic
+				max_size_bucket=size_bucket;
+			}
+			if(size_bucket<min_size_bucket){
+				// #pragma omp atomic
+				min_size_bucket=size_bucket;
+			}
     		min2kmer2context[i_set].clear();
     	}
     	#pragma omp critical (monocolorFile)
@@ -393,13 +408,13 @@ void kmer_Set_Light::get_monocolor_minitigs_mem(vector<robin_hood::unordered_nod
     	}
     	buffer.clear();
     }
-	if(size_bucket>max_size_bucket){
-		max_size_bucket=size_bucket;
+	if(size_superbucket>max_size_superbucket){
+		max_size_superbucket=size_superbucket;
 	}
-	if(size_bucket<min_size_bucket){
-		min_size_bucket=size_bucket;
+	if(size_superbucket<min_size_superbucket){
+		min_size_superbucket=size_superbucket;
 	}
-	    cout<<size_bucket/1000  <<' ';
+	    cout<<size_superbucket/1000  <<' ';
 }
 
 
@@ -410,6 +425,7 @@ uint16_t kmer_Set_Light::parseCoverage(const string& str){
 	if(color_mode==2){return parseCoverage_bin(str);}
 	return parseCoverage_log2(str);
 }
+
 
 
 void kmer_Set_Light::create_super_buckets_list(const vector<string>& input_files){
