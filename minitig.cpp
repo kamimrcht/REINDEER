@@ -220,20 +220,19 @@ void kmer_Set_Light::construct_index_fof(const string& input_file, const string&
 	duration<double> time_span12 = duration_cast<duration<double>>(t2 - t1);
 	cout<<time_span12.count() << " seconds."<<endl;
 	{
-		ofstream out(working_dir+"_blmonocolor.fa",ios::app);
-		//~ #pragma omp parallel for num_threads(min(coreNumber,(uint64_t)4))
-		//~ #pragma omp parallel for num_threads((coreNumber)) schedule(static)
+		ofstream out(working_dir+"_blmonocolor.fa");
+		#pragma omp parallel for num_threads(coreNumber)
 		for(uint i_superbuckets=0; i_superbuckets<number_superbuckets.value(); ++i_superbuckets){
 			merge_super_buckets_mem(working_dir+"_blout"+to_string(i_superbuckets),fnames.size(),&out);
 			remove((working_dir+"_blsout"+to_string(i_superbuckets)).c_str());
 			cout<<"-"<<flush;
 		}
 	}
-	cout<<endl;
-	cout<<"max size bucket:	"<<max_size_bucket<<endl;
-	cout<<"min size bucket:	"<<min_size_bucket<<endl;
-	cout<<"max size superbucket:	"<<max_size_superbucket<<endl;
-	cout<<"min size superbucket:	"<<min_size_superbucket<<endl;
+	// cout<<endl;
+	// cout<<"max size bucket:	"<<max_size_bucket<<endl;
+	// cout<<"min size bucket:	"<<min_size_bucket<<endl;
+	// cout<<"max size superbucket:	"<<max_size_superbucket<<endl;
+	// cout<<"min size superbucket:	"<<min_size_superbucket<<endl;
 	reset();
 
 
@@ -241,6 +240,7 @@ void kmer_Set_Light::construct_index_fof(const string& input_file, const string&
 	cout<<"Monocolor minitig computed, now regular indexing start"<<endl;
 	duration<double> time_span32 = duration_cast<duration<double>>(t3 - t2);
 	cout<<time_span32.count() << " seconds."<<endl;
+	// exit(0);
 
 	create_super_buckets(working_dir+"_blmonocolor.fa");
 
@@ -289,7 +289,7 @@ void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t 
 			uint8_t sizel(0);
             bool stop(false);
 			while(not in.eof() and in.good() and not toobig){
-				#pragma omp critical
+				// #pragma omp critical
 				{
 					in.read(reinterpret_cast<char *>(&min_int), 4);
 					in.read(reinterpret_cast<char *>(&color), 4);
@@ -312,7 +312,7 @@ void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t 
                     positions_mutex[indice%4096].lock();
 					if(min2kmer2context[indice].count(canon)==0){
 						min2kmer2context[indice][canon]={false,{}};
-						#pragma omp atomic
+						// #pragma omp atomic
 						inserted_elements++;
 					}
 					min2kmer2context[indice][canon].count.push_back({color,coverage});
@@ -323,13 +323,13 @@ void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t 
 						canon=(min_k(seq, rcSeq));
 						if(min2kmer2context[indice].count(canon)==0){
 							min2kmer2context[indice][canon]={false,{}};
-							#pragma omp atomic
+							// #pragma omp atomic
 							inserted_elements++;
 						}
 						min2kmer2context[indice][canon].count.push_back({color,coverage});
 					}
 					if(inserted_elements>100000000){
-						#pragma omp critical
+						// #pragma omp critical
 						toobig=true;
 					}
 					positions_mutex[indice%4096].unlock();
@@ -376,15 +376,12 @@ kmer kmer_Set_Light::select_good_successor(const  robin_hood::unordered_node_map
 void kmer_Set_Light::get_monocolor_minitigs_mem(vector<robin_hood::unordered_node_map<kmer,kmer_context>>&  min2kmer2context , ofstream* out, const vector<int32_t>& mini,uint64_t number_color){
     vector<uint16_t> bit_vector(number_color,0);
     uint64_t size_superbucket(0);
-    #pragma omp parallel num_threads(coreNumber)
+    // #pragma omp parallel num_threads(coreNumber)
     {
     	string sequence, buffer,seq2dump,compact;
     	uint64_t ms=min2kmer2context.size();
-    	#pragma omp for schedule(static,ms/coreNumber)
+    	// #pragma omp for schedule(static,ms/coreNumber)
     	for(uint i_set=(0);i_set<ms;i_set++){
-            // for (auto& it: min2kmer2context[i_set]){
-            //     compress_kmer_context(it.second);
-            // }
     		for (auto& it: min2kmer2context[i_set]){
     			if(not it.second.isdump){
     				it.second.isdump=true;
@@ -414,32 +411,32 @@ void kmer_Set_Light::get_monocolor_minitigs_mem(vector<robin_hood::unordered_nod
     				}
     			}
     		}
-			uint64_t size_bucket=min2kmer2context[i_set].size();
-            #pragma omp atomic
-            size_superbucket+=size_bucket;
-			if(size_bucket>max_size_bucket){
-				// #pragma omp atomic
-				max_size_bucket=size_bucket;
-			}
-			if(size_bucket<min_size_bucket){
-				// #pragma omp atomic
-				min_size_bucket=size_bucket;
-			}
-    		min2kmer2context[i_set].clear();
+		// 	uint64_t size_bucket=min2kmer2context[i_set].size();
+        //     #pragma omp atomic
+        //     size_superbucket+=size_bucket;
+		// 	if(size_bucket>max_size_bucket){
+		// 		// #pragma omp atomic
+		// 		max_size_bucket=size_bucket;
+		// 	}
+		// 	if(size_bucket<min_size_bucket){
+		// 		// #pragma omp atomic
+		// 		min_size_bucket=size_bucket;
+		// 	}
+    	// 	min2kmer2context[i_set].clear();
     	}
     	#pragma omp critical (monocolorFile)
     	{
-    		*out<<buffer;
+    		*out<<buffer<<flush;
     	}
     	buffer.clear();
     }
-	if(size_superbucket>max_size_superbucket){
-		max_size_superbucket=size_superbucket;
-	}
-	if(size_superbucket<min_size_superbucket){
-		min_size_superbucket=size_superbucket;
-	}
-	    cout<<size_superbucket/1000  <<' ';
+	// if(size_superbucket>max_size_superbucket){
+	// 	max_size_superbucket=size_superbucket;
+	// }
+	// if(size_superbucket<min_size_superbucket){
+	// 	min_size_superbucket=size_superbucket;
+	// }
+	//     cout<<size_superbucket/1000  <<' ';
 }
 
 
