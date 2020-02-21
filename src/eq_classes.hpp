@@ -91,14 +91,40 @@ void dump_compressed_vector_bucket(vector<uint16_t>& counts, int64_t minitig_id,
 	else
 		n = colors.size();
 	uint nn(n  + 1024);
+	//cout << "before char ";
+	//for (auto&& v : counts)
+	//	cout << v;
+	//cout << endl;
 	unsigned char comp[nn];
+	
 	if (record_counts)
 		in = (unsigned char*)&counts[0];
 	else
 		in = (unsigned char*)&colors[0];
 	unsigned compr_vector_size;
+	//cout << "before coding " ;
+	//for (uint i(0); i < counts.size()*2; ++i){
+		//cout << *in[i];
+	//}
+	//cout << *in << endl;
+	//cout << endl;
 	compr_vector_size = trlec(in, n, comp) ;
-
+	//cout << "compr vec size " << compr_vector_size << " compr " ;
+	for (uint i(0); i < compr_vector_size; ++i)
+	{
+	//	cout << comp[i];
+	}
+	//cout << endl;
+	//// test
+	unsigned char * decod = new unsigned char[counts.size() *2 + 1024];
+	auto s = trled(&comp[0], compr_vector_size, decod, counts.size()*2 );
+	//cout <<"decoded size " <<  s << " decoded ";
+	for (uint i(0); i < counts.size()*2; ++i)
+	{
+	//	cout << (uint)decod[i] << " ";
+	}
+	//cout << endl;
+	//
 	uint32_t bucket_nb;
 	// hash bit from the compressed counts to choose the bucket
 	if (compr_vector_size >= 8){

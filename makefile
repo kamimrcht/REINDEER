@@ -24,11 +24,15 @@ EXEC=Reindeer
 
 all: $(EXEC)
 
-Reindeer: main.o blight.o utils.o trlec.o trled.o
+Reindeer: main.o blight.o utils.o trlec.o trled.o minitig.o
 	$(CXX) -o $@ $^ $(CFLAGS)
 
 main.o: main.cpp $(INC)
 	$(CXX) -o $@ -c $< $(CFLAGS)
+
+minitig.o: blight/minitig.cpp $(INC)
+	$(CXX) -o $@ -c $< $(CFLAGS)
+
 
 blight.o: blight/blight.cpp $(INC)
 	$(CXX) -o $@ -c $< $(CFLAGS)

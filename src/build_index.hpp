@@ -198,6 +198,7 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 				counts = get_counts_minitigs(header);
 			else
 				colors = get_colors_minitigs(header);
+			
 			minitig_id.clear();
 			if (minitig[0] == 'A' or minitig[0] == 'C' or minitig[0] == 'G' or minitig[0] == 'T')
 			{

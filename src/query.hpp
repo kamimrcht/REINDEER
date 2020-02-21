@@ -43,15 +43,23 @@ using namespace chrono;
 unsigned char* decode_vector(unsigned char* minitig_counts, unsigned vector_size, uint64_t color_number, bool record_counts)
 {
 	unsigned char* decoded_vector;
+	unsigned sz;
 	if (record_counts)
 	{
-		decoded_vector= new unsigned char[color_number*2 + 1024];
-		auto sz = trled(minitig_counts, vector_size, decoded_vector, color_number*2);
+		decoded_vector= new unsigned char[color_number*2 + 4096];
+		 sz = trled(minitig_counts, vector_size, decoded_vector, color_number*2);
+	
+	//cout << "decoded " << color_number*2 << " " << sz << " " << vector_size << endl;
+	//for (uint i(0); i < color_number*2; ++i){
+	
+	//	cout << (uint) decoded_vector[i] << " ";
+	//}
+	//cout << endl;
 	}
 	else
 	{
 		decoded_vector= new unsigned char[color_number + 1024];
-		auto sz = trled(minitig_counts, vector_size, decoded_vector, color_number);
+		 sz = trled(minitig_counts, vector_size, decoded_vector, color_number);
 	}
 	return decoded_vector;
 }
@@ -161,6 +169,7 @@ void get_colors_counts_query_eq_classes(vector<int64_t>& kmer_ids,   uint64_t co
 	unsigned char* color;
 	color = new unsigned char[2*color_number+1204];
 	unsigned size;
+	//uint count(0);
 	int64_t lastId(-1);
 	vector<uint16_t> qcounts, lastV;
 	vector<uint8_t> qcolors;
@@ -169,9 +178,9 @@ void get_colors_counts_query_eq_classes(vector<int64_t>& kmer_ids,   uint64_t co
 		if(kmer_ids[i]>=0)
 		{
 			// no need to compute for a kmer if it comes from the same minitig than the previous, just copy the result
-			if ((int64_t) kmer_ids[i] == lastId)
+			if ( kmer_ids[i] == lastId)
 			{
-				lastId = (int64_t) kmer_ids[i];
+				lastId = kmer_ids[i];
 				query_counts.push_back(lastV);
 			}
 			else
@@ -197,11 +206,24 @@ void get_colors_counts_query_eq_classes(vector<int64_t>& kmer_ids,   uint64_t co
 				}
 				else
 				{
+					
 					pos = get_matrix_line_query(kmer_ids[i], color, size, position_in_file, compr_minitig_color);
+					//cout << "compr" << endl;
+					//for( uint y(0); y < compr_minitig_color_size[pos]; ++y)
+					//{
+					//	cout << compr_minitig_color[pos][y] ;
+					//}
+					//cout << endl << "pos " << pos << endl;
 					lo = decode_vector((unsigned char*)&compr_minitig_color[pos][0], compr_minitig_color_size[pos], color_number, record_counts);
 					if (record_counts)
 					{
-						qcounts = count_string_to_count_vector(lo, compr_minitig_color_size[pos]);
+						qcounts = count_string_to_count_vector(lo, color_number*2);
+						//cout << "counts" << endl;
+						//for (auto&& xx : qcounts)
+						//{
+						//	cout << xx << " ";
+						//}
+						//cout << endl;
 					}
 					else
 					{
@@ -214,11 +236,16 @@ void get_colors_counts_query_eq_classes(vector<int64_t>& kmer_ids,   uint64_t co
 				}
 				lastV = qcounts;
 				if (not qcounts.empty())
+				{
 					query_counts.push_back( qcounts );
+				//	cout << "ok" << endl;
+				}
 				
 			}
+		//++count;
 		}
 	}
+	//cout << count << " ";
 	delete color;
 	in.close();
 }
@@ -230,14 +257,15 @@ void get_colors_counts(vector<int64_t>& kmer_ids, bool record_counts, uint64_t c
 	vector<uint16_t> counts;
 	int64_t lastId(-1);
 	vector<uint16_t> qcounts, lastV;
-	for(uint64_t i(0);i<kmer_ids.size();++i)
+	//uint count(0);
+	for(int64_t i(0);i<kmer_ids.size();++i)
 	{
 		if(kmer_ids[i]>=0)
 		{
 			// no need to compute for a kmer if it comes from the same minitig than the previous, just copy the result
-			if ((int64_t) kmer_ids[i] == lastId)
+			if ( kmer_ids[i] == lastId)
 			{
-				lastId = (int64_t) kmer_ids[i];
+				lastId = kmer_ids[i];
 				query_counts.push_back(lastV);
 			}
 			else
@@ -246,9 +274,13 @@ void get_colors_counts(vector<int64_t>& kmer_ids, bool record_counts, uint64_t c
 				lastV = qcounts;
 				if (not qcounts.empty())
 					query_counts.push_back( qcounts );
+		
 			}
+			//count++;
 		}
+
 	}
+	//cout << count << " ";
 }
 
 
@@ -257,11 +289,13 @@ void write_count_output(bool record_counts, vector<vector<uint16_t>>& query_coun
 {
 	string nc("*");
 	vector<string> last(color_number,"*");
+	//cout << "nc" << endl;
 	for (auto&& c: query_counts)
 	{
 		for (uint color(0); color < c.size(); ++color)
 		{
 			nc = to_string(c[color]);
+			//cout << nc ;
 			if (nc == "0")
 					nc = "*";
 			if (last[color] != nc )
@@ -271,6 +305,7 @@ void write_count_output(bool record_counts, vector<vector<uint16_t>>& query_coun
 				last[color] = nc;
 			}
 		}
+		//cout << endl;
 	}
 	for (uint str(0); str<toW.size(); ++str)
 	{
@@ -291,7 +326,7 @@ void write_count_output(bool record_counts, vector<vector<uint16_t>>& query_coun
 	}
 }
 
-void write_results_below_threshold(string& toWrite, vector<vector<uint16_t>>& query_counts, uint64_t color_number , vector<string>& toW, vector<string>& color_counts,  string& header, bool record_counts, uint threshold, string& line, uint k)
+void write_results_above_threshold(string& toWrite, vector<vector<uint16_t>>& query_counts, uint64_t color_number , vector<string>& toW, vector<string>& color_counts,  string& header, bool record_counts, uint threshold, string& line, uint k)
 {
 	vector<double_t> percent(color_number, 0);
 	
@@ -326,7 +361,7 @@ void write_output(vector<int64_t>& kmers_colors, string& toWrite, bool record_re
 	vector<string> color_counts;
 	vector<string> toW(color_number,"");
 	write_count_output(record_counts, query_counts, color_number, toW, color_counts );
-	write_results_below_threshold( toWrite,query_counts, color_number , toW,  color_counts,   header,  record_counts, threshold, line, k);
+	write_results_above_threshold( toWrite,query_counts, color_number , toW,  color_counts,   header,  record_counts, threshold, line, k);
 }
 
 
