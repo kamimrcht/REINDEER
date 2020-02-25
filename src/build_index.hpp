@@ -313,7 +313,7 @@ void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, string& colo
 	if (not exists_test(output +"/_blmonocolor.fa"))
 	{
 		
-		cout << "Minitig coloring..."<< endl;
+		cout << "Minitigs and index constuction..."<< endl;
 		// apply minitig merge (-> MMM) with rule regarding colors or counts
 		if (record_counts)
 		{
@@ -344,13 +344,14 @@ void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, string& colo
 	vector<unsigned> compr_minitig_color_size;
 	long eq_class_nb(0);
 	string s("");
+	cout << "Building colors and equivalence classes matrix to be written on disk..." << endl;
 	do_coloring(color_load_file, color_dump_file, fof, &ksl, record_counts, record_reads, k, color_number, nb_threads, exact, output, compr_minitig_color, compr_minitig_color_size, do_query_on_disk, s, eq_class_nb);
 	high_resolution_clock::time_point t12 = high_resolution_clock::now();
 	duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
-	cout<<"Coloration done: "<< time_span12.count() << " seconds."<<endl;
+	cout<<"Matrix done: "<< time_span12.count() << " seconds."<<endl;
 	high_resolution_clock::time_point t2 = high_resolution_clock::now();
 	
-	cout << "Dump index..."<< endl;
+	cout << "Dumping index..."<< endl;
 	ksl.dump_disk(output + "/reindeer_index.gz");
 	high_resolution_clock::time_point t13 = high_resolution_clock::now();
 	if (delete_minitig_file)
@@ -360,7 +361,6 @@ void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, string& colo
 	}
 	duration<double> time_span13 = duration_cast<duration<double>>(t13 - t2);
 	cout<<"Index written on disk: "<< time_span13.count() << " seconds."<<endl;
-
 }
 
 

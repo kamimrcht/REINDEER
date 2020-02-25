@@ -110,19 +110,19 @@ void dump_compressed_vector_bucket(vector<uint16_t>& counts, int64_t minitig_id,
 	//cout << endl;
 	compr_vector_size = trlec(in, n, comp) ;
 	//cout << "compr vec size " << compr_vector_size << " compr " ;
-	for (uint i(0); i < compr_vector_size; ++i)
-	{
+	//for (uint i(0); i < compr_vector_size; ++i)
+	//{
 	//	cout << comp[i];
-	}
+	//}
 	//cout << endl;
 	//// test
-	unsigned char * decod = new unsigned char[counts.size() *2 + 1024];
-	auto s = trled(&comp[0], compr_vector_size, decod, counts.size()*2 );
+	//unsigned char * decod = new unsigned char[counts.size() *2 + 1024];
+	//auto s = trled(&comp[0], compr_vector_size, decod, counts.size()*2 );
 	//cout <<"decoded size " <<  s << " decoded ";
-	for (uint i(0); i < counts.size()*2; ++i)
-	{
+	//for (uint i(0); i < counts.size()*2; ++i)
+	//{
 	//	cout << (uint)decod[i] << " ";
-	}
+	//}
 	//cout << endl;
 	//
 	uint32_t bucket_nb;
