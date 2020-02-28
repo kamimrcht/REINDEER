@@ -30,9 +30,8 @@ Reindeer: main.o blight.o utils.o trlec.o trled.o minitig.o
 main.o: main.cpp $(INC)
 	$(CXX) -o $@ -c $< $(CFLAGS)
 
-minitig.o: blight/minitig.cpp $(INC)
+minitig.o: src/minitig.cpp $(INC)
 	$(CXX) -o $@ -c $< $(CFLAGS)
-
 
 blight.o: blight/blight.cpp $(INC)
 	$(CXX) -o $@ -c $< $(CFLAGS)
@@ -49,6 +48,5 @@ trled.o: trle/trled.c $(INC)
 clean:
 	rm -rf trlec.o trled.o utils.o main.o blight.o
 	rm -rf $(EXEC)
-
 
 rebuild: clean $(EXEC)
