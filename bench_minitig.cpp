@@ -111,7 +111,7 @@ int main(int argc, char ** argv){
 		if(inputfof!=""){
 			cout<<"Build index from list of file "<<inputfof<<" in folder wdir (if it does not exist please create it) "<<endl;
 			//~ ksl.construct_index_fof(inputfof);
-			ksl.construct_index_fof(inputfof,"wdir",0,0);
+			ksl.construct_index_fof(inputfof,"wdir",0);
 			//0 for colors
 			//1 for exact counts
 			//2 for binned counts
