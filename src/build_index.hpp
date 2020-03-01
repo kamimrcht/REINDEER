@@ -319,19 +319,19 @@ void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, string& colo
 		{
 			if (quantize)
 			{
-				ksl.construct_index_fof(fof, output, 2, 0);
+				ksl.construct_index_fof(fof, output, 2);
 			}
 			else
 			{
 				if (do_log)
-					ksl.construct_index_fof(fof, output, 3, 0);
+					ksl.construct_index_fof(fof, output, 3);
 				else
-					ksl.construct_index_fof(fof, output, 1, 0);
+					ksl.construct_index_fof(fof, output, 1);
 			}
 		}
 		else
 		{
-			ksl.construct_index_fof(fof, output, 0, 0);
+			ksl.construct_index_fof(fof, output, 0);
 		}
 	} 
 	else 

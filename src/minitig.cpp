@@ -179,15 +179,12 @@ uint64_t min_size_superbucket(10000000000);
 
 
 
-void kmer_Set_Light::construct_index_fof(const string& input_file, const string& tmp_dir, int colormode, double max_divergence){
+void kmer_Set_Light::construct_index_fof(const string& input_file, const string& tmp_dir, int colormode){
 	omp_set_nested(2);
 	if(not tmp_dir.empty()){
 		working_dir=tmp_dir+"/";
 	}
 	color_mode=colormode;
-	if(color_mode==1){
-		max_divergence_count=(max_divergence/100)+1;
-	}
 	if(color_mode==2){
 		init_discretization_scheme();
 	}
@@ -237,7 +234,7 @@ void kmer_Set_Light::construct_index_fof(const string& input_file, const string&
 
 
 	high_resolution_clock::time_point t3 = high_resolution_clock::now();
-	cout<<"Monocolor minitig computed, now regular indexing start"<<endl;
+	cout<<"\nMonocolor minitig computed, now regular indexing start"<<endl;
 	duration<double> time_span32 = duration_cast<duration<double>>(t3 - t2);
 	cout<<time_span32.count() << " seconds."<<endl;
 	// exit(0);
@@ -373,15 +370,21 @@ kmer kmer_Set_Light::select_good_successor(const  robin_hood::unordered_node_map
 
 
 
+
+
+
 void kmer_Set_Light::get_monocolor_minitigs_mem(vector<robin_hood::unordered_node_map<kmer,kmer_context>>&  min2kmer2context , ofstream* out, const vector<int32_t>& mini,uint64_t number_color){
-    vector<uint16_t> bit_vector(number_color,0);
-    uint64_t size_superbucket(0);
+    // vector<uint16_t> bit_vector(number_color,0);
+    // uint64_t size_superbucket(0);
     // #pragma omp parallel num_threads(coreNumber)
     {
     	string sequence, buffer,seq2dump,compact;
     	uint64_t ms=min2kmer2context.size();
     	// #pragma omp for schedule(static,ms/coreNumber)
     	for(uint i_set=(0);i_set<ms;i_set++){
+			for (auto& it: min2kmer2context[i_set]){
+				sort(it.second.count.begin(),it.second.count.end());
+			}
     		for (auto& it: min2kmer2context[i_set]){
     			if(not it.second.isdump){
     				it.second.isdump=true;
