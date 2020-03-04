@@ -108,60 +108,6 @@ void build_matrix(string& color_load_file, string& color_dump_file, string& fof,
 
 
 
-void build_matrix_for_disk_query(string& color_load_file, string& color_dump_file, string& fof, kmer_Set_Light* ksl, bool record_counts, bool record_reads, uint k, uint64_t& color_number, uint nb_threads, bool exact, string& output, vector <unsigned char*>& compressed_colors, vector <unsigned>& compressed_colors_size, string& output_file)
-{
-	//~ auto minitigs_file = new zstr::ifstream(output +"/_blmonocolor.fa");
-	ifstream  minitigs_file(output +"/_blmonocolor.fa");
-	uint64_t nb_minitigs(0);
-	ofstream out(output_file);
-	ofstream out_nb(output_file+"_minitig_nb");
-	//~ ofstream out_position(output_file+"_position");
-	mutex mm;
-	out.write(reinterpret_cast<char*>(&color_number),sizeof(uint64_t)); // number of colors
-	uint nb_treated_minitigs(0);
-	#pragma omp parallel num_threads(nb_threads)
-	{
-		vector<int64_t> minitig_id;
-		vector<uint16_t> counts;
-		string header,minitig, buffer;
-		unsigned char *in;
-		while(not minitigs_file.eof())
-		{
-			#pragma omp critical(infile)
-			{
-				getline(minitigs_file, header);
-				getline(minitigs_file, minitig);
-
-			}
-			if(minitig.empty() or header.empty()){continue;}
-			counts = get_counts_minitigs(header);
-			minitig_id.clear();
-			if (minitig[0] == 'A' or minitig[0] == 'C' or minitig[0] == 'G' or minitig[0] == 'T')
-			{
-				mm.lock();
-				++nb_minitigs;
-				minitig_id=ksl->get_rank_query(minitig.substr(0,k)); // all kmers have the same id so we only query one
-				mm.unlock();
-				if((not minitig_id.empty()) and minitig_id.back()>=0)
-				{
-					mm.lock();
-					dump_compressed_vector(counts, minitig_id.back(), out, in);
-					nb_treated_minitigs++;
-					mm.unlock();
-				}
-			}
-		}
-		delete(in);
-	}
-	out_nb.write(reinterpret_cast<char*>(&nb_minitigs),sizeof(uint64_t));
-	minitigs_file.close();
-	out.close();
-	out_nb.close();
-	//~ out_position.close();
-}
-
-
-
 // dispatch count vectors in files. Similar counts go in similar files
 void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_file, string& fof, kmer_Set_Light* ksl, bool record_counts, bool record_reads, uint k, uint64_t& color_number, uint nb_threads, bool exact, string& output, vector <unsigned char*>& compressed_colors, vector <unsigned>& compressed_colors_size, string& output_file, bool do_query_on_disk )
 {
@@ -285,10 +231,7 @@ void do_coloring(string& color_load_file, string& color_dump_file, string& fof, 
 	} 
 	else  //indexing
 	{
-		//~ if (do_query_on_disk)
-			//~ build_matrix_for_disk_query(color_load_file,  color_dump_file,  fof,  ksl,  record_counts, record_reads,  k, color_number, nb_threads,  exact, output, compr_minitig_color, compr_minitig_color_size, color_dump_file);
-		//~ else 
-			write_matrix_in_bucket_files(color_load_file,  color_dump_file,  fof,  ksl,  record_counts, record_reads,  k, color_number, nb_threads,  exact, output, compr_minitig_color, compr_minitig_color_size, color_dump_file, do_query_on_disk);
+		write_matrix_in_bucket_files(color_load_file,  color_dump_file,  fof,  ksl,  record_counts, record_reads,  k, color_number, nb_threads,  exact, output, compr_minitig_color, compr_minitig_color_size, color_dump_file, do_query_on_disk);
 	}
 }
 

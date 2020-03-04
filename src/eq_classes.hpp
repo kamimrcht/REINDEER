@@ -5,6 +5,7 @@
 #include "../trle/trle.h"
 #include "../blight/utils.h"
 #include "../blight/robin_hood.h"
+#include "matrix_operation.hpp"
 
 using namespace std;
 
@@ -32,128 +33,7 @@ void sort_vectors(vector<count_vector>& matrix_lines)
 }
 
 
-//~ uint32_t xorshift ( uint32_t x ) {
-	//~ x = ( ( x >> 16 ) ^ x ) * 0x2c1b3c6d;
-	//~ x = ( ( x >> 16 ) ^ x ) * 0x297a2d39;
-	//~ x = ( ( x >> 16 ) ^ x );
-	//~ return x;
-//~ }
 
-  uint64_t xorshift ( uint64_t x ) {
-	x = ( ( x >> 32 ) ^ x ) * 0xCFEE444D8B59A89B;
-	x = ( ( x >> 32 ) ^ x ) * 0xCFEE444D8B59A89B;
-	x = ( ( x >> 32 ) ^ x );
-	return x;
-}
-
-
-void dump_compressed_vector_bucket_disk_query(vector<uint16_t>& counts, int64_t minitig_id, unsigned char *in,vector<ofstream*>& bucket_files,  vector<uint8_t>& colors, bool record_counts)
-{
-
-	vector<unsigned char> comp;
-	unsigned compr_vector_size;
-	int64_t tw(minitig_id);
-	if (record_counts)
-	{
-		uint n(counts.size()*2);
-		uint nn(counts.size()*2 + 1024);
-		comp = RLE16C(counts); //homemade RLE with escape character 255
-	}
-	else
-	{
-		comp = RLE8C(colors);
-	}
-	compr_vector_size = comp.size();
-	uint32_t bucket_nb;
-	// hash bit from the compressed counts to choose the bucket
-	if (compr_vector_size >= 8){
-		bucket_nb = (xorshift((uint64_t)comp[0] + (uint64_t)comp[1]*256 +  (uint64_t)comp[2]*256*256 + (uint64_t)comp[3]*256*256*256 + (uint64_t)comp[4]*256*256*256*256 + (uint64_t)comp[5]*256*256*256*256*256 + (uint64_t)comp[6]*256*256*256*256*256*256 + (uint64_t)comp[7]*256*256*256*256*256*256*256 ) % bucket_files.size());
-	
-	}else if (compr_vector_size >= 4){
-		bucket_nb = (xorshift((uint64_t)comp[0] + (uint64_t)comp[1]*256 +  (uint64_t)comp[2]*256*256 + (uint64_t)comp[3]*256*256*256  ) % bucket_files.size());
-	}else{
-		bucket_nb = (xorshift((uint64_t)comp[0]) % bucket_files.size());
-	}
-	//write info in the bucket
-	long position(bucket_files[bucket_nb]->tellp());
-	bucket_files[bucket_nb]->write(reinterpret_cast<char*>(&compr_vector_size),sizeof(unsigned)); //size of the compressed information
-	bucket_files[bucket_nb]->write(reinterpret_cast<char*>(&tw),sizeof(int64_t)); //index
-	bucket_files[bucket_nb]->write((const char*)&comp[0],(compr_vector_size)); // compressed count vector	
-	//~ out_positions.write(reinterpret_cast<char*>(&position), sizeof(long)); //position in vector of count vectors
-}
-
-void dump_compressed_vector_bucket(vector<uint16_t>& counts, int64_t minitig_id, unsigned char *in,  vector<ofstream*>& bucket_files, vector<uint8_t>& colors, bool record_counts )
-{
-	//get the bucket number
-	uint n;
-	if (record_counts)
-		n = counts.size()*2;
-	else
-		n = colors.size();
-	uint nn(n  + 1024);
-	//cout << "before char ";
-	//for (auto&& v : counts)
-	//	cout << v;
-	//cout << endl;
-	unsigned char comp[nn];
-	
-	if (record_counts)
-		in = (unsigned char*)&counts[0];
-	else
-		in = (unsigned char*)&colors[0];
-	unsigned compr_vector_size;
-	//cout << "before coding " ;
-	//for (uint i(0); i < counts.size()*2; ++i){
-		//cout << *in[i];
-	//}
-	//cout << *in << endl;
-	//cout << endl;
-	compr_vector_size = trlec(in, n, comp) ;
-	//cout << "compr vec size " << compr_vector_size << " compr " ;
-	//for (uint i(0); i < compr_vector_size; ++i)
-	//{
-	//	cout << comp[i];
-	//}
-	//cout << endl;
-	//// test
-	//unsigned char * decod = new unsigned char[counts.size() *2 + 1024];
-	//auto s = trled(&comp[0], compr_vector_size, decod, counts.size()*2 );
-	//cout <<"decoded size " <<  s << " decoded ";
-	//for (uint i(0); i < counts.size()*2; ++i)
-	//{
-	//	cout << (uint)decod[i] << " ";
-	//}
-	//cout << endl;
-	//
-	uint32_t bucket_nb;
-	// hash bit from the compressed counts to choose the bucket
-	if (compr_vector_size >= 8){
-		bucket_nb = (xorshift((uint64_t)comp[0] + (uint64_t)comp[1]*256 +  (uint64_t)comp[2]*256*256 + (uint64_t)comp[3]*256*256*256 + (uint64_t)comp[4]*256*256*256*256 + (uint64_t)comp[5]*256*256*256*256*256 + (uint64_t)comp[6]*256*256*256*256*256*256 + (uint64_t)comp[7]*256*256*256*256*256*256*256 ) % bucket_files.size());
-	
-	}else if (compr_vector_size >= 4){
-		bucket_nb = (xorshift((uint64_t)comp[0] + (uint64_t)comp[1]*256 +  (uint64_t)comp[2]*256*256 + (uint64_t)comp[3]*256*256*256  ) % bucket_files.size());
-	}else{
-		bucket_nb = (xorshift((uint64_t)comp[0]) % bucket_files.size());
-	}
-	//write info in the bucket
-	long position(bucket_files[bucket_nb]->tellp());
-	bucket_files[bucket_nb]->write(reinterpret_cast<char*>(&compr_vector_size),sizeof(unsigned)); //size of the compressed information
-	bucket_files[bucket_nb]->write(reinterpret_cast<char*>(&minitig_id),sizeof(int64_t)); //index
-	bucket_files[bucket_nb]->write((const char*)comp,(compr_vector_size)); // compressed count vector
-	//~ out_positions.write(reinterpret_cast<char*>(&position), sizeof(long)); //position in vector of count vectors
-}
-
-
-
-
-
-void read_matrix_compressed_line(ifstream& in, int64_t& rank, char* comp, unsigned& comp_size)
-{
-	in.read(reinterpret_cast<char *>(&comp_size), sizeof(unsigned));
-	in.read(reinterpret_cast<char *>(&rank), sizeof(int64_t));
-	in.read((char*)(comp) , comp_size);
-
-}
 
 
 // write final matrix of equivalence classes
@@ -221,7 +101,7 @@ void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_
 	}
 	else
 	{
-		outz = new zstr::ofstream(output + "/reindeer_matrix_eqc");
+		outz = new zstr::ofstream(output + "/reindeer_matrix_eqc.gz");
 		outz->write(reinterpret_cast<char*>(&color_number),sizeof(uint64_t)); // number of colors
 
 	}
@@ -275,15 +155,13 @@ void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_
 	}
 	long nb_eq_class(prev_pos + 1);
 	cout << "Number of equivalence classes found: " << prev_pos + 1<< endl;
-	//~ ofstream out_position(output + "/reindeer_matrix_eqc_position");
-	zstr::ofstream * out_position =  new zstr::ofstream(output + "/reindeer_matrix_eqc_position");
+	zstr::ofstream * out_position =  new zstr::ofstream(output + "/reindeer_matrix_eqc_position.gz");
 	uint nb(0);
 	for (uint i(0); i < final_positions.size(); ++i)
 	{
 		out_position->write(reinterpret_cast<char*>(&final_positions[i]), sizeof(long)); 
 		++nb;
 	}
-	//~ out_position.close();
 	delete out_position;
 	ofstream out_nbc(output + "/reindeer_matrix_eqc_nb_class");
 	out_nbc.write(reinterpret_cast<char*>(&nb_eq_class), sizeof(long));

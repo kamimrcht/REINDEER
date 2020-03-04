@@ -76,7 +76,19 @@ void reindeer_query(uint k, string& output,string& output_query, bool record_cou
 
 	string fof( getRealPath("graphs.lst", output));
 	string color_dump_file("");
-	string color_load_file(getRealPath("reindeer_matrix_eqc", output));
+	string color_load_file;
+	string matrix_name;
+	if (do_query_on_disk)
+	{
+		color_load_file = getRealPath("reindeer_matrix_eqc", output);
+		matrix_name = color_load_file;
+	}
+	else
+	{
+		color_load_file = getRealPath("reindeer_matrix_eqc.gz", output);
+		size_t wo_ext = color_load_file.find_last_of("."); 
+		matrix_name = color_load_file.substr(0, wo_ext); 
+	}
 	string nb_eq_class_file(getRealPath("reindeer_matrix_eqc_nb_class", output));
 	uint64_t color_number(get_color_number(fof));
 	vector<unsigned char*> compr_minitig_color;
@@ -91,7 +103,7 @@ void reindeer_query(uint k, string& output,string& output_query, bool record_cou
 	
 	cout << "\nComputing query..." << endl;
 	high_resolution_clock::time_point tnew = high_resolution_clock::now();
-	perform_query(*ksl, color_number, k, record_counts,  record_reads,  threshold, bgreat_paths_fof, query, output_query, threads, exact, compr_minitig_color, compr_minitig_color_sizes, do_query_on_disk, color_load_file, eq_class_nb);
+	perform_query(*ksl, color_number, k, record_counts,  record_reads,  threshold, bgreat_paths_fof, query, output_query, threads, exact, compr_minitig_color, compr_minitig_color_sizes, do_query_on_disk, matrix_name, eq_class_nb);
 	high_resolution_clock::time_point tnew2 = high_resolution_clock::now();
 	duration<double> time_spannew2 = duration_cast<duration<double>>(tnew2 - tnew);
 	cout<<"Querying sequence took "<< time_spannew2.count() << " seconds."<<endl;
