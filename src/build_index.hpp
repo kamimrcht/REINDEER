@@ -115,7 +115,7 @@ void build_matrix_for_disk_query(string& color_load_file, string& color_dump_fil
 	uint64_t nb_minitigs(0);
 	ofstream out(output_file);
 	ofstream out_nb(output_file+"_minitig_nb");
-	ofstream out_position(output_file+"_position");
+	//~ ofstream out_position(output_file+"_position");
 	mutex mm;
 	out.write(reinterpret_cast<char*>(&color_number),sizeof(uint64_t)); // number of colors
 	uint nb_treated_minitigs(0);
@@ -145,7 +145,7 @@ void build_matrix_for_disk_query(string& color_load_file, string& color_dump_fil
 				if((not minitig_id.empty()) and minitig_id.back()>=0)
 				{
 					mm.lock();
-					dump_compressed_vector(counts, minitig_id.back(), out, in, out_position);
+					dump_compressed_vector(counts, minitig_id.back(), out, in);
 					nb_treated_minitigs++;
 					mm.unlock();
 				}
@@ -157,7 +157,7 @@ void build_matrix_for_disk_query(string& color_load_file, string& color_dump_fil
 	minitigs_file.close();
 	out.close();
 	out_nb.close();
-	out_position.close();
+	//~ out_position.close();
 }
 
 
@@ -177,7 +177,7 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 	ifstream minitigs_file(minitigs_fn);
 	uint64_t nb_minitigs(0);
 	ofstream out_nb(output_file+"_eqc_minitig_nb");
-	ofstream out_position(output_file+"_position");
+	//~ ofstream out_position(output_file+"_position");
 	mutex mm;
 	uint nb_treated_minitigs(0);
 	//~ #pragma omp parallel num_threads(nb_threads)
@@ -213,9 +213,9 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 
 					//write count vector
 					if (do_query_on_disk)
-						dump_compressed_vector_bucket_disk_query(counts, minitig_id.back(), in, out_position, all_files,  colors, record_counts);
+						dump_compressed_vector_bucket_disk_query(counts, minitig_id.back(), in, all_files,  colors, record_counts);
 					else
-						dump_compressed_vector_bucket(counts, minitig_id.back(), in, out_position, all_files,  colors, record_counts);
+						dump_compressed_vector_bucket(counts, minitig_id.back(), in, all_files,  colors, record_counts);
 
 					nb_treated_minitigs++;
 					mm.unlock();
@@ -227,7 +227,7 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 	out_nb.write(reinterpret_cast<char*>(&nb_minitigs),sizeof(uint64_t)); //TODO NB COLOR + /!\ relecture
 	//close files
 	out_nb.close();
-	out_position.close();
+	//~ out_position.close();
 	for (uint i(0); i < all_files.size(); ++i)
 	{
 		all_files[i]->close();
@@ -309,7 +309,7 @@ kmer_Set_Light* load_rle_index(uint k, string& color_load_file, string& color_du
 void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, string& color_load_file, string& color_dump_file, string& fof, bool record_counts, bool record_reads, uint64_t& color_number, kmer_Set_Light& ksl, uint nb_threads, bool exact, string& output, bool do_query_on_disk, bool quantize, bool do_log)
 {
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
-	bool delete_minitig_file(false);
+	bool delete_minitig_file(true);
 	if (not exists_test(output +"/_blmonocolor.fa"))
 	{
 		

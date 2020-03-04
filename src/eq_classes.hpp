@@ -47,7 +47,7 @@ void sort_vectors(vector<count_vector>& matrix_lines)
 }
 
 
-void dump_compressed_vector_bucket_disk_query(vector<uint16_t>& counts, int64_t minitig_id, unsigned char *in, ofstream& out_positions, vector<ofstream*>& bucket_files,  vector<uint8_t>& colors, bool record_counts)
+void dump_compressed_vector_bucket_disk_query(vector<uint16_t>& counts, int64_t minitig_id, unsigned char *in,vector<ofstream*>& bucket_files,  vector<uint8_t>& colors, bool record_counts)
 {
 
 	vector<unsigned char> comp;
@@ -79,10 +79,10 @@ void dump_compressed_vector_bucket_disk_query(vector<uint16_t>& counts, int64_t 
 	bucket_files[bucket_nb]->write(reinterpret_cast<char*>(&compr_vector_size),sizeof(unsigned)); //size of the compressed information
 	bucket_files[bucket_nb]->write(reinterpret_cast<char*>(&tw),sizeof(int64_t)); //index
 	bucket_files[bucket_nb]->write((const char*)&comp[0],(compr_vector_size)); // compressed count vector	
-	out_positions.write(reinterpret_cast<char*>(&position), sizeof(long)); //position in vector of count vectors
+	//~ out_positions.write(reinterpret_cast<char*>(&position), sizeof(long)); //position in vector of count vectors
 }
 
-void dump_compressed_vector_bucket(vector<uint16_t>& counts, int64_t minitig_id, unsigned char *in, ofstream& out_positions, vector<ofstream*>& bucket_files, vector<uint8_t>& colors, bool record_counts )
+void dump_compressed_vector_bucket(vector<uint16_t>& counts, int64_t minitig_id, unsigned char *in,  vector<ofstream*>& bucket_files, vector<uint8_t>& colors, bool record_counts )
 {
 	//get the bucket number
 	uint n;
@@ -140,7 +140,7 @@ void dump_compressed_vector_bucket(vector<uint16_t>& counts, int64_t minitig_id,
 	bucket_files[bucket_nb]->write(reinterpret_cast<char*>(&compr_vector_size),sizeof(unsigned)); //size of the compressed information
 	bucket_files[bucket_nb]->write(reinterpret_cast<char*>(&minitig_id),sizeof(int64_t)); //index
 	bucket_files[bucket_nb]->write((const char*)comp,(compr_vector_size)); // compressed count vector
-	out_positions.write(reinterpret_cast<char*>(&position), sizeof(long)); //position in vector of count vectors
+	//~ out_positions.write(reinterpret_cast<char*>(&position), sizeof(long)); //position in vector of count vectors
 }
 
 
