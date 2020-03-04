@@ -1,27 +1,4 @@
-#include <stdio.h>
-#include <fstream>
-#include <iostream>
-#include <vector>
-#include <atomic>
-#include <mutex>
-#include <stdint.h>
-#include <unordered_map>
-#include <map>
-#include <pthread.h>
-#include <chrono>
-#include <omp.h>
-#include <tmmintrin.h>
-#include <math.h>
-#include <algorithm>
-#include <sys/stat.h>
-#include <unistd.h>
-#include "../blight/bbhash.h"
-#include "../blight/blight.h"
-#include "../blight/utils.h"
-#include "../blight/zstr.hpp"
-#include "../blight/common.h"
-#include "../blight/robin_hood.h"
-#include "../trle/trle.h"
+#include "minitig.hpp"
 
 
 using namespace std;
