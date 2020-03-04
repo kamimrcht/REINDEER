@@ -31,6 +31,7 @@
 #include "../blight/zstr.hpp"
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <linux/limits.h>
 
 #ifndef UTILS
 #define UTILS
