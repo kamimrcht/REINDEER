@@ -1,3 +1,24 @@
+#include <stdio.h>
+#include <fstream>
+#include <iostream>
+#include <vector>
+#include <atomic>
+#include <mutex>
+#include <stdint.h>
+#include <unordered_map>
+#include <pthread.h>
+#include <chrono>
+#include <omp.h>
+#include <tmmintrin.h>
+#include <math.h>
+#include <algorithm>
+#include <sys/stat.h>
+#include <unistd.h>
+#include "bbhash.h"
+#include "blight.h"
+#include "zstr.hpp"
+#include "common.h"
+
 #ifndef UTIL
 #define UTIL
 
