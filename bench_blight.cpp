@@ -40,7 +40,7 @@ int main(int argc, char ** argv){
 	uint k(31);
 	uint m1(10);
 	uint m2(0);
-	uint m3(4);
+	uint m3(5);
 	uint c(1);
 	uint bit(0);
 	bool full(false),dump(false),hash(false);

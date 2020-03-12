@@ -272,7 +272,7 @@ void kmer_Set_Light::create_super_buckets(const string& input_file){
 	}
 	vector<ostream*> out_files;
 	for(uint64_t i(0);i<number_superbuckets;++i){
-		auto out =new ofstream(working_dir+"_blout"+to_string(i));
+		auto out =new zstr::ofstream(working_dir+"_blout"+to_string(i)+".gz");
 		if(not out->good()){
 			cout<<"Problem with files opening"<<endl;
 			exit(1);
@@ -464,7 +464,7 @@ void kmer_Set_Light::read_super_buckets(const string& input_file){
 		for(uint64_t SBC=0;SBC<number_superbuckets.value();++SBC){
 			vector<uint64_t> number_kmer_accu(bucket_per_superBuckets.value(),0);
 			uint64_t BC(SBC*bucket_per_superBuckets);
-			zstr::ifstream in((input_file+to_string(SBC)));
+			zstr::ifstream in((input_file+to_string(SBC)+".gz"));
 			while(not in.eof() and in.good()){
 				useless=line="";
 				getline(in,useless);

@@ -219,7 +219,7 @@ private:
     bool auto_detect_run;
     bool is_text;
 
-    static const std::size_t default_buff_size = (std::size_t)1 << 20;
+    static const std::size_t default_buff_size = (std::size_t)1 << 21;
 }; // class istreambuf
 
 class ostreambuf final
