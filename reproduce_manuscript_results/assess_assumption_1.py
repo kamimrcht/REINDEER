@@ -2,8 +2,7 @@
 # requires a KMC-counted dataset
 # Rayan, Jan 2020
 
-# pip install compress-pickle
-from compress_pickle import dump, load
+from pickle import dump
 import sys
 
 
@@ -58,8 +57,11 @@ for j,fasta in enumerate(fasta_sequences):
     
     if sample_points != 0 and len(points)> sample_points: break
 
-print("saving points")
-dump(points, "points.pkl")
+subsampling = 500000
+print("saving points, subsampling to",subsampling)
+import random
+subsampled_points = random.sample(points,subsampling)
+dump(subsampled_points, open("points.500k.pkl","wb"))
 
 import scipy.stats
 print("spearman",scipy.stats.spearmanr(points))
