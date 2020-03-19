@@ -2,8 +2,17 @@
 # requires a KMC-counted dataset
 # Rayan, Jan 2020
 
-unitigs_file = "/opt/reindeer/datasets/reads/SRR1002076.unitigs.fa"
-kmc_counts = "/opt/reindeer/datasets/reads/SRR1002076.countsk21.raw"
+# pip install compress-pickle
+from compress_pickle import dump, load
+import sys
+
+
+#unitigs_file = "/opt/reindeer/datasets/reads/SRR1002076.unitigs.fa"
+#kmc_counts = "/opt/reindeer/datasets/reads/SRR1002076.countsk21.raw"
+if len(sys.argv) < 3:
+	exit("args: unitigs_file kmc_counts.raw")
+unitigs_file = sys.argv[1]
+kmc_counts = sys.argv[2]
 k=21
 
 #sample_kmc=10000000
@@ -49,7 +58,8 @@ for j,fasta in enumerate(fasta_sequences):
     
     if sample_points != 0 and len(points)> sample_points: break
 
-print(points)
+print("saving points")
+dump(points, "points.pkl")
 
 import scipy.stats
 print("spearman",scipy.stats.spearmanr(points))

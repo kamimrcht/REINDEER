@@ -1,0 +1,21 @@
+# counting, for a single dataset file
+
+/usr/bin/time ~/tools/KMC/kmc -k21 -ci2 -r @list_kmc "$1"_k21_ci2 /local/scratch/kmc
+~/tools/KMC//kmc_dump "$1"_k21_ci2 "$1"_k21_ci2.raw
+rm -f list_kmc
+
+# counting, for multi-files dataset
+
+/usr/bin/time ~/tools/KMC/kmc -k21 -ci2 -r $1.fastq "$1"_k21_ci2 /local/scratch/kmc
+~/tools/KMC//kmc_dump "$1"_k21_ci2 "$1"_k21_ci2.raw
+
+
+# running the .py file for all datasets
+
+for dataset in `cat list_datasets`
+do
+	time  python ~/tools/REINDEER/reproduce_manuscript_results/assess_assumption_1.py ../data/$dataset.unitigs.fa "$dataset"_k21_ci2.raw |tee $dataset.LOG
+	 mv points.pkl $dataset.pkl
+ done
+
+ (base) 
