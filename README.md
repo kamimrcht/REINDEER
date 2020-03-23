@@ -135,3 +135,6 @@ In the third column, we observe that two numbers were given, separated by a `:` 
 We provide a page with scripts to reproduce the results we show in our manuscript, link [here](https://github.com/kamimrcht/REINDEER/tree/master/reproduce_manuscript_results).
 
 
+# Compilation tips
+
+If REINDEER gives a `Error: no such instruction` during compilation, try replacing `-march=native -mtune=native` by `-msse4` in the file `makefile`. If this did not work, pleaes file an issue.
