@@ -277,6 +277,7 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t& color_n
 	ofstream out(name);
 	uint64_t num_seq(0);
 	string qline;
+	mutex mm;
 	vector<string> lines;
 	vector<vector<uint32_t>> query_unitigID_tmp;
 	vector<long> position_in_file;
@@ -295,32 +296,50 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t& color_n
 				}
 			}
 			uint i;
-			string header;
+			
 			#pragma omp for ordered
-			for(i=(0);i<lines.size();++i){
+			//~ for(i=(0);i<lines.size();++i){
+			for(i=(0);i<lines.size();i+=2){
+				uint j(i);
+				
 				if (i%1000 == 0)
 					cout << "-";
 				string toWrite;
-				string line=lines[i];
-				if(line[0]=='A' or line[0]=='C' or line[0]=='G' or line[0]=='T')
+				string header;
+				//~ cout <<line << endl;
+				while (j < i+2)
 				{
-					vector<int64_t> kmers_colors;
-					vector<string> color_counts;
-					vector<int64_t> kmer_ids;
-					kmer_ids=ksl.get_rank_query(line);
-					vector<vector<uint16_t>> query_counts;
-					vector<vector<uint8_t>> query_colors;
-					get_colors_counts_query_eq_classes( kmer_ids, color_number, query_counts,  compr_minitig_color, compr_minitig_color_size, position_in_file, record_counts, query_colors, do_query_on_disk, rd_file);
-					write_output( kmers_colors, toWrite,  record_reads,  record_counts,  query_unitigID,query_unitigID_tmp,  color_number, header, line, k, threshold, query_counts, query_colors);
-				} else {
-					if (line[0]=='@' or line[0]=='>')
-						header = line;
+					string line=lines[j];
+					if(line[0]=='A' or line[0]=='C' or line[0]=='G' or line[0]=='T')
+					{
+						vector<int64_t> kmers_colors;
+						vector<string> color_counts;
+						vector<int64_t> kmer_ids;
+						kmer_ids=ksl.get_rank_query(line);
+						vector<vector<uint16_t>> query_counts;
+						vector<vector<uint8_t>> query_colors;
+						get_colors_counts_query_eq_classes( kmer_ids, color_number, query_counts,  compr_minitig_color, compr_minitig_color_size, position_in_file, record_counts, query_colors, do_query_on_disk, rd_file);
+						mm.lock();
+						cout << header << endl;
+						write_output( kmers_colors, toWrite,  record_reads,  record_counts,  query_unitigID,query_unitigID_tmp,  color_number, header, line, k, threshold, query_counts, query_colors);
+						mm.unlock();
+					} else {
+					//~ if (line[0]=='@' or line[0]=='>')
+						if (line[0]=='>')
+							//~ mm.lock();
+							header = line;
+							//~ cout << "************" << header << endl;
+							//~ mm.unlock();
+					}
+					j++;
 				}
 				#pragma omp ordered
+				mm.lock();
 				if (toWrite != header +"\n")
 				{
 					out<<toWrite;
 				}
+				mm.unlock();
 			}
 		}
 		lines={};
