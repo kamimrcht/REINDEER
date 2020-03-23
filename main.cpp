@@ -38,7 +38,7 @@ using namespace chrono;
 char ch;
 string query,fof(""), color_dump_file("reindeer_matrix"), color_load_file(""), bgreat_paths_fof(""), output_bcalm("bcalm_out"),output_union_bcalm("bcalm_union_out"),output("output_reindeer"), output_index("index_out");
 uint k(31), threads(1);
-bool record_counts(false);
+bool record_counts(true);
 bool record_reads(false);
 bool exact(false);
 bool quantize(false);
@@ -62,7 +62,7 @@ void PrintHelp()
             "                              OR ii) you need Bcalm to be run to obtain unitigs per sample, in this case use --bcalm option\n"
             "      * Optional parameters\n"
             "-k                      :     k-mer size (default 31)\n"
-            "--count                 :     Retain abundances instead of presence/absence\n"
+            "--nocount               :     Only compute presence/absence, not abundance\n"
             "--bcalm                 :     Launch bcalm on each single read dataset\n"
             "--paired-end            :     Index using paired-end files (provide pairs of files one after another in the fof). Works only with --bcalm.\n"
             "--disk-query            :     Index for on-disk query (default: in-memory). To be used for large indexes that won't fit in RAM.\n"
@@ -76,9 +76,9 @@ void PrintHelp()
 			"      * Mandatory parameters\n"
 			"--query                 :     Query mode\n"
 			"-l                      :     Reindeer index directory (should be output_reindeer if you've not used -o during indexing)\n"
-            "      * Optional parameters\n"
             "-q <FASTA>              :     FASTA query file with query sequences\n"
-            "--count                 :     Query abundances (index construction with --count mandatory)\n"
+            "      * Optional parameters\n"
+            "--nocount               :     You need to specify this if the index was constructed with --nocount\n"
             "-S                      :     Threshold: at least S% of the query k-mers must be in a dataset to be reported\n"
             "-o <file>               :     Directory to write output files (default: output_reindeer/query_results)\n"
             "--disk-query            :     On-disk query (default: in-memory). To be used for large indexes that won't fit in RAM, if the index was constructed with the same option.\n\n"
@@ -97,7 +97,7 @@ void ProcessArgs(int argc, char** argv)
     const option long_opts[] = {
             {"index", no_argument, nullptr, 'i'},
             {"help", no_argument, nullptr, 'h'},
-            {"count", no_argument, nullptr, 'c'},
+            {"nocount", no_argument, nullptr, 'c'},
             {"bcalm", no_argument, nullptr, 'b'},
             {"query", no_argument, nullptr, 'Q'},
             {"paired-end", no_argument, nullptr, 'P'},
@@ -141,8 +141,8 @@ void ProcessArgs(int argc, char** argv)
 				threads=stoi(optarg);
 				break;
 			case 'c':
-				record_counts=true;
-				break;
+				record_counts=false;
+                break;
 			case 'P':
 				PE=true;
 				break;
