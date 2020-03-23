@@ -93,7 +93,7 @@ Here is one example line from Reindeer's query:
 A query sequence appears in the output if more than `t`% k-mers were found an indexed dataset.
 Headers from the initial files are used to refer to query sequences (for instance `>SRR10092187.47 HISEQ:815:HK2NNBCXY:1:1101:1829:2108 length=51`).
 
-Then, the indexed datasets it appears in are written, separated by spaces. The numbers (i.e., `1` and `2` in `dataset1:100% dataset3:71%`) refer to the rank (starting at 1) of the datasets in the inital fof file.
+Then, the indexed datasets it appears in are written, separated by spaces. The numbers (i.e., `1` and `3` in `dataset1:100% dataset3:71%`) refer to the rank (starting at 1) of the datasets in the inital fof file.
 
 In this example, it means than `t`% k-mers from sequence `>SRR10092187.47 HISEQ:815:HK2NNBCXY:1:1101:1829:2108 length=51` were in the first and third sample written in the fof file.
 
