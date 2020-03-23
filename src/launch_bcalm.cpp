@@ -89,6 +89,7 @@ string getRealPaths(string& fof, string& main_output)
 		char actualpath [PATH_MAX+1];
 		char *ptr;
 		ptr = realpath(symlinkpath, actualpath);
+		if (ptr == NULL) {printf("error! can't find true path of file %s\n",symlinkpath);exit(1);}
 		string rp(ptr);
 		file_list_graphs << rp  << endl;
 
