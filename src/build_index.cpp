@@ -107,7 +107,7 @@ void build_matrix(string& color_load_file, string& color_dump_file, string& fof,
 
 
 // dispatch count vectors in files. Similar counts go in similar files
-void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_file, string& fof, kmer_Set_Light* ksl, bool record_counts, bool record_reads, uint k, uint64_t& color_number, uint nb_threads, bool exact, string& output, vector <unsigned char*>& compressed_colors, vector <unsigned>& compressed_colors_size, string& output_file, bool do_query_on_disk )
+void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_file, string& fof, kmer_Set_Light* ksl, bool record_counts, bool record_reads, uint k, uint64_t& color_number, uint nb_threads, bool exact, string& output, vector <unsigned char*>& compressed_colors, vector <unsigned>& compressed_colors_size, string& output_file, bool do_query_on_disk, uint16_t nb_colors )
 {
 	//create bucket files for partitionning the compressed counts -> finding eq classes
 	vector<ofstream*> all_files;
@@ -177,7 +177,7 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 		all_files[i]->close();
 	}
 	// compute final equivalence class and write them
-	write_eq_class_matrix(output, all_files, nb_minitigs, color_number, do_query_on_disk);
+	write_eq_class_matrix(output, all_files, nb_minitigs, color_number, do_query_on_disk, nb_colors);
 	// remove bucket files
 	for (uint i(0); i < all_files.size(); ++i)
 	{
@@ -194,25 +194,10 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 
 
 // color using minitig file: either build and dump the color matrix during the index construction, or load it during the query
-void do_coloring(string& color_load_file, string& color_dump_file, string& fof, kmer_Set_Light* ksl, bool record_counts, bool record_reads, uint k, uint64_t& color_number, uint nb_threads, bool exact, string& output, vector<unsigned char*>& compr_minitig_color,vector<unsigned>& compr_minitig_color_size, bool do_query_on_disk, string& nb_eq_class_file, long& eq_class_nb)
+void do_coloring(string& color_load_file, string& color_dump_file, string& fof, kmer_Set_Light* ksl, bool record_counts, bool record_reads, uint k, uint64_t& color_number, uint nb_threads, bool exact, string& output, vector<unsigned char*>& compr_minitig_color,vector<unsigned>& compr_minitig_color_size, bool do_query_on_disk, string& nb_eq_class_file, string& nb_color_file, long& eq_class_nb, uint16_t& nb_colors)
 {
 	vector <string> file_names;
-	if(exists_test(fof)){
-		ifstream fofin(fof);
-		string file_name;
-		while(not fofin.eof()){
-			getline(fofin,file_name);
-			if(not file_name.empty()){
-				if(exists_test(file_name)){
-					file_names.push_back(file_name);
-				}else{
-					cout<<file_name<<" is not here"<<endl;
-				}
-			}
-		}
-	}else{
-		cout<<"File of file problem"<<endl;
-	}
+
 	color_number = file_names.size();
 	
 	if (not color_load_file.empty()) //query
@@ -220,6 +205,10 @@ void do_coloring(string& color_load_file, string& color_dump_file, string& fof, 
 		ifstream nb_eq_f(nb_eq_class_file);
 		nb_eq_f.read(reinterpret_cast<char *>(&eq_class_nb), sizeof(long));
 		nb_eq_f.close();
+		ifstream nb_colors_f(nb_color_file);
+		nb_colors_f.read(reinterpret_cast<char *>(&nb_colors), sizeof(long));
+		nb_colors_f.close();
+		
 		if (not do_query_on_disk)
 		{
 			uint64_t color_number;
@@ -229,16 +218,33 @@ void do_coloring(string& color_load_file, string& color_dump_file, string& fof, 
 	} 
 	else  //indexing
 	{
-		write_matrix_in_bucket_files(color_load_file,  color_dump_file,  fof,  ksl,  record_counts, record_reads,  k, color_number, nb_threads,  exact, output, compr_minitig_color, compr_minitig_color_size, color_dump_file, do_query_on_disk);
+		if(exists_test(fof)){
+			ifstream fofin(fof);
+			string file_name;
+			while(not fofin.eof()){
+				getline(fofin,file_name);
+				if(not file_name.empty()){
+					if(exists_test(file_name)){
+						file_names.push_back(file_name);
+					}else{
+						cout<<file_name<<" is not here"<<endl;
+					}
+				}
+			}
+		}else{
+			cout<<"File of file problem"<<endl;
+		}
+		write_matrix_in_bucket_files(color_load_file,  color_dump_file,  fof,  ksl,  record_counts, record_reads,  k, color_number, nb_threads,  exact, output, compr_minitig_color, compr_minitig_color_size, color_dump_file, do_query_on_disk, nb_colors); 
 	}
 }
 
 
 // load dumped index(+colors)
-kmer_Set_Light* load_rle_index(uint k, string& color_load_file, string& color_dump_file, string& fof, bool record_counts, bool record_reads, uint64_t& color_number, uint nb_threads, bool exact, string& output, vector<unsigned char*> &compr_minitig_color,  vector<unsigned>& compr_minitig_color_sizes, bool do_query_on_disk, string& nb_eq_class_file, long& eq_class_nb)
+kmer_Set_Light* load_rle_index(uint k, string& color_load_file, string& color_dump_file, string& fof, bool record_counts, bool record_reads, uint64_t& color_number, uint nb_threads, bool exact, string& output, vector<unsigned char*> &compr_minitig_color,  vector<unsigned>& compr_minitig_color_sizes, bool do_query_on_disk, string& nb_eq_class_file, string& nb_colors_file, long& eq_class_nb, uint16_t& nb_colors)
 {
 	kmer_Set_Light* ksl= new kmer_Set_Light(output + "/reindeer_index.gz");
-	do_coloring(color_load_file, color_dump_file, fof, ksl, record_counts, record_reads, k, color_number, nb_threads, exact, output, compr_minitig_color, compr_minitig_color_sizes, do_query_on_disk, nb_eq_class_file, eq_class_nb);
+	do_coloring(color_load_file, color_dump_file, fof, ksl, record_counts, record_reads, k, color_number, nb_threads, exact, output, compr_minitig_color, compr_minitig_color_sizes, do_query_on_disk, nb_eq_class_file, nb_colors_file, eq_class_nb, nb_colors);
+	//~ cout << nb_colors << endl;
 	string cmd("rm -f " + output +"/_blmonocolor.fa");
 	int sysRet(system(cmd.c_str()));
 	return ksl;
@@ -247,7 +253,7 @@ kmer_Set_Light* load_rle_index(uint k, string& color_load_file, string& color_du
 
 
 // build index from new file
-void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, string& color_load_file, string& color_dump_file, string& fof, bool record_counts, bool record_reads, uint64_t& color_number, kmer_Set_Light& ksl, uint nb_threads, bool exact, string& output, bool do_query_on_disk, bool quantize, bool do_log)
+void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, string& color_load_file, string& color_dump_file, string& fof, bool record_counts, bool record_reads, uint64_t& color_number, kmer_Set_Light& ksl, uint nb_threads, bool exact, string& output, bool do_query_on_disk, bool quantize, bool do_log, uint16_t nb_colors)
 {
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
 	bool delete_minitig_file(true);
@@ -286,7 +292,7 @@ void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, string& colo
 	long eq_class_nb(0);
 	string s("");
 	cout << "Building colors and equivalence classes matrix to be written on disk..." << endl;
-	do_coloring(color_load_file, color_dump_file, fof, &ksl, record_counts, record_reads, k, color_number, nb_threads, exact, output, compr_minitig_color, compr_minitig_color_size, do_query_on_disk, s, eq_class_nb);
+	do_coloring(color_load_file, color_dump_file, fof, &ksl, record_counts, record_reads, k, color_number, nb_threads, exact, output, compr_minitig_color, compr_minitig_color_size, do_query_on_disk, s, s, eq_class_nb, nb_colors);
 	high_resolution_clock::time_point t12 = high_resolution_clock::now();
 	duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
 	cout<<"Matrix done: "<< time_span12.count() << " seconds."<<endl;

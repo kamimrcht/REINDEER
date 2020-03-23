@@ -213,8 +213,8 @@ int main(int argc, char **argv)
 		}
 		string cl("");
 		bcalm_cleanup();
-		string cmd("cp " + fof + " " + output + "/graphs.lst");
-		systRet=system(cmd.c_str());
+		//~ string cmd("cp " + fof + " " + output + "/graphs.lst");
+		//~ systRet=system(cmd.c_str());
 		cout << "Indexing k-mers...\n\n" << endl;
 		color_dump_file = output + "/" + color_dump_file;
 		reindeer_index(k, fof, color_dump_file, record_counts,record_reads, output, cl, threads, exact, do_query_on_disk, quantize, do_log);

@@ -82,7 +82,7 @@ void get_eq_classes_disk_query(string& output, robin_hood::unordered_map<string,
 }
 
 //sort count vectors by file, write one occurence per count in a new matrix file
-void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_t nb_unitigs, uint64_t color_number, bool do_query_on_disk)
+void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_t nb_unitigs, uint64_t color_number, bool do_query_on_disk, uint16_t nb_colors)
 {
 	cout << "Sorting datasets to find equivalence classes..." << endl;
 	vector<long> final_positions(nb_unitigs);
@@ -160,6 +160,10 @@ void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_
 	ofstream out_nbc(output + "/reindeer_matrix_eqc_nb_class");
 	out_nbc.write(reinterpret_cast<char*>(&nb_eq_class), sizeof(long));
 	out_nbc.close();
+	ofstream out_nbcol(output + "/reindeer_matrix_eqc_nb_colors");
+	//~ cout << "*******************" <<nb_colors << endl;
+	out_nbcol.write(reinterpret_cast<char*>(&nb_colors), sizeof(uint16_t));
+	out_nbcol.close();
 	if (do_query_on_disk)
 		delete out;
 	else
