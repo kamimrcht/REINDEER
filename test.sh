@@ -6,7 +6,7 @@ if (( eqc==180 )); then echo "    -> Construction test passed." ; else echo "   
 
 echo "Querying index..............................................................."
 ./Reindeer --count --query -l out_test -q  test/output_bcalm/SRR10092187_10k.unitigs.fa -o out_test >> out_test/log 2>&1;
-DIFF=$(diff out_test/query_results/out_query_Reindeer0.out test/query_results/out_query_Reindeer0.out)
+DIFF=$(diff test/out_test/out_query_Reindeer0.out test/query_results/out_query_Reindeer0.out)
 if [ "$DIFF" != "" ] ; then echo "    -> Query test error."; else echo "    -> Query test passed."; fi;
 
 rm -r out_test;
