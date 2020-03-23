@@ -202,9 +202,9 @@ int main(int argc, char **argv)
 		{
 			cout << "Computing De Bruijn graphs on each dataset using Bcalm2...\n\n" << endl;
 			fof = bcalm_launcher_single(fof,  k,  threads, output, output_bcalm); // from here fof is a fof of unitig files
-		} else {
-			fof = getRealPaths(fof, output);
-		}
+		//~ } else {
+			//~ fof = getRealPaths(fof, output);
+		//~ }
 		if ( fof.empty() or k == 0 )
 		{
 			cout << "Missing argument " << endl;
