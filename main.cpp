@@ -36,7 +36,7 @@ using namespace std;
 using namespace chrono;
 
 char ch;
-string query,fof, color_dump_file("reindeer_matrix"), color_load_file(""), bgreat_paths_fof(""), output_bcalm("bcalm_out"),output_union_bcalm("bcalm_union_out"),output("output_reindeer"), output_index("index_out");
+string query,fof(""), color_dump_file("reindeer_matrix"), color_load_file(""), bgreat_paths_fof(""), output_bcalm("bcalm_out"),output_union_bcalm("bcalm_union_out"),output("output_reindeer"), output_index("index_out");
 uint k(31), threads(1);
 bool record_counts(false);
 bool record_reads(false);
@@ -50,43 +50,42 @@ bool do_log(false);
 void PrintHelp()
 {
     cout <<
-			"\n******************* REINDEER **************************************\n"
-			"******************* REad Index for abuNDancE quERy ******************\n"
+			"******************* REINDEER **************************************\n"
+			"******************* REad Index for abuNDancE quERy ******************\n\n"
+			
+            "                    INDEX BUILDING\n\n"
 
-
-			"\n                    INDEX BUILDING\n"
-			"* Mandatory\n"
+			"      * Mandatory parameters\n"
             "--index <file>          :     Indexing mode\n"
-            "-f                      :     File of file for colors\n"
-            "                              either you've already computed each DBG on your samples, in this case the fof is a list of unitig files\n"
-            "                              OR you need Bcalm to be run tp obtain unitigs per sample, in this case use --bcalm option\n"
-            "* Options\n"
+            "-f                      :     File of file for colors. Either:\n"
+            "                                  i) you've already computed each DBG on your samples, in this case the fof is a list of unitig files\n"
+            "                              OR ii) you need Bcalm to be run to obtain unitigs per sample, in this case use --bcalm option\n"
+            "      * Optional parameters\n"
             "-k                      :     k-mer size (default 31)\n"
             "--count                 :     Retain abundances instead of presence/absence\n"
-            "--bcalm                 :     Launch bcalm on each single read dataset\n\n"
-            "--paired-end            :     Index using paired-end files (provide pairs of files one after another in the fof). Works only with --bcalm.\n\n"
-            "--disk-query            :     Index for on-disk query (default: in-memory). To be used for large indexes that won't fit in RAM.\n\n"
-            "--quantization          :     Quantize the abundances in bins (to use only with --count).\n\n"
-            "--log-count             :     Record the log of the counts, gives approximate counts that save space (to use only with --count).\n\n"
-            "* Output options\n"
-            "-o <file>               :     Directory to write output files (default: output_reindeer)\n"
+            "--bcalm                 :     Launch bcalm on each single read dataset\n"
+            "--paired-end            :     Index using paired-end files (provide pairs of files one after another in the fof). Works only with --bcalm.\n"
+            "--disk-query            :     Index for on-disk query (default: in-memory). To be used for large indexes that won't fit in RAM.\n"
+            "--quantization          :     Quantize the abundances in bins (to use only with --count).\n"
+            "--log-count             :     Record the log of the counts, gives approximate counts that save space (to use only with --count).\n"
+            "      * Output options\n"
+            "-o <file>               :     Directory to write output files (default: output_reindeer)\n\n"
 
+            "                    QUERY\n\n"
 
-            "                    QUERY\n"
-			"* Mandatory\n"
+			"      * Mandatory parameters\n"
 			"--query                 :     Query mode\n"
 			"-l                      :     Reindeer index directory (should be output_reindeer if you've not used -o during indexing)\n"
-            "* Options\n"
+            "      * Optional parameters\n"
+            "-q <FASTA>              :     FASTA query file with query sequences\n"
             "--count                 :     Query abundances (index construction with --count mandatory)\n"
             "-S                      :     Threshold: at least S% of the query k-mers must be in a dataset to be reported\n"
-            "-q <FASTA>              :     FASTA query file with query sequences\n\n\n"
             "-o <file>               :     Directory to write output files (default: output_reindeer/query_results)\n"
             "--disk-query            :     On-disk query (default: in-memory). To be used for large indexes that won't fit in RAM, if the index was constructed with the same option.\n\n"
 
 
-            "                    Performances\n"
-            "-t <integer>            :     Number of threads (default 1)\n\n\n"
-
+            "                    General\n\n"
+            "-t <integer>            :     Number of threads (default 1)\n"
             "--help                  :     Show help\n";
     exit(1);
 }
@@ -185,9 +184,15 @@ int main(int argc, char **argv)
 		PrintHelp();
 		return 0;
 	}
-	
-	if (do_Index) //indexing only
+
+    if (do_Index) //indexing only
 	{
+        if ( fof.size() == 0 ){
+            cout << "Please specify input datasets to index using using -f.\n" << endl;
+            PrintHelp();
+            return 0;
+        }
+
 		if (PE)
 		{
 			cout << "Writing paired-end file...\n" << endl;
