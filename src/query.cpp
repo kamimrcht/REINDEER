@@ -310,6 +310,7 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint16_t& color_n
 				while (j < i+2)
 				{
 					string line=lines[j];
+					//~ cout << line << endl;
 					if(line[0]=='A' or line[0]=='C' or line[0]=='G' or line[0]=='T')
 					{
 						vector<int64_t> kmers_colors;
@@ -326,6 +327,7 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint16_t& color_n
 					} else {
 						if (line[0]=='>')
 							header = line;
+						//~ cout << header << endl;
 					}
 					j++;
 				}
