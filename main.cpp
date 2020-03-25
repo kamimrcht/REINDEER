@@ -56,8 +56,8 @@ void PrintHelp()
             "                    INDEX BUILDING\n\n"
 
 			"      * Mandatory parameters\n"
-            "--index <file>          :     Indexing mode\n"
-            "-f                      :     File of file for colors. Either:\n"
+            "--index                 :     Indexing mode\n"
+            "-f <file>               :     File of file for colors. Either:\n"
             "                                  i) you've already computed each DBG on your samples, in this case the fof is a list of unitig files\n"
             "                              OR ii) you need Bcalm to be run to obtain unitigs per sample, in this case use --bcalm option\n"
             "      * Optional parameters\n"
