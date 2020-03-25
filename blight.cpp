@@ -333,7 +333,7 @@ void kmer_Set_Light::create_super_buckets(const string& input_file){
 						}
 					}
 					//COMPUTE KMER MINIMIZER
-					if(old_minimizer!=minimizer){
+					if(revhash(old_minimizer)%minimizer_number!=revhash(minimizer)%minimizer_number){
 						old_minimizer=(revhash(old_minimizer)%minimizer_number);
 						buffer[old_minimizer/bucket_per_superBuckets.value()]+=">"+to_string(old_minimizer)+"\n"+ref.substr(last_position,i-last_position+k)+"\n";
 						// *(out_files[((old_minimizer))/bucket_per_superBuckets])<<">"+to_string(old_minimizer)+"\n"<<ref.substr(last_position,i-last_position+k)<<"\n";
@@ -483,7 +483,7 @@ void kmer_Set_Light::read_super_buckets(const string& input_file){
 					number_super_kmer++;
 				}
 			}
-			remove((input_file+to_string(SBC)).c_str());
+			remove((input_file+to_string(SBC)+".gz").c_str());
 			//~ create_mphf_mem(BC,BC+bucket_per_superBuckets);
 			create_mphf_disk(BC,BC+bucket_per_superBuckets);
 			position_super_kmers.optimize();
