@@ -49,7 +49,7 @@ Help:
 
 # Index construction
 
-## Starting with read files (fasta/fastq)
+## Starting with read files (raw or gzipped fasta/fastq)
 
 Make sure you have installed Bcalm by doing `sh install`.
 Let's assume you work with two files, `reads_1.fastq` and `reads_2.fastq`.
@@ -64,7 +64,7 @@ If you want to change the output, you can use the `-o` option:
 
 `./Reindeer --index -f test/fof.txt --bcalm -o output_dir`
 
-## Starting with De Bruijn graph files
+## Starting with De Bruijn graph files (raw or gzipped fasta files)
 
 Let's assume you have already computed a De Bruijn graph for each dataset.
 You can provide a file of file of each unitig file (fasta) instead of the read files.
