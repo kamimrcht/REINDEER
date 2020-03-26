@@ -19,19 +19,27 @@ Then:
 
 `sh install.sh`
 
+or
+
+`make`
+
 Test can be run:
 
 `sh test.sh`
+
+### Compilation tips
+
+If REINDEER gives a `Error: no such instruction` during compilation, try replacing `-march=native -mtune=native` by `-msse4` in the file `makefile`. If this did not work, pleaes file an issue.
 
 ## Quick start
 Have a look at the file of file format in `test/fof_unitigs.txt`.
 Then build the index:
 
-`./Reindeer --index -f test/fof_unitigs.txt --count -o quick_out`
+`./Reindeer --index -f test/fof_unitigs.txt -o quick_out`
 
 and query:
 
-`./Reindeer --query --count -q test/query_test.fa -l quick_out -o quick_query`
+`./Reindeer --query -q test/query_test.fa -l quick_out -o quick_query`
 
 Results should be in `quick_query/query_results/out_query_Reindeer0.out`.
 
@@ -71,12 +79,13 @@ Simply provide the fasta query file (**single line**) to Reindeer using `-q`, al
 `./Reindeer --query -q test/query_test.fa -l output_reindeer`
 
 
-# Index and query k-mers abundances
+# Index and query k-mers presence/absence only (not abundances)
 
-In order to have k-mer abundances instead of presence/absence per indexed dataset, use `--count` option.
+By default, REINDEER records k-mers abundances in each input dataset.
+In order to have k-mer presence/absence instead of abundance per indexed dataset, use `--nocount` option.
 
-`./Reindeer --index -f test/fof_unitigs.txt --count`
-`./Reindeer --query -l output_reindeer -q test/query_test.fa --count`
+`./Reindeer --index -f test/fof_unitigs.txt --nocount`
+`./Reindeer --query -l output_reindeer -q test/query_test.fa --nocount`
 
 
 
@@ -116,25 +125,19 @@ In the third column, we observe that two numbers were given, separated by a `:` 
 ## log counts/quantized counts
 
 
-`./Reindeer --index --count --log-count -f fof_unitigs.txt`
+`./Reindeer --index --log-count -f fof_unitigs.txt`
 
-`./Reindeer --index --count --quantization -f test/fof_unitigs.txt `
+`./Reindeer --index --quantization -f test/fof_unitigs.txt `
 
-
-## disk query
-
-`./Reindeer --index --count --disk-query -f fof_unitigs.txt`
 
 ## input paired-end reads (to bcalm)
 
 
-`./Reindeer --index --count --paired-end --bcalm  -f fof.txt`
+`./Reindeer --index --paired-end --bcalm  -f fof.txt`
 
 # Reproduce the manuscript's results
 
 We provide a page with scripts to reproduce the results we show in our manuscript, link [here](https://github.com/kamimrcht/REINDEER/tree/master/reproduce_manuscript_results).
 
 
-# Compilation tips
 
-If REINDEER gives a `Error: no such instruction` during compilation, try replacing `-march=native -mtune=native` by `-msse4` in the file `makefile`. If this did not work, pleaes file an issue.
