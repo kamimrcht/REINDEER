@@ -15,7 +15,7 @@ void get_list_graphs_fof(string& fof, vector<string>& list_graphs)
 	}
 }
 
-string bcalm_launcher_single(string& input_fof, uint k, uint threads, string& main_output, string& output_bcalm)
+string bcalm_launcher_single(string& input_fof, uint k, uint threads, string& main_output, string& output_bcalm, bool PE)
 {
 	int systemRet;
 	string outputDir(main_output + "/" +output_bcalm);
@@ -26,10 +26,25 @@ string bcalm_launcher_single(string& input_fof, uint k, uint threads, string& ma
 	ofstream file_list_graphs( main_output + "/graphs.lst");
 	string cmd(""), filename("");
 	char* f;
-	for (uint i(0); i < list_graphs.size(); ++i)
+	//~ for (uint i(0); i < list_graphs.size(); ++i)
+	for (uint i(0); i < list_graphs.size(); )
 	{
-		input = list_graphs[i];
-		output = split_utils(split_utils(list_graphs[i], '/').back(), '.')[0];
+		if (not PE)
+		{
+			input = list_graphs[i];
+			output = split_utils(split_utils(list_graphs[i], '/').back(), '.')[0];
+			++i;
+		} 
+		else // paired end
+		{
+			if (i < list_graphs.size() -1)
+			{
+				input = list_graphs[i] + "," + list_graphs[i+1];
+				output = split_utils(split_utils(list_graphs[i], '/').back(), '.')[0] + "_" + split_utils(split_utils(list_graphs[i+1], '/').back(), '.')[0] ;
+			}
+			++i;++i;
+		}
+			
 		cmd = "./bin/bcalm -in " + input + " -kmer-size " + to_string(k) + " -abundance-min 2  -nb-cores " + to_string(threads) + " -out " + output;
 		cout << cmd << endl;
 		systemRet = system(cmd.c_str());

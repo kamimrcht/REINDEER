@@ -193,15 +193,16 @@ int main(int argc, char **argv)
             return 0;
         }
 
-		if (PE)
-		{
-			cout << "Writing paired-end file...\n" << endl;
-			interleave_paired_end(fof, output);
-		}
+		//~ if (PE)
+		//~ {
+			//~ cout << "Writing paired-end file...\n" << endl;
+			//~ interleave_paired_end(fof, output);
+		//~ }
 		if (bcalm)
 		{
 			cout << "Computing De Bruijn graphs on each dataset using Bcalm2...\n\n" << endl;
-			fof = bcalm_launcher_single(fof,  k,  threads, output, output_bcalm); // from here fof is a fof of unitig files
+			fof = bcalm_launcher_single(fof,  k,  threads, output, output_bcalm, PE);
+			 // from here fof is a fof of unitig files
 		//~ } else {
 			//~ fof = getRealPaths(fof, output);
 		}
