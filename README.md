@@ -123,12 +123,22 @@ In the third column, we observe that two numbers were given, separated by a `:` 
 
 # Beta options
 
-## log counts/quantized counts
+## query the index on the disk instead of loading the index in-ram
 
+First build the index:
+
+`./Reindeer --index --disk-query -f fof_unitigs.txt`
+
+Then query:
+
+`./Reindeer --query --disk-query -l output_reindeer -q query.fa`
+
+
+## log counts/quantized counts
 
 `./Reindeer --index --log-count -f fof_unitigs.txt`
 
-`./Reindeer --index --quantization -f test/fof_unitigs.txt `
+`./Reindeer --index --quantization -f test/fof_unitigs.txt`
 
 
 ## input paired-end reads (to bcalm)
