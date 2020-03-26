@@ -51,6 +51,7 @@ Help:
 
 ## Starting with read files (fasta/fastq)
 
+Make sure you have installed Bcalm by doing `sh install`.
 Let's assume you work with two files, `reads_1.fastq` and `reads_2.fastq`.
 The first thing needed to is to create a file of file (fof) that record the path to the reads.
 An example file can be found here: `test/fof.txt`
