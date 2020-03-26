@@ -1,6 +1,3 @@
-
-
-
 #include "matrix_operation.hpp"
 using namespace std;
 
@@ -55,15 +52,24 @@ vector<unsigned char*> load_compressed_vectors(const string& input_file, vector<
 
 void dump_compressed_vector_bucket_disk_query(vector<uint16_t>& counts, int64_t minitig_id, unsigned char *in,vector<ofstream*>& bucket_files,  vector<uint8_t>& colors, bool record_counts)
 {
-
 	vector<unsigned char> comp;
 	unsigned compr_vector_size;
 	int64_t tw(minitig_id);
 	if (record_counts)
 	{
+		cout << "COUNTS " << minitig_id << endl;
+		for (auto && c: counts)
+			cout << c << " ";
+		cout << endl;
 		uint n(counts.size()*2);
 		uint nn(counts.size()*2 + 1024);
 		comp = RLE16C(counts); //homemade RLE with escape character 255
+		vector<uint16_t> decomp = RLE16D(comp);
+		cout << "decomp " << minitig_id << endl;
+		for (auto && c: decomp)
+			cout << c << " ";
+		cout << endl;
+		
 	}
 	else
 	{
@@ -72,21 +78,27 @@ void dump_compressed_vector_bucket_disk_query(vector<uint16_t>& counts, int64_t 
 	compr_vector_size = comp.size();
 	uint32_t bucket_nb;
 	// hash bit from the compressed counts to choose the bucket
-	if (compr_vector_size >= 8){
+	if (compr_vector_size >= 8)
+	{
 		bucket_nb = (xorshift((uint64_t)comp[0] + (uint64_t)comp[1]*256 +  (uint64_t)comp[2]*256*256 + (uint64_t)comp[3]*256*256*256 + (uint64_t)comp[4]*256*256*256*256 + (uint64_t)comp[5]*256*256*256*256*256 + (uint64_t)comp[6]*256*256*256*256*256*256 + (uint64_t)comp[7]*256*256*256*256*256*256*256 ) % bucket_files.size());
-	
-	}else if (compr_vector_size >= 4){
+	}
+	else if (compr_vector_size >= 4)
+	{
 		bucket_nb = (xorshift((uint64_t)comp[0] + (uint64_t)comp[1]*256 +  (uint64_t)comp[2]*256*256 + (uint64_t)comp[3]*256*256*256  ) % bucket_files.size());
-	}else{
+	}
+	else
+	{
 		bucket_nb = (xorshift((uint64_t)comp[0]) % bucket_files.size());
 	}
 	//write info in the bucket
 	long position(bucket_files[bucket_nb]->tellp());
 	bucket_files[bucket_nb]->write(reinterpret_cast<char*>(&compr_vector_size),sizeof(unsigned)); //size of the compressed information
 	bucket_files[bucket_nb]->write(reinterpret_cast<char*>(&tw),sizeof(int64_t)); //index
-	bucket_files[bucket_nb]->write((const char*)&comp[0],(compr_vector_size)); // compressed count vector	
+	bucket_files[bucket_nb]->write((const char*)&comp[0],(compr_vector_size)); // compressed count vector
 }
 
+
+//write count vectors in buckets to compare them and de-duplicate the count matrix
 void dump_compressed_vector_bucket(vector<uint16_t>& counts, int64_t minitig_id, unsigned char *in,  vector<ofstream*>& bucket_files, vector<uint8_t>& colors, bool record_counts )
 {
 	//get the bucket number
@@ -106,12 +118,17 @@ void dump_compressed_vector_bucket(vector<uint16_t>& counts, int64_t minitig_id,
 	compr_vector_size = trlec(in, n, comp) ;
 	uint32_t bucket_nb;
 	// hash bit from the compressed counts to choose the bucket
-	if (compr_vector_size >= 8){
+	if (compr_vector_size >= 8)
+	{
 		bucket_nb = (xorshift((uint64_t)comp[0] + (uint64_t)comp[1]*256 +  (uint64_t)comp[2]*256*256 + (uint64_t)comp[3]*256*256*256 + (uint64_t)comp[4]*256*256*256*256 + (uint64_t)comp[5]*256*256*256*256*256 + (uint64_t)comp[6]*256*256*256*256*256*256 + (uint64_t)comp[7]*256*256*256*256*256*256*256 ) % bucket_files.size());
 	
-	}else if (compr_vector_size >= 4){
+	}
+	else if (compr_vector_size >= 4)
+	{
 		bucket_nb = (xorshift((uint64_t)comp[0] + (uint64_t)comp[1]*256 +  (uint64_t)comp[2]*256*256 + (uint64_t)comp[3]*256*256*256  ) % bucket_files.size());
-	}else{
+	}
+	else
+	{
 		bucket_nb = (xorshift((uint64_t)comp[0]) % bucket_files.size());
 	}
 	//write info in the bucket
@@ -130,7 +147,6 @@ void read_matrix_compressed_line(ifstream& in, int64_t& rank, char* comp, unsign
 	in.read(reinterpret_cast<char *>(&comp_size), sizeof(unsigned));
 	in.read(reinterpret_cast<char *>(&rank), sizeof(int64_t));
 	in.read((char*)(comp) , comp_size);
-
 }
 
 

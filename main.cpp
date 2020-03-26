@@ -184,7 +184,6 @@ int main(int argc, char **argv)
 		PrintHelp();
 		return 0;
 	}
-
     if (do_Index) //indexing only
 	{
         if ( fof.size() == 0 ){
@@ -192,19 +191,10 @@ int main(int argc, char **argv)
             PrintHelp();
             return 0;
         }
-
-		//~ if (PE)
-		//~ {
-			//~ cout << "Writing paired-end file...\n" << endl;
-			//~ interleave_paired_end(fof, output);
-		//~ }
 		if (bcalm)
 		{
 			cout << "Computing De Bruijn graphs on each dataset using Bcalm2...\n\n" << endl;
 			fof = bcalm_launcher_single(fof,  k,  threads, output, output_bcalm, PE);
-			 // from here fof is a fof of unitig files
-		//~ } else {
-			//~ fof = getRealPaths(fof, output);
 		}
 		
 		if ( fof.empty() or k == 0 )
@@ -215,16 +205,9 @@ int main(int argc, char **argv)
 		}
 		string cl("");
 		bcalm_cleanup();
-		//~ string cmd("cp " + fof + " " + output + "/graphs.lst");
-		//~ systRet=system(cmd.c_str());
 		cout << "Indexing k-mers...\n\n" << endl;
 		color_dump_file = output + "/" + color_dump_file;
 		reindeer_index(k, fof, color_dump_file, record_counts,record_reads, output, cl, threads, exact, do_query_on_disk, quantize, do_log);
-		//~ if (PE)
-		//~ {
-			//~ string cmd("rm " + output + "/PE*" );
-			//~ systRet = system(cmd.c_str());
-		//~ }
 		cout << "INDEX BUILDING = THE END" <<endl;
 	} else {
 		if (color_load_file.empty())

@@ -70,18 +70,19 @@ void get_position_vector_query_disk(vector<long>& position_in_file, string& posi
 	delete in;
 }
 
-void get_matrix_line_query_disk(int64_t rank, unsigned char* color, unsigned& line_size, long position_in_matrix, ifstream& in )
+long get_matrix_line_query_disk(int64_t rank, unsigned char* color, unsigned& line_size, vector<long>& position_in_file, ifstream& in )
 {
-	in.seekg(position_in_matrix);
+	int64_t rank2;
+	long pos =  position_in_file[rank];
+	in.seekg(pos);
 	in.read(reinterpret_cast<char *>(&line_size), sizeof(unsigned));
-	in.read(reinterpret_cast<char *>(&rank), sizeof(int64_t));
+	in.read(reinterpret_cast<char *>(&rank2), sizeof(int64_t));
 	in.read((char*)(color) , line_size);
-
+	return pos;
 }
 
 long get_matrix_line_query(int64_t	rank, unsigned char* color, unsigned& line_size, vector<long>& position_in_file, vector<unsigned char*>& compr_minitig_color )
 {
-	
 	long pos =  position_in_file[rank];
 	color = compr_minitig_color[pos];
 	return pos;
@@ -89,7 +90,6 @@ long get_matrix_line_query(int64_t	rank, unsigned char* color, unsigned& line_si
 
 void get_colors_counts_query_eq_classes(vector<int64_t>& kmer_ids,   uint16_t color_number, vector<vector<uint16_t>>& query_counts,  vector<unsigned char*>& compr_minitig_color, vector<unsigned>&compr_minitig_color_size,vector<long>& position_in_file, bool record_counts, vector<vector<uint8_t>>& query_colors, bool do_query_on_disk, string& rd_file)
 {
-
 	ifstream in(rd_file);
 	unsigned char* color;
 	color = new unsigned char[2*color_number+1204];
@@ -114,44 +114,30 @@ void get_colors_counts_query_eq_classes(vector<int64_t>& kmer_ids,   uint16_t co
 				unsigned char* lo;
 				if (do_query_on_disk)
 				{
-					pos = position_in_file[kmer_ids[i]];
-					int64_t rank;
-					get_matrix_line_query_disk(rank, color, size, pos, in);
-					vector<uint8_t> count_int = count_string_to_count_vector8(color, size);
-					if (record_counts)
-					{
-						qcounts = RLE16D(count_int);
-					}
-					else
-					{
-						qcounts = {};
-						vector<uint8_t> qcounts8 = RLE8D(count_int);
-						copy(qcounts8.begin(), qcounts8.end(), back_inserter(qcounts));
-					}
+					pos = get_matrix_line_query_disk(kmer_ids[i], color, size, position_in_file, in);
+					lo = decode_vector((unsigned char*)&color[0], size, color_number, record_counts);
 				}
 				else
 				{
-					
 					pos = get_matrix_line_query(kmer_ids[i], color, size, position_in_file, compr_minitig_color);
 					lo = decode_vector((unsigned char*)&compr_minitig_color[pos][0], compr_minitig_color_size[pos], color_number, record_counts);
-					if (record_counts)
-					{
-						qcounts = count_string_to_count_vector(lo, color_number*2);
-					}
-					else
-					{
-						qcounts = {};
-						vector<uint8_t> qcounts8 = count_string_to_count_vector8(lo, compr_minitig_color_size[pos]);
-						copy(qcounts8.begin(), qcounts8.end(), back_inserter(qcounts));
-					}
-					delete lo;	
 				}
+				if (record_counts)
+				{
+					qcounts = count_string_to_count_vector(lo, color_number*2);
+				}
+				else
+				{
+					qcounts = {};
+					vector<uint8_t> qcounts8 = count_string_to_count_vector8(lo, compr_minitig_color_size[pos]);
+					copy(qcounts8.begin(), qcounts8.end(), back_inserter(qcounts));
+				}
+				delete lo;	
 				lastV = qcounts;
 				if (not qcounts.empty())
 				{
 					query_counts.push_back( qcounts );
 				}
-				
 			}
 		}
 	}
@@ -297,9 +283,7 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint16_t& color_n
 				}
 			}
 			uint i;
-			
 			#pragma omp for ordered
-			//~ for(i=(0);i<lines.size();++i){
 			for(i=(0);i<lines.size();i+=2){
 				uint j(i);
 				
@@ -310,7 +294,6 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint16_t& color_n
 				while (j < i+2)
 				{
 					string line=lines[j];
-					//~ cout << line << endl;
 					if(line[0]=='A' or line[0]=='C' or line[0]=='G' or line[0]=='T')
 					{
 						vector<int64_t> kmers_colors;
@@ -319,7 +302,6 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint16_t& color_n
 						kmer_ids=ksl.get_rank_query(line);
 						vector<vector<uint16_t>> query_counts;
 						vector<vector<uint8_t>> query_colors;
-
 						get_colors_counts_query_eq_classes( kmer_ids, color_number, query_counts,  compr_minitig_color, compr_minitig_color_size, position_in_file, record_counts, query_colors, do_query_on_disk, rd_file);
 						mm.lock();
 						write_output( kmers_colors, toWrite,  record_reads,  record_counts,  query_unitigID,query_unitigID_tmp,  color_number, header, line, k, threshold, query_counts, query_colors);
@@ -327,7 +309,6 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint16_t& color_n
 					} else {
 						if (line[0]=='>')
 							header = line;
-						//~ cout << header << endl;
 					}
 					j++;
 				}

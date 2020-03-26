@@ -4,6 +4,8 @@
 using namespace chrono;
 using namespace std;
 
+bool DELE_MONOTIG_FILE(true);
+
 // read colors from bcalm headers
 vector<uint8_t>  get_colors_minitigs(string& line)
 {
@@ -13,7 +15,6 @@ vector<uint8_t>  get_colors_minitigs(string& line)
 	{
 		colors.push_back((uint8_t) (stoi(colors_minitig[c]) > 0));
 	}
-	
 	return colors;
 }
 
@@ -30,7 +31,6 @@ vector<uint16_t> get_counts_minitigs(string& line)
 			}
 			pred=c+1;
 		}
-
 	}
 	counts.push_back(stoi(line.substr(pred)));
 	return counts;
@@ -39,70 +39,6 @@ vector<uint16_t> get_counts_minitigs(string& line)
 
 
 
-// build color/count matrix and dump it
-void build_matrix(string& color_load_file, string& color_dump_file, string& fof, kmer_Set_Light* ksl, bool record_counts, bool record_reads, uint k, uint64_t& color_number, uint nb_threads, bool exact, string& output, vector <unsigned char*>& compressed_colors, vector <unsigned>& compressed_colors_size, string& output_file)
-{
-	ifstream minitigs_file(output +"/_blmonocolor.fa");
-	uint64_t nb_minitigs(0);
-	auto out=new zstr::ofstream(output_file);
-	ofstream out_nb(output_file+"_minitig_nb");
-	mutex mm;
-	out->write(reinterpret_cast<char*>(&color_number),sizeof(uint64_t)); // number of colors
-	#pragma omp parallel num_threads(nb_threads)
-	{
-		vector<int64_t> minitig_id;
-		vector<uint16_t> counts;
-		string header,minitig, buffer;
-		unsigned char *in;
-		while(not minitigs_file.eof())
-		{
-			#pragma omp critical(infile)
-			{
-				getline(minitigs_file, header);
-				getline(minitigs_file, minitig);
-
-			}
-			if(minitig.empty() or header.empty()){continue;}
-			counts = get_counts_minitigs(header);
-			minitig_id.clear();
-			if (minitig[0] == 'A' or minitig[0] == 'C' or minitig[0] == 'G' or minitig[0] == 'T')
-			{
-				mm.lock();
-				++nb_minitigs;
-				mm.unlock();
-				minitig_id=ksl->get_rank_query(minitig.substr(0,k)); // all kmers have the same id so we only query one
-				if((not minitig_id.empty()) and minitig_id.back()>=0)
-				{
-					mm.lock();
-					dump_compressed_vector_buff(counts, minitig_id.back(), buffer, in);
-					mm.unlock();
-					if(buffer.size()>40000)
-					{
-						#pragma omp critical(outfile)
-						{
-							//~ out.write(&buffer[0], buffer.size());
-							out->write(&buffer[0], buffer.size());
-						}
-						buffer.clear();
-					}
-				}
-			}
-		}
-		if(buffer.size()>0)
-		{
-			#pragma omp critical(outfile)
-			{
-				out->write(&buffer[0], buffer.size());
-			}
-			buffer.clear();
-		}
-		delete(in);
-	}
-	out_nb.write(reinterpret_cast<char*>(&nb_minitigs),sizeof(uint64_t));
-	minitigs_file.close();
-	delete out;
-	out_nb.close();
-}
 
 
 
@@ -117,11 +53,10 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 		all_files.push_back(out); 
 	}
 	string output_file_name;
-	string minitigs_fn(output +"/_blmonocolor.fa"); //minitigs
+	string minitigs_fn(output +"/_blmonocolor.fa"); //monotigs
 	ifstream minitigs_file(minitigs_fn);
 	uint64_t nb_minitigs(0);
 	ofstream out_nb(output_file+"_eqc_minitig_nb");
-	//~ ofstream out_position(output_file+"_position");
 	mutex mm;
 	uint nb_treated_minitigs(0);
 	//~ #pragma omp parallel num_threads(nb_threads)
@@ -154,11 +89,10 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 				if((not minitig_id.empty()) and minitig_id.back()>=0)
 				{
 					mm.lock();
-
-					//write count vector
-					if (do_query_on_disk)
-						dump_compressed_vector_bucket_disk_query(counts, minitig_id.back(), in, all_files,  colors, record_counts);
-					else
+					//~ //write count vector
+					//~ if (do_query_on_disk)
+						//~ dump_compressed_vector_bucket_disk_query(counts, minitig_id.back(), in, all_files,  colors, record_counts);
+					//~ else
 						dump_compressed_vector_bucket(counts, minitig_id.back(), in, all_files,  colors, record_counts);
 
 					nb_treated_minitigs++;
@@ -171,7 +105,6 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 	out_nb.write(reinterpret_cast<char*>(&nb_minitigs),sizeof(uint64_t)); //TODO NB COLOR + /!\ relecture
 	//close files
 	out_nb.close();
-	//~ out_position.close();
 	for (uint i(0); i < all_files.size(); ++i)
 	{
 		all_files[i]->close();
@@ -191,8 +124,6 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 
 
 
-
-
 // color using minitig file: either build and dump the color matrix during the index construction, or load it during the query
 void do_coloring(string& color_load_file, string& color_dump_file, string& fof, kmer_Set_Light* ksl, bool record_counts, bool record_reads, uint k, uint64_t& color_number, uint nb_threads, bool exact, string& output, vector<unsigned char*>& compr_minitig_color,vector<unsigned>& compr_minitig_color_size, bool do_query_on_disk, string& nb_eq_class_file, string& nb_color_file, long& eq_class_nb, uint16_t& nb_colors)
 {
@@ -208,7 +139,6 @@ void do_coloring(string& color_load_file, string& color_dump_file, string& fof, 
 		ifstream nb_colors_f(nb_color_file);
 		nb_colors_f.read(reinterpret_cast<char *>(&nb_colors), sizeof(long));
 		nb_colors_f.close();
-		
 		if (not do_query_on_disk)
 		{
 			uint64_t color_number;
@@ -244,9 +174,11 @@ kmer_Set_Light* load_rle_index(uint k, string& color_load_file, string& color_du
 {
 	kmer_Set_Light* ksl= new kmer_Set_Light(output + "/reindeer_index.gz");
 	do_coloring(color_load_file, color_dump_file, fof, ksl, record_counts, record_reads, k, color_number, nb_threads, exact, output, compr_minitig_color, compr_minitig_color_sizes, do_query_on_disk, nb_eq_class_file, nb_colors_file, eq_class_nb, nb_colors);
-	//~ cout << nb_colors << endl;
-	string cmd("rm -f " + output +"/_blmonocolor.fa");
-	int sysRet(system(cmd.c_str()));
+	if (DELE_MONOTIG_FILE)
+	{
+		string cmd("rm -f " + output +"/_blmonocolor.fa");
+		int sysRet(system(cmd.c_str()));
+	}
 	return ksl;
 }
 
@@ -256,7 +188,7 @@ kmer_Set_Light* load_rle_index(uint k, string& color_load_file, string& color_du
 void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, string& color_load_file, string& color_dump_file, string& fof, bool record_counts, bool record_reads, uint64_t& color_number, kmer_Set_Light& ksl, uint nb_threads, bool exact, string& output, bool do_query_on_disk, bool quantize, bool do_log, uint16_t nb_colors)
 {
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
-	bool delete_minitig_file(true);
+	//~ bool delete_minitig_file(true);
 	if (not exists_test(output +"/_blmonocolor.fa"))
 	{
 		
@@ -283,9 +215,9 @@ void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, string& colo
 	} 
 	else 
 	{
-		cout << "Warning , _blmonocolor.fa file was found in output dir, I will use it and I won't delete it" << endl;
+		cout << "Warning , monotig file (_blmonocolor.fa) was found in output dir, I will use it and I won't delete it" << endl;
 		ksl.construct_index(output + "/_blmonocolor.fa",output);
-		delete_minitig_file = false;
+		DELE_MONOTIG_FILE = false;
 	}
 	vector<unsigned char*>compr_minitig_color;
 	vector<unsigned> compr_minitig_color_size;
@@ -301,7 +233,7 @@ void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, string& colo
 	cout << "Dumping index..."<< endl;
 	ksl.dump_disk(output + "/reindeer_index.gz");
 	high_resolution_clock::time_point t13 = high_resolution_clock::now();
-	if (delete_minitig_file)
+	if (DELE_MONOTIG_FILE)
 	{
 		string cmd("rm -f " + output +"/_blmonocolor.fa");
 		int sysRet(system(cmd.c_str()));

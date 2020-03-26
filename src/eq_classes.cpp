@@ -4,30 +4,10 @@
 using namespace std;
 
 
-//~ struct count_vector
-//~ {
-	//~ unsigned compressed_size;
-	//~ int64_t minitig_rank;
-	//~ string compressed;
-//~ };
-
-
-//~ struct compare_vec
-//~ {
-	//~ bool operator()(count_vector& vec1, count_vector& vec2)
-	//~ {
-		//~ return vec1.compressed < vec2.compressed;
-	//~ }
-//~ };
-
-
 void sort_vectors(vector<count_vector>& matrix_lines)
 {
 	sort(matrix_lines.begin(), matrix_lines.end(), compare_vec());
 }
-
-
-
 
 
 // write final matrix of equivalence classes
@@ -62,7 +42,6 @@ void get_eq_classes_disk_query(string& output, robin_hood::unordered_map<string,
 		++prev_pos;
 		count_vector v (rk->second.first);
 		char* comp (&v.compressed[0]); //homemade RLE compression
-
 		unsigned compr_vector_size = v.compressed.size();
 		long position(out->tellp());
 		out->write(reinterpret_cast<char*>(&compr_vector_size),sizeof(unsigned));
@@ -161,7 +140,6 @@ void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_
 	out_nbc.write(reinterpret_cast<char*>(&nb_eq_class), sizeof(long));
 	out_nbc.close();
 	ofstream out_nbcol(output + "/reindeer_matrix_eqc_nb_colors");
-	//~ cout << "*******************" <<nb_colors << endl;
 	out_nbcol.write(reinterpret_cast<char*>(&nb_colors), sizeof(uint16_t));
 	out_nbcol.close();
 	if (do_query_on_disk)

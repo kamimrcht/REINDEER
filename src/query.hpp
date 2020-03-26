@@ -56,7 +56,8 @@ vector<uint16_t> get_count_minitig(unsigned char* minitig_counts, unsigned vecto
 
 
 void get_position_vector_query_disk(vector<long>& position_in_file, string& position_file_name, uint64_t nb_minitig);
-void get_matrix_line_query_disk(int64_t rank, unsigned char* color, unsigned& line_size, long position_in_matrix, ifstream& in );
+//~ void get_matrix_line_query_disk(int64_t rank, unsigned char* color, unsigned& line_size, long position_in_matrix, ifstream& in );
+long get_matrix_line_query_disk(int64_t rank, unsigned char* color, unsigned& line_size, vector<long>& position_in_file, ifstream& in );
 
 
 long get_matrix_line_query(int64_t	rank, unsigned char* color, unsigned& line_size, vector<long>& position_in_file, vector<unsigned char*>& compr_minitig_color );

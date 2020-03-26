@@ -180,6 +180,9 @@ vector<uint16_t> RLE16D(const vector<uint8_t>&V){
 	for(uint64_t i(0);i<V.size();i+=3){
 		res.resize(V[i+2],V[i]*256+V[i+1]);
 	}
+	for (auto && k : res)
+	cout << k <<  " ";
+	cout << endl;
 	return res;
 }
 

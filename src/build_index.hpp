@@ -16,7 +16,6 @@ vector<uint16_t> get_counts_minitigs(string& line);
 
 
 // build color/count matrix and dump it
-void build_matrix(string& color_load_file, string& color_dump_file, string& fof, kmer_Set_Light* ksl, bool record_counts, bool record_reads, uint k, uint64_t& color_number, uint nb_threads, bool exact, string& output, vector <unsigned char*>& compressed_colors, vector <unsigned>& compressed_colors_size, string& output_file);
 
 
 // dispatch count vectors in files. Similar counts go in similar files
