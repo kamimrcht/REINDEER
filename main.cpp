@@ -220,11 +220,11 @@ int main(int argc, char **argv)
 		cout << "Indexing k-mers...\n\n" << endl;
 		color_dump_file = output + "/" + color_dump_file;
 		reindeer_index(k, fof, color_dump_file, record_counts,record_reads, output, cl, threads, exact, do_query_on_disk, quantize, do_log);
-		if (PE)
-		{
-			string cmd("rm " + output + "/PE*" );
-			systRet = system(cmd.c_str());
-		}
+		//~ if (PE)
+		//~ {
+			//~ string cmd("rm " + output + "/PE*" );
+			//~ systRet = system(cmd.c_str());
+		//~ }
 		cout << "INDEX BUILDING = THE END" <<endl;
 	} else {
 		if (color_load_file.empty())
