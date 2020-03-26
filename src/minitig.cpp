@@ -216,7 +216,7 @@ void kmer_Set_Light::construct_index_fof(const string& input_file, const string&
 		for(uint i_superbuckets=0; i_superbuckets<number_superbuckets.value(); ++i_superbuckets)
 		{
 			merge_super_buckets_mem(working_dir + "_blout" + to_string(i_superbuckets), fnames.size(), &out);
-			remove((working_dir + "_blsout" + to_string(i_superbuckets)).c_str());
+			remove((working_dir + "_blout" + to_string(i_superbuckets)).c_str());
 			cout << "-" << flush;
 		}
 	}
