@@ -570,7 +570,7 @@ we need this 2-functors scheme because HashFunctors won't work with unordered_ma
 					return in_final_map->second;
 				} else {
 					// elem was not in orignal set of keys
-					assert(false, "not in final map");
+					//assert(false, "not in final map"); // Rayan: removed as we definitely want blight to report when a kmer isnt found; not throw an assert false
 					return ULLONG_MAX; // means elem not in set
 				}
 			}
