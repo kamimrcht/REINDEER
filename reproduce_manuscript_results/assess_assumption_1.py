@@ -12,7 +12,7 @@ if len(sys.argv) < 3:
 	exit("args: unitigs_file kmc_counts.raw")
 unitigs_file = sys.argv[1]
 kmc_counts = sys.argv[2]
-k=21
+k=0
 
 #sample_kmc=10000000
 #sample_points=100000
@@ -29,6 +29,7 @@ def normalize(kmer):
 counts_dict = dict()
 for i,line in enumerate(open(kmc_counts)):
     kmer, count = line.strip().split()
+    if i == 0: k = len(kmer)
     counts_dict[normalize(kmer)] = int(count)
     
     if sample_kmc != 0 and i > sample_kmc: break
@@ -60,9 +61,17 @@ for j,fasta in enumerate(fasta_sequences):
 subsampling = 500000
 print("saving points, subsampling to",subsampling)
 import random
-subsampled_points = random.sample(points,subsampling)
+if len(points) <= subsampling:
+	subsampled_points = points
+else:
+	subsampled_points = random.sample(points,subsampling)
 dump(subsampled_points, open("points.500k.pkl","wb"))
 
 import scipy.stats
+print("stats on all points")
 print("spearman",scipy.stats.spearmanr(points))
 print("pearson",scipy.stats.pearsonr(list(map(lambda x:x[0],points)),list(map(lambda x:x[1],points))))
+
+print("stats on subsampled")
+print("spearman",scipy.stats.spearmanr(subsampled_points))
+print("pearson",scipy.stats.pearsonr(list(map(lambda x:x[0],subsampled_points)),list(map(lambda x:x[1],subsampled_points))))
