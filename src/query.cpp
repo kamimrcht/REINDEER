@@ -271,6 +271,7 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint16_t& color_n
 	// FOR EACH LINE OF THE QUERY FILE
 	string position_file_name(rd_file+"_position.gz");
 	get_position_vector_query_disk(position_in_file,  position_file_name,nb_minitig);
+    bool should_be_oneline = true; // delete this when the query doesn't need to be a one-line-per-sequence multiFASTA anymore
 	while(not query_file.eof()){
 		#pragma omp parallel num_threads(nb_threads)
 		{
@@ -296,6 +297,13 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint16_t& color_n
 					string line=lines[j];
 					if(line[0]=='A' or line[0]=='C' or line[0]=='G' or line[0]=='T')
 					{
+                        if (should_be_oneline)
+                        {
+                            cout<<"Query FASTA file needs to have one line per sequence"<<endl; exit(1);
+                        }
+                        else
+                            should_be_oneline = !should_be_oneline;
+
 						vector<int64_t> kmers_colors;
 						vector<string> color_counts;
 						vector<int64_t> kmer_ids;
@@ -309,6 +317,7 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint16_t& color_n
 					} else {
 						if (line[0]=='>')
 							header = line;
+                        should_be_oneline = !should_be_oneline;
 					}
 					j++;
 				}

@@ -50,12 +50,12 @@ bool do_log(false);
 void PrintHelp()
 {
     cout <<
-			"******************* REINDEER v1.0.1**********************************\n"
-			"******************* REad Index for abuNDancE quERy ******************\n\n"
-			
+            "******************* REINDEER v1.0.1**********************************\n"
+            "******************* REad Index for abuNDancE quERy ******************\n\n"
+            
             "                    INDEX BUILDING\n\n"
 
-			"      * Mandatory parameters\n"
+            "      * Mandatory parameters\n"
             "--index                 :     Indexing mode\n"
             "-f <file>               :     File of file for colors. Either:\n"
             "                                  i) you've already computed each DBG on your samples, in this case the fof is a list of unitig files\n"
@@ -73,9 +73,9 @@ void PrintHelp()
 
             "                    QUERY\n\n"
 
-			"      * Mandatory parameters\n"
-			"--query                 :     Query mode\n"
-			"-l                      :     Reindeer index directory (should be output_reindeer if you've not used -o during indexing)\n"
+            "      * Mandatory parameters\n"
+            "--query                 :     Query mode\n"
+            "-l                      :     Reindeer index directory (should be output_reindeer if you've not used -o during indexing)\n"
             "-q <FASTA>              :     FASTA query file with query sequences\n"
             "      * Optional parameters\n"
             "--nocount               :     You need to specify this if the index was constructed with --nocount\n"
@@ -92,7 +92,7 @@ void PrintHelp()
 
 void ProcessArgs(int argc, char** argv)
 {
-	
+    
     const char* const short_opts = "k:S:t:f:l:g:q:o:w:";
     const option long_opts[] = {
             {"index", no_argument, nullptr, 'i'},
@@ -116,51 +116,51 @@ void ProcessArgs(int argc, char** argv)
 
         switch (opt)
         {
-			case 'i':
-				do_Index=true;
-				break;
-			case 'f':
-				fof=optarg;
-				break;
-			case 'Q':
-				do_Query=true;
-				break;
-			case 'u':
-				quantize=true;
-				break;
-			case 'L':
-				do_log=true;
-				break;
-			case 'q':
-				query=optarg;
-				break;
-			case 'k':
-				k=stoi(optarg);
-				break;
-			case 't':
-				threads=stoi(optarg);
-				break;
-			case 'c':
-				record_counts=false;
+            case 'i':
+                do_Index=true;
                 break;
-			case 'P':
-				PE=true;
-				break;
-			case 'S':
-				threshold=stoi(optarg);
-				break;
-			case 'l':
-				color_load_file=optarg;
-				break;
-			case 'o':
-				output=optarg;
-				break;
-			case 'b':
-				bcalm=true;
-				break;
-			case 'd':
-				do_query_on_disk=true;
-				break;
+            case 'f':
+                fof=optarg;
+                break;
+            case 'Q':
+                do_Query=true;
+                break;
+            case 'u':
+                quantize=true;
+                break;
+            case 'L':
+                do_log=true;
+                break;
+            case 'q':
+                query=optarg;
+                break;
+            case 'k':
+                k=stoi(optarg);
+                break;
+            case 't':
+                threads=stoi(optarg);
+                break;
+            case 'c':
+                record_counts=false;
+                break;
+            case 'P':
+                PE=true;
+                break;
+            case 'S':
+                threshold=stoi(optarg);
+                break;
+            case 'l':
+                color_load_file=optarg;
+                break;
+            case 'o':
+                output=optarg;
+                break;
+            case 'b':
+                bcalm=true;
+                break;
+            case 'd':
+                do_query_on_disk=true;
+                break;
         case 'h': // -h or --help
         case '?': // Unrecognized option
         default:
@@ -173,56 +173,61 @@ void ProcessArgs(int argc, char** argv)
 
 int main(int argc, char **argv)
 {
-	int systRet;
+    int systRet;
     ProcessArgs(argc, argv);
-	
-	if (not dirExists(output)){
-		systRet=system(("mkdir " + output).c_str());
-	}
-	if ( (do_Index and do_Query) or not(do_Index or do_Query) ){
-		cout << "You must choose: either indexing or querying\n" << endl;
-		PrintHelp();
-		return 0;
-	}
+    
+    if (not dirExists(output)){
+        systRet=system(("mkdir " + output).c_str());
+    }
+    if ( (do_Index and do_Query) or not(do_Index or do_Query) ){
+        cout << "You must choose: either indexing or querying\n" << endl;
+        PrintHelp();
+        return 0;
+    }
     if (do_Index) //indexing only
-	{
+    {
         if ( fof.size() == 0 ){
             cout << "Please specify input datasets to index using using -f.\n" << endl;
             PrintHelp();
             return 0;
         }
-		if (bcalm)
-		{
-			cout << "Computing De Bruijn graphs on each dataset using Bcalm2...\n\n" << endl;
-			fof = bcalm_launcher_single(fof,  k,  threads, output, output_bcalm, PE);
-		}
-		
-		if ( fof.empty() or k == 0 )
-		{
-			cout << "Missing argument " << endl;
-			PrintHelp();
-			return 0;
-		}
-		string cl("");
-		bcalm_cleanup();
-		cout << "Indexing k-mers...\n\n" << endl;
-		color_dump_file = output + "/" + color_dump_file;
-		reindeer_index(k, fof, color_dump_file, record_counts,record_reads, output, cl, threads, exact, do_query_on_disk, quantize, do_log);
-		cout << "INDEX BUILDING = THE END" <<endl;
-	} else {
-		if (color_load_file.empty())
-		{
-			cout << "Missing argument -l" << endl;
-			PrintHelp();
-			return 0;
-		} else {
-			cout << "Querying..." << endl;
-			string output_query(output + "/query_results");
-			if (not dirExists(output_query)){
-				systRet=system(("mkdir " + output_query).c_str());
-			}
-			reindeer_query(k, color_load_file, output_query,  record_counts,  record_reads,  threshold,  bgreat_paths_fof,  query, threads, exact, do_query_on_disk);
-		}
-	}
+        if (bcalm)
+        {
+            cout << "Computing De Bruijn graphs on each dataset using Bcalm2...\n\n" << endl;
+            fof = bcalm_launcher_single(fof,  k,  threads, output, output_bcalm, PE);
+        }
+        
+        if ( fof.empty() or k == 0 )
+        {
+            cout << "Missing argument " << endl;
+            PrintHelp();
+            return 0;
+        }
+        string cl("");
+        bcalm_cleanup();
+        cout << "Indexing k-mers...\n\n" << endl;
+        color_dump_file = output + "/" + color_dump_file;
+        reindeer_index(k, fof, color_dump_file, record_counts,record_reads, output, cl, threads, exact, do_query_on_disk, quantize, do_log);
+        cout << "INDEX BUILDING = THE END" <<endl;
+    } else {
+        if (color_load_file.empty())
+        {
+            cout << "Missing argument -l" << endl;
+            PrintHelp();
+            return 0;
+        } else {
+            cout << "Querying..." << endl;
+            string output_query(output + "/query_results");
+            if (not dirExists(output_query)){
+                systRet=system(("mkdir " + output_query).c_str());
+            }
+            if (not exists_test(query))
+            {   
+                cout << "Invalid query file" << endl;
+                return 0;
+            }
+            reindeer_query(k, color_load_file, output_query,  record_counts,  record_reads,  threshold,  bgreat_paths_fof,  query, threads, exact, do_query_on_disk);
+        }
+    }
     return 0;
 }
