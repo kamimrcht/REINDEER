@@ -1,0 +1,3 @@
+# converts a multiFASTA file into one where all sequences are one one line
+# this is the needed format in REINDEER query files 
+awk '/^>/ {printf("\n%s\n",$0);next; } { printf("%s",$0);}  END {printf("\n");}' < $1
