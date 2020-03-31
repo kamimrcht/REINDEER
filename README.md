@@ -29,7 +29,7 @@ Then, a query sequence (FASTA) can be quantified in each indexed dataset.
 Other tools allow to perform such a task, however REINDEER is focused on memory footprint. Thus, we showed it allows to index 2585 RNA-seq datasets (~4 billions k-mers) using less than 60GB of RAM and a final index size lower than 60GB on the disk.
 Then, REINDEER index can be loaded in RAM for fast queries.
 
-![alt text](Images/reindeer.png "REINDEER.png")
+<img src="./Images/reindeer.png" alt="drawing" width="400"/>
 
 
 Note on presence/absence queries: REINDEER supports this type of queries, although other data structures are more fit for this task. See for instance:
@@ -38,6 +38,7 @@ Note on presence/absence queries: REINDEER supports this type of queries, althou
 * [Vari-Merge](https://academic.oup.com/bioinformatics/article/35/14/i51/5529124)
 * [BIGSI](https://www.ncbi.nlm.nih.gov/pubmed/30718882)
 * [BiFrost](https://www.biorxiv.org/content/10.1101/695338v2)
+
 to name a few.
 
 # Installation
