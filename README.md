@@ -94,9 +94,17 @@ In order to have k-mer presence/absence instead of abundance per indexed dataset
 
 By default, query outputs are written in `output_reindeer/query_results/`
 
+## k-mer abundances
+
+The output of REINDEER looks like:
+
+>    >SRR10092187.6 HISEQ:815:HK2NNBCXY:1:1101:1224:2136 length=51 66 2:4
+
+Counts are reported in a particular format. In this example, `66` means that the queried k-mers correspond to a region which abundance is 66 in dataset 1. In the third column, we observe that two numbers were given, separated by a `:` It means that the sequence spans 2 unitigs in the graph of dataset 2, so REINDEER reported the counts in these 2 unitigs.
+
 ## k-mer presence/absence
 
-Here is one example line from Reindeer's query:
+When launched with `--nocount`, an example line from Reindeer's query is:
 
 >    >SRR10092187.47 HISEQ:815:HK2NNBCXY:1:1101:1829:2108 length=51 dataset1:100% dataset3:71%
 
@@ -109,16 +117,6 @@ In this example, it means than `t`% k-mers from sequence `>SRR10092187.47 HISEQ:
 
 Finally, we can see that 100% of the k-mers from the queried sequence appear in dataset `1`, and only 71% appear in dataset `3`.
 
-## k-mer abundances
-
-The output changes slightly:
-
->    >SRR10092187.6 HISEQ:815:HK2NNBCXY:1:1101:1224:2136 length=51 66 2:4
-
-This time, instead of percentages of present k-mers, the query counts per datasets are indicated.
-In this example, `66` means that the queried k-mers correspond to a region which abundance is 66 in dataset 1.
-
-In the third column, we observe that two numbers were given, separated by a `:` It means that the sequence spans 2 unitigs in the graph of dataset 2, so REINDEER reported the counts in these 2 unitigs.
 
 
 # Beta options
