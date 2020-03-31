@@ -50,7 +50,7 @@ bool do_log(false);
 void PrintHelp()
 {
     cout <<
-            "******************* REINDEER v1.0.1**********************************\n"
+            "******************* REINDEER v1.0.2**********************************\n"
             "******************* REad Index for abuNDancE quERy ******************\n\n"
             
             "                    INDEX BUILDING\n\n"
