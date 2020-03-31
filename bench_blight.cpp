@@ -109,7 +109,7 @@ int main(int argc, char ** argv){
 		cout<<"I use -k "+to_string(k)+" -m  "+to_string(m1)+" -n  "+to_string(m2)+" -s  "+to_string(m3)+" -t "+to_string(c)+" -b "+to_string(bit)<<endl;
 		kmer_Set_Light ksl(k,m1,m2,m3,c,bit);
 		if(input!=""){
-			cout<<"Build index from file "<<input<<"in directory wdir (if it does not exists please create it)"<<endl;
+			cout<<"Build index from file "<<input<<" in directory wdir (if it does not exists please create it)"<<endl;
 			ksl.construct_index(input,"wdir");
 		}
 

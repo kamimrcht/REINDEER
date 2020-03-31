@@ -457,10 +457,10 @@ void kmer_Set_Light::str2bool(const string& str,uint64_t mini){
 
 
 void kmer_Set_Light::read_super_buckets(const string& input_file){
-	//~ #pragma omp parallel num_threads(coreNumber)
+	#pragma omp parallel num_threads(coreNumber)
 	{
 		string useless,line;
-		//~ #pragma omp for
+		#pragma omp for
 		for(uint64_t SBC=0;SBC<number_superbuckets.value();++SBC){
 			vector<uint64_t> number_kmer_accu(bucket_per_superBuckets.value(),0);
 			uint64_t BC(SBC*bucket_per_superBuckets);
@@ -473,22 +473,29 @@ void kmer_Set_Light::read_super_buckets(const string& input_file){
 					useless=useless.substr(1);
 					uint64_t minimizer(stoi(useless));
 					str2bool(line,minimizer);
-					//~ #pragma omp critical(PSK)
+					// #pragma omp critical(PSK)
 					{
 						position_super_kmers[number_kmer_accu[minimizer%bucket_per_superBuckets]+all_mphf[minimizer].mphf_size]=true;
 					}
+					#pragma omp atomic
 					number_kmer+=line.size()-k+1;
 					number_kmer_accu[minimizer%bucket_per_superBuckets]+=line.size()-k+1;
+					#pragma omp atomic
+					++number_super_kmer;
 					line.clear();
-					number_super_kmer++;
+
 				}
 			}
 			remove((input_file+to_string(SBC)+".gz").c_str());
 			//~ create_mphf_mem(BC,BC+bucket_per_superBuckets);
+
 			create_mphf_disk(BC,BC+bucket_per_superBuckets);
-			position_super_kmers.optimize();
-			position_super_kmers.optimize_gap_size();
-			fill_positions(BC,BC+bucket_per_superBuckets);
+			// #pragma omp critical(PSK)
+			// {
+			// 	position_super_kmers.optimize();
+			// 	position_super_kmers.optimize_gap_size();
+			// }
+				fill_positions(BC,BC+bucket_per_superBuckets);
 			BC+=bucket_per_superBuckets.value();
 			cout<<"-"<<flush;
 		}
