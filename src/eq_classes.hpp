@@ -15,7 +15,7 @@ using namespace std;
 struct count_vector
 {
 	unsigned compressed_size;
-	int64_t minitig_rank;
+	int64_t monotig_rank;
 	string compressed;
 };
 

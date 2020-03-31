@@ -3,9 +3,9 @@ using namespace std;
 
 
 // dump rle vector on buffer
-void dump_compressed_vector_buff(vector<uint16_t>& counts, int64_t minitig_id, string& buffer, unsigned char *in)
+void dump_compressed_vector_buff(vector<uint16_t>& counts, int64_t monotig_id, string& buffer, unsigned char *in)
 {
-	// one vector corresponding to the minitig count/colors
+	// one vector corresponding to the monotig count/colors
 	// convert to string for the compression
 	uint n(counts.size()*2);
 	uint nn(counts.size()*2 + 1024);
@@ -13,15 +13,15 @@ void dump_compressed_vector_buff(vector<uint16_t>& counts, int64_t minitig_id, s
 	in = (unsigned char*)&counts[0];
 	unsigned compr_vector_size = trlec(in, n, comp) ; //todo can I write it now on the disk
 	buffer.append(reinterpret_cast<char*>(&compr_vector_size),sizeof(unsigned));
-	int64_t tw(minitig_id);
+	int64_t tw(monotig_id);
 	buffer.append(reinterpret_cast<char*>(&tw),sizeof(int64_t));
 	buffer.append((const char*)comp,(compr_vector_size));
 }
 
 // load rle encoded matrix from disk (keep compressed in ram)
-vector<unsigned char*> load_compressed_vectors(const string& input_file, vector<unsigned>&vector_sizes, uint64_t& color_number, uint64_t& minitig_number, long eq_class_nb)
+vector<unsigned char*> load_compressed_vectors(const string& input_file, vector<unsigned>&vector_sizes, uint64_t& color_number, uint64_t& monotig_number, long eq_class_nb)
 {
-	ifstream in_nb(input_file + "_minitig_nb");
+	ifstream in_nb(input_file + "_monotig_nb");
 	auto in = new zstr::ifstream(input_file);
 	if(not exists_test(input_file))
 	{
@@ -30,7 +30,7 @@ vector<unsigned char*> load_compressed_vectors(const string& input_file, vector<
 	}
 	int64_t rank;
 	unsigned line_size;
-	in_nb.read(reinterpret_cast<char *>(&minitig_number), sizeof(uint64_t));
+	in_nb.read(reinterpret_cast<char *>(&monotig_number), sizeof(uint64_t));
 	in->read(reinterpret_cast<char *>(&color_number), sizeof(uint64_t));
 	vector<unsigned char*> out; //todo resize when loading eq class
 	uint t(0);
@@ -50,14 +50,14 @@ vector<unsigned char*> load_compressed_vectors(const string& input_file, vector<
 }
 
 
-void dump_compressed_vector_bucket_disk_query(vector<uint16_t>& counts, int64_t minitig_id, unsigned char *in,vector<ofstream*>& bucket_files,  vector<uint8_t>& colors, bool record_counts)
+void dump_compressed_vector_bucket_disk_query(vector<uint16_t>& counts, int64_t monotig_id, unsigned char *in,vector<ofstream*>& bucket_files,  vector<uint8_t>& colors, bool record_counts)
 {
 	vector<unsigned char> comp;
 	unsigned compr_vector_size;
-	int64_t tw(minitig_id);
+	int64_t tw(monotig_id);
 	if (record_counts)
 	{
-		cout << "COUNTS " << minitig_id << endl;
+		cout << "COUNTS " << monotig_id << endl;
 		for (auto && c: counts)
 			cout << c << " ";
 		cout << endl;
@@ -65,7 +65,7 @@ void dump_compressed_vector_bucket_disk_query(vector<uint16_t>& counts, int64_t 
 		uint nn(counts.size()*2 + 1024);
 		comp = RLE16C(counts); //homemade RLE with escape character 255
 		vector<uint16_t> decomp = RLE16D(comp);
-		cout << "decomp " << minitig_id << endl;
+		cout << "decomp " << monotig_id << endl;
 		for (auto && c: decomp)
 			cout << c << " ";
 		cout << endl;
@@ -99,7 +99,7 @@ void dump_compressed_vector_bucket_disk_query(vector<uint16_t>& counts, int64_t 
 
 
 //write count vectors in buckets to compare them and de-duplicate the count matrix
-void dump_compressed_vector_bucket(vector<uint16_t>& counts, int64_t minitig_id, unsigned char *in,  vector<ofstream*>& bucket_files, vector<uint8_t>& colors, bool record_counts )
+void dump_compressed_vector_bucket(vector<uint16_t>& counts, int64_t monotig_id, unsigned char *in,  vector<ofstream*>& bucket_files, vector<uint8_t>& colors, bool record_counts )
 {
 	//get the bucket number
 	uint n;
@@ -134,7 +134,7 @@ void dump_compressed_vector_bucket(vector<uint16_t>& counts, int64_t minitig_id,
 	//write info in the bucket
 	long position(bucket_files[bucket_nb]->tellp());
 	bucket_files[bucket_nb]->write(reinterpret_cast<char*>(&compr_vector_size),sizeof(unsigned)); //size of the compressed information
-	bucket_files[bucket_nb]->write(reinterpret_cast<char*>(&minitig_id),sizeof(int64_t)); //index
+	bucket_files[bucket_nb]->write(reinterpret_cast<char*>(&monotig_id),sizeof(int64_t)); //index
 	bucket_files[bucket_nb]->write((const char*)comp,(compr_vector_size)); // compressed count vector
 }
 

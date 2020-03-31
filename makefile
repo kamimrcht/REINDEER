@@ -18,19 +18,19 @@ ifeq ($(DEBUG_SYMS), 1)
 endif
 CFLAGS2+= -w -Wall -std=gnu99 -DUSE_THREADS  -fstrict-aliasing -Iext $(DEFS)
 CFLAGS+=-std=c++11 -pipe -lz -fopenmp ${WARNS}
-INC=blight/blight.h blight/bbhash.h blight/common.h src/utils.hpp src/reindeer.hpp src/launch_bcalm.hpp trle/trle.h trle/trle_.h trle/conf.h src/eq_classes.hpp src/query.hpp src/build_index.hpp blight/utils.h src/eq_classes.hpp blight/zstr.hpp blight/common.h blight/robin_hood.h src/minitig.hpp src/matrix_operation.hpp
+INC=blight/blight.h blight/bbhash.h blight/common.h src/utils.hpp src/reindeer.hpp src/launch_bcalm.hpp trle/trle.h trle/trle_.h trle/conf.h src/eq_classes.hpp src/query.hpp src/build_index.hpp blight/utils.h src/eq_classes.hpp blight/zstr.hpp blight/common.h blight/robin_hood.h src/monotig.hpp src/matrix_operation.hpp
 EXEC=Reindeer
 
 
 all: $(EXEC)
 
-Reindeer: main.o blight.o utils_b.o trlec.o trled.o minitig.o utils.o reindeer.o query.o build_index.o eq_classes.o launch_bcalm.o matrix_operation.o
+Reindeer: main.o blight.o utils_b.o trlec.o trled.o monotig.o utils.o reindeer.o query.o build_index.o eq_classes.o launch_bcalm.o matrix_operation.o
 	$(CXX) -o $@ $^ $(CFLAGS)
 
 main.o: main.cpp $(INC)
 	$(CXX) -o $@ -c $< $(CFLAGS)
 
-minitig.o: src/minitig.cpp $(INC)
+monotig.o: src/monotig.cpp $(INC)
 	$(CXX) -o $@ -c $< $(CFLAGS)
 
 blight.o: blight/blight.cpp $(INC)
@@ -67,7 +67,7 @@ matrix_operation.o: src/matrix_operation.cpp $(INC)
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 clean:
-	rm -rf trlec.o trled.o utils.o main.o blight.o utils_b.o reindeer.o query.o build_index.o eq_classes.o launch_bcalm.o minitig.o matrix_operation.o
+	rm -rf trlec.o trled.o utils.o main.o blight.o utils_b.o reindeer.o query.o build_index.o eq_classes.o launch_bcalm.o monotig.o matrix_operation.o
 	rm -rf $(EXEC)
 
 rebuild: clean $(EXEC)

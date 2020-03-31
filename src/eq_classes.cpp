@@ -15,14 +15,14 @@ void get_eq_classes(string& output, robin_hood::unordered_map<string, pair<count
 {
 	string prev_comp("");
 	// for each representant, write the compressed size, index and compressed counts on disk
-	// write a file:  integer i at position n shows which row i of the matrix should be looked up for minitig n (surjection minitigs -> class representants)
+	// write a file:  integer i at position n shows which row i of the matrix should be looked up for monotig n (surjection monotigs -> class representants)
 	for (auto rk(bucket_class.begin()); rk != bucket_class.end(); ++rk)
 	{
 		++prev_pos;
 		count_vector v (rk->second.first);
 		char* comp (&v.compressed[0]);
 		out->write(reinterpret_cast<char*>(&v.compressed_size),sizeof(unsigned));
-		out->write(reinterpret_cast<char*>(&v.minitig_rank),sizeof(int64_t));
+		out->write(reinterpret_cast<char*>(&v.monotig_rank),sizeof(int64_t));
 		out->write((const char*)comp,(v.compressed_size));
 		for (auto && rank: rk->second.second)
 		{
@@ -36,7 +36,7 @@ void get_eq_classes_disk_query(string& output, robin_hood::unordered_map<string,
 {
 	string prev_comp("");
 	// for each representant, write the compressed size, index and compressed counts on disk
-	// write a file:  integer i at position n shows which row i of the matrix should be looked up for minitig n (surjection minitigs -> class representants)
+	// write a file:  integer i at position n shows which row i of the matrix should be looked up for monotig n (surjection monotigs -> class representants)
 	for (auto rk(bucket_class.begin()); rk != bucket_class.end(); ++rk)
 	{
 		++prev_pos;
@@ -45,7 +45,7 @@ void get_eq_classes_disk_query(string& output, robin_hood::unordered_map<string,
 		unsigned compr_vector_size = v.compressed.size();
 		long position(out->tellp());
 		out->write(reinterpret_cast<char*>(&compr_vector_size),sizeof(unsigned));
-		int64_t tw(v.minitig_rank);
+		int64_t tw(v.monotig_rank);
 		out->write(reinterpret_cast<char*>(&tw),sizeof(int64_t));
 		out->write((const char*)&comp[0],(compr_vector_size));
 		char* returnc = new char[1];
@@ -104,14 +104,14 @@ void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_
 				if (not bucket_class.count(v.compressed))
 				{
 					vector<uint64_t> vv;
-					vv.push_back(v.minitig_rank);
+					vv.push_back(v.monotig_rank);
 					pair<count_vector, vector<uint64_t>> p (v,vv);
 					bucket_class.insert({v.compressed,p});
 				}
 				else
 				{
 					// for count vectors identical to a representant, rememember their index is associated to this representant
-					bucket_class[v.compressed].second.push_back(v.minitig_rank);
+					bucket_class[v.compressed].second.push_back(v.monotig_rank);
 				}
 				in.peek();
 

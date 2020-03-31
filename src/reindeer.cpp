@@ -58,18 +58,18 @@ void reindeer_query(uint k, string& output,string& output_query, bool record_cou
 
 	uint64_t color_number; //virer
 	
-	vector<unsigned char*> compr_minitig_color;
-	vector<unsigned> compr_minitig_color_sizes;
+	vector<unsigned char*> compr_monotig_color;
+	vector<unsigned> compr_monotig_color_sizes;
 
 	cout << "\n#Loading index..." << endl;
 	long eq_class_nb(0);
-	kmer_Set_Light* ksl = load_rle_index(k, color_load_file, color_dump_file, fof, record_counts, record_reads, color_number, threads, exact, output, compr_minitig_color, compr_minitig_color_sizes, do_query_on_disk, nb_eq_class_file, color_nb_file, eq_class_nb, nb_colors);
+	kmer_Set_Light* ksl = load_rle_index(k, color_load_file, color_dump_file, fof, record_counts, record_reads, color_number, threads, exact, output, compr_monotig_color, compr_monotig_color_sizes, do_query_on_disk, nb_eq_class_file, color_nb_file, eq_class_nb, nb_colors);
 	high_resolution_clock::time_point t12 = high_resolution_clock::now();
 	duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
 	cout<<"#Index loading total: "<< time_span12.count() << " seconds."<<endl;
 	cout << "\n#Computing query..." << endl;
 	high_resolution_clock::time_point tnew = high_resolution_clock::now();
-	perform_query(*ksl, nb_colors, k, record_counts,  record_reads,  threshold, bgreat_paths_fof, query, output_query, threads, exact, compr_minitig_color, compr_minitig_color_sizes, do_query_on_disk, matrix_name, eq_class_nb);
+	perform_query(*ksl, nb_colors, k, record_counts,  record_reads,  threshold, bgreat_paths_fof, query, output_query, threads, exact, compr_monotig_color, compr_monotig_color_sizes, do_query_on_disk, matrix_name, eq_class_nb);
 	high_resolution_clock::time_point tnew2 = high_resolution_clock::now();
 	duration<double> time_spannew2 = duration_cast<duration<double>>(tnew2 - tnew);
 	cout<<"#Querying sequences took "<< time_spannew2.count() << " seconds in total."<<endl;
