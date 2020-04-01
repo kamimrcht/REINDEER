@@ -221,7 +221,7 @@ int main(int argc, char **argv)
             if (not dirExists(output_query)){
                 systRet=system(("mkdir " + output_query).c_str());
             }
-            if (not exists_test(query))
+            if (not(query.empty() or exists_test(query)))
             {   
                 cout << "Invalid query file" << endl;
                 return 0;
