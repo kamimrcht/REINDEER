@@ -24,13 +24,12 @@
 
 # Motivation
 
-REINDEER builds a data-structure that indexes the abundances of k-mers from a collection of datasets (raw RNA-seq or metagenomic reads for instance).
-Then, a query sequence (FASTA) can be quantified in each indexed dataset.
-Other tools allow to perform such a task, however REINDEER is focused on memory footprint. Thus, we showed it allows to index 2585 RNA-seq datasets (~4 billions k-mers) using less than 60GB of RAM and a final index size lower than 60GB on the disk.
-Then, REINDEER index can be loaded in RAM for fast queries.
+REINDEER builds a data-structure that indexes k-mers and their abundances in a collection of datasets (raw RNA-seq or metagenomic reads for instance).
+Then, a sequence (FASTA) can be queried for its presence and abundance in each indexed dataset.
+While other tools (e.g. SBT, BIGSI) were also designed for large-scale k-mer presence/absence queries, retrieving abundances was so far unsupported (except for single datasets, e.g. using some k-mer counters like KMC, Jellyfish). REINDEER combines fast queries, small index size, and low memory footprint during indexing and queries. We showed it allows to index 2585 RNA-seq datasets (~4 billions k-mers) using less than 60GB of RAM and a final index size lower than 60GB on the disk.
+Then, a REINDEER index can either be queried on disk (experimental feature, low RAM usage) or be loaded in RAM for faster queries.
 
 <img src="./Images/reindeer.png" alt="drawing" width="400"/>
-
 
 Note on presence/absence queries: REINDEER supports this type of queries, although other data structures are more fit for this task. See for instance:
 
