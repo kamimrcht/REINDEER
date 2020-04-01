@@ -42,6 +42,7 @@ using namespace std;
 
 uint64_t xorshift ( uint64_t x );
 
+string getLineFasta_buffer(ifstream* in);
 
 
 bool is_empty_file(ifstream& file);

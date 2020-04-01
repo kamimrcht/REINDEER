@@ -12,7 +12,28 @@ uint64_t xorshift ( uint64_t x ) {
 }
 
 
-
+//~ void getLineFasta(ifstream* in, string& fasta, string& header) {
+//~ void getLineFasta_buffer(ifstream* in, string& fasta, string& header, uint buffer) {
+string getLineFasta_buffer(ifstream* in) {
+	string line, result;
+	getline(*in, line);
+	char c = static_cast<char>(in->peek());
+	if (line[0] == '>' )
+	{
+		return line;
+	}
+	else
+	{
+		result += line;
+		while (c != '>' and c != EOF ) 
+		{
+			getline(*in, line);
+			result += line;
+			c = static_cast<char>(in->peek());
+		}
+		return result;
+	}
+}
 
 bool is_empty_file(ifstream& file)
 {
