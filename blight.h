@@ -242,12 +242,12 @@ public:
     bool exists(const kmer& query);
     void read_super_buckets(const string& input_file);
     void create_mphf_mem(uint64_t beg,uint64_t end);
-    void create_mphf_disk(uint64_t beg,uint64_t end);
+    void create_mphf_disk(uint64_t beg,uint64_t end,bm::bvector<>& position_super_kmers_local);
     void updateK(kmer& min, char nuc);
     void updateRCK(kmer& min, char nuc);
     void updateM(kmer& min, char nuc);
     void updateRCM(kmer& min, char nuc);
-    void fill_positions(uint64_t beg,uint64_t end);
+    void fill_positions(uint64_t beg,uint64_t end,bm::bvector<>& position_super_kmers_local);
     bool exists(const string& query);
     void multiple_query(const string& query);
     kmer minimizer_according_xs(kmer seq);
