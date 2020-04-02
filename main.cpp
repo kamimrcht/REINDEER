@@ -80,7 +80,7 @@ void PrintHelp()
             "      * Optional parameters\n"
             "--nocount               :     You need to specify this if the index was constructed with --nocount\n"
             "-S                      :     Threshold: at least S% of the query k-mers must be in a dataset to be reported (default: " << threshold << "%)\n"
-            "-o <file>               :     Directory to write output files (default: output_reindeer/query_results)\n"
+            "-o <file>               :     Directory to write output files (default: output_reindeer/)\n"
             "--disk-query            :     On-disk query (default: in-memory). To be used for large indexes that won't fit in RAM, if the index was constructed with the same option.\n\n"
 
 
