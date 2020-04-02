@@ -460,10 +460,10 @@ void kmer_Set_Light::read_super_buckets(const string& input_file){
 	#pragma omp parallel num_threads(coreNumber)
 	{
 		string useless,line;
-		// bm::bvector<> position_super_kmers_local;
+		bm::bvector<> position_super_kmers_local;
 		#pragma omp for
 		for(uint64_t SBC=0;SBC<number_superbuckets.value();++SBC){
-			bm::bvector<> position_super_kmers_local;
+			// bm::bvector<> position_super_kmers_local;
 			position_super_kmers_local.init();
 			vector<uint64_t> number_kmer_accu(bucket_per_superBuckets.value(),0);
 			uint64_t BC(SBC*bucket_per_superBuckets);
@@ -494,18 +494,16 @@ void kmer_Set_Light::read_super_buckets(const string& input_file){
 
 			fill_positions(BC,BC+bucket_per_superBuckets,position_super_kmers_local);
 			BC+=bucket_per_superBuckets.value();
-			#pragma omp critical(PSK)
-			{
-				position_super_kmers.merge(position_super_kmers_local);
-			}
+			// #pragma omp critical(PSK)
+			// {
+			// 	position_super_kmers.merge(position_super_kmers_local);
+			// }
 			cout<<"-"<<flush;
-
-
 		}
-		// #pragma omp critical(PSK)
-		// {
-		// 	position_super_kmers.merge(position_super_kmers_local);
-		// }
+		#pragma omp critical(PSK)
+		{
+			position_super_kmers.merge(position_super_kmers_local);
+		}
 
 	}
 	position_super_kmers[number_kmer]=true;
@@ -730,15 +728,20 @@ void kmer_Set_Light::create_mphf_disk(uint64_t begin_BC,uint64_t end_BC,	bm::bve
 
 
 void kmer_Set_Light::int_to_bool(uint64_t n_bits_to_encode,uint64_t X, uint64_t pos,uint64_t start){
-	positions_mutex[(pos*n_bits_to_encode+start/1024)*4096/(positions_int)].lock();
+	uint64_t i_mutex(((pos*n_bits_to_encode+start)/1024)*4096/(positions_int));
+	positions_mutex[i_mutex].lock();
 	for(uint64_t i(0);i<n_bits_to_encode;++i){
 		uint64_t pos_check(i+pos*n_bits_to_encode+start);
-		// #pragma omp critical
+		if((pos_check/1024)*4096/(positions_int)!=i_mutex){
+				positions_mutex[i_mutex].unlock();
+				i_mutex++;
+				positions_mutex[i_mutex].lock();
+		}
 		positions[pos_check]=X%2;
 
 		X>>=1;
 	}
-	positions_mutex[(pos*n_bits_to_encode+start/1024)*4096/(positions_int)].unlock();
+	positions_mutex[i_mutex].unlock();
 }
 
 
