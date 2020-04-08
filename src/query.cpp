@@ -272,9 +272,9 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint16_t& color_n
 	string position_file_name(rd_file+"_position.gz");
 	get_position_vector_query_disk(position_in_file,  position_file_name,nb_monotig);
 	while(not query_file.eof()){
-		#pragma omp parallel num_threads(nb_threads)
+		
 		{
-			#pragma omp critical(i_file)
+			
 			{
 				uint i(0);
 				do 
@@ -291,7 +291,7 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint16_t& color_n
 				} while(not(lines.back()[0] == '>' and i > 4000));
 			}
 			uint i;
-			#pragma omp for ordered
+			
 			for(i=(0);i<lines.size();i+=2){
 				uint j(i);
 				
@@ -322,7 +322,7 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint16_t& color_n
 					}
 					j++;
 				}
-				#pragma omp ordered
+				
 				mm.lock();
 				if (toWrite != header +"\n")
 				{
