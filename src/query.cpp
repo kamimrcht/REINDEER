@@ -132,7 +132,7 @@ void get_colors_counts_query_eq_classes(vector<int64_t>& kmer_ids,   uint16_t co
 					vector<uint8_t> qcounts8 = count_string_to_count_vector8(lo, compr_monotig_color_size[pos]);
 					copy(qcounts8.begin(), qcounts8.end(), back_inserter(qcounts));
 				}
-				delete lo;	
+				delete []lo;	
 				lastV = qcounts;
 				if (not qcounts.empty())
 				{
@@ -141,7 +141,7 @@ void get_colors_counts_query_eq_classes(vector<int64_t>& kmer_ids,   uint16_t co
 			}
 		}
 	}
-	delete color;
+	delete []color;
 	in.close();
 }
 
