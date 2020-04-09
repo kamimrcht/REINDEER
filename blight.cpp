@@ -1218,7 +1218,7 @@ kmer_Set_Light::kmer_Set_Light(const string& index_file) {
 	uint8_t* buff = new uint8_t[sz];
 	out.read((char*)buff, sz);
 	bm::deserialize(position_super_kmers, buff);
-	delete buff;
+	delete []buff;
 
 	position_super_kmers_RS = new bm::bvector<>::rs_index_type();
 	position_super_kmers.build_rs_index(position_super_kmers_RS);
