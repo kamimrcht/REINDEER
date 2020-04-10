@@ -356,6 +356,10 @@ void perform_query(kmer_Set_Light& ksl, uint16_t& color_number,  uint k, bool re
 {
 	uint64_t nb_monotig;
 	ifstream nb_minit_f(rd_file + "_monotig_nb");
+	if (!nb_minit_f.is_open()) {
+		cout << "Can't open monotig_nb file in index" << endl;
+		exit(1);
+	}
 	nb_minit_f.read(reinterpret_cast<char *>(&nb_monotig), sizeof(uint64_t));
 	uint counter(0),patience(0);
 	vector<string> bgreat_files;
