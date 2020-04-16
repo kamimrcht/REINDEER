@@ -288,7 +288,7 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint16_t& color_n
 					if(qline.empty()){break;}
 					lines.push_back(qline);
 					++i;
-				} while(not(lines.back()[0] == '>' and i > 4000));
+				} while(not(lines.back()[0] != '>' and i > 4000));
 			}
 			uint i;
 			#pragma omp for ordered
