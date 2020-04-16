@@ -200,8 +200,7 @@ Citation:
 @article{marchet2020reindeer,
   title={REINDEER: efficient indexing of k-mer presence and abundance in sequencing datasets},
   author={Marchet, Camille and Iqbal, Zamin and Gautheret, Daniel and Salson, Mika{\"e}l and Chikhi, Rayan},
-  journal={bioRxiv},
+  booktitle={ISMB},
   year={2020},
-  publisher={Cold Spring Harbor Laboratory}
 }
 ```
