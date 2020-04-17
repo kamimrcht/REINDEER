@@ -36,16 +36,11 @@ using namespace std;
 using namespace chrono;
 
 char ch;
-string query,fof(""), color_dump_file("reindeer_matrix"), color_load_file(""), bgreat_paths_fof(""), output_bcalm("bcalm_out"),output_union_bcalm("bcalm_union_out"),output("output_reindeer"), output_index("index_out");
+string query,fof(""), color_dump_file("reindeer_matrix"), color_load_file(""), output_bcalm("bcalm_out"),output_union_bcalm("bcalm_union_out"),output("output_reindeer"), output_index("index_out");
 uint k(31), threads(1);
-bool record_counts(true);
-bool record_reads(false);
-bool exact(false);
-bool quantize(false);
-bool do_query_on_disk(false);
-bool bcalm(false), do_Index(false), do_Query(false), PE(false);
+bool record_counts(true), quantize(false), do_query_on_disk(false), bcalm(false), do_Index(false), do_Query(false), PE(false), do_log(false);
 uint threshold(40);
-bool do_log(false);
+
 
 void PrintHelp()
 {
@@ -207,7 +202,7 @@ int main(int argc, char **argv)
         bcalm_cleanup();
         cout << "Indexing k-mers...\n\n" << endl;
         color_dump_file = output + "/" + color_dump_file;
-        reindeer_index(k, fof, color_dump_file, record_counts,record_reads, output, cl, threads, exact, do_query_on_disk, quantize, do_log);
+        reindeer_index(k, fof, color_dump_file, record_counts, output, cl, threads,  do_query_on_disk, quantize, do_log);
         cout << "INDEX BUILDING = THE END" <<endl;
     } else {
         if (color_load_file.empty())
@@ -225,8 +220,8 @@ int main(int argc, char **argv)
             {   
                 cout << "Invalid query file" << endl;
                 return 0;
-            }
-            reindeer_query(color_load_file, output_query,  record_counts,  record_reads,  threshold,  bgreat_paths_fof,  query, threads, exact, do_query_on_disk);
+			}
+            reindeer_query(color_load_file, output_query,  record_counts,  threshold,   query, threads,  do_query_on_disk);
         }
     }
     return 0;

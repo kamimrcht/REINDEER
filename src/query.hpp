@@ -72,16 +72,16 @@ void write_count_output(bool record_counts, vector<vector<uint16_t>>& query_coun
 
 void write_results_above_threshold(string& toWrite, vector<vector<uint16_t>>& query_counts, uint64_t color_number , vector<string>& toW, vector<string>& color_counts,  string& header, bool record_counts, uint threshold, string& line, uint k);
 
-void write_output(vector<int64_t>& kmers_colors, string& toWrite, bool record_reads, bool record_counts, vector<vector<uint32_t>>& query_unitigID,vector<vector<uint32_t>>& query_unitigID_tmp,  uint64_t& color_number, string& header, string& line, uint k, uint threshold,  vector<vector<uint16_t>>& query_counts, vector<vector<uint8_t>>& query_colors);
+void write_output(vector<int64_t>& kmers_colors, string& toWrite, bool record_counts, vector<vector<uint32_t>>& query_unitigID,vector<vector<uint32_t>>& query_unitigID_tmp,  uint64_t& color_number, string& header, string& line, uint k, uint threshold,  vector<vector<uint16_t>>& query_counts, vector<vector<uint8_t>>& query_colors);
 
 
 
 
-void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t& color_number, uint k, bool record_counts, bool record_reads, uint threshold,vector<vector<uint32_t>>& query_unitigID, uint nb_threads, bool exact, vector<unsigned char*>& compr_monotig_color, vector<unsigned >& compr_monotig_color_size, bool do_query_on_disk, string& rd_file, long eq_class_nb, uint64_t nb_monotig);
+void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t& color_number, uint k, bool record_counts, uint threshold,vector<vector<uint32_t>>& query_unitigID, uint nb_threads,  vector<unsigned char*>& compr_monotig_color, vector<unsigned >& compr_monotig_color_size, bool do_query_on_disk, string& rd_file, long eq_class_nb, uint64_t nb_monotig);
 
-void query_by_file(uint& counter, string& entry, kmer_Set_Light& ksl, uint64_t& color_number,   uint k, bool record_counts, bool record_reads, uint threshold, vector<string>& bgreat_files, string& output, uint nb_threads, bool exact, vector<unsigned char*>& compr_monotig_color, vector<unsigned >& compr_monotig_color_size, bool do_query_on_disk, string& rd_file, long eq_class_nb, uint64_t	 nb_monotig);
+void query_by_file(uint& counter, string& entry, kmer_Set_Light& ksl, uint64_t& color_number,   uint k, bool record_counts,  uint threshold,  string& output, uint nb_threads,  vector<unsigned char*>& compr_monotig_color, vector<unsigned >& compr_monotig_color_size, bool do_query_on_disk, string& rd_file, long eq_class_nb, uint64_t	 nb_monotig);
 
 
-void perform_query(kmer_Set_Light& ksl, uint64_t& color_number,  uint k, bool record_counts, bool record_reads, uint threshold, string& bgreat_paths_fof, string& query, string& output, uint nb_threads, bool exact, vector<unsigned char*>& compr_monotig_color,  vector<unsigned>& compr_monotig_color_size, bool do_query_on_disk, string& rd_file, long eq_class_nb, uint64_t nb_monotig);
+void perform_query(kmer_Set_Light& ksl, uint64_t& color_number,  uint k, bool record_counts, uint threshold,  string& query, string& output, uint nb_threads, vector<unsigned char*>& compr_monotig_color,  vector<unsigned>& compr_monotig_color_size, bool do_query_on_disk, string& rd_file, long eq_class_nb, uint64_t nb_monotig);
 
 #endif
