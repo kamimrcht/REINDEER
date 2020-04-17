@@ -342,17 +342,6 @@ void query_by_file(uint& counter, string& entry, kmer_Set_Light& ksl, uint64_t& 
 
 void perform_query(kmer_Set_Light& ksl, uint64_t& color_number,  uint k, bool record_counts,  uint threshold, string& query, string& output, uint nb_threads,  vector<unsigned char*>& compr_monotig_color,  vector<unsigned>& compr_monotig_color_size, bool do_query_on_disk, string& rd_file, long eq_class_nb, uint64_t nb_monotig)
 {
-	//~ uint64_t nb_monotig;
-	//~ ifstream info_file(rd_file + "_info");
-	//~ if (!info_file.is_open()) {
-		//~ cout << "Can't open an index file" << endl;
-		//~ exit(1);
-	//~ }
-	//~ //get nb of monotigs, nb of eq_classes, nb_of colors
-	//~ info_file.read(reinterpret_cast<char *>(&nb_monotig), sizeof(uint64_t));
-	//~ info_file.read(reinterpret_cast<char *>(&k), sizeof(uint));
-	//~ info_file.read(reinterpret_cast<char *>(&eq_class_nb), sizeof(long));
-	//~ info_file.read(reinterpret_cast<char *>(&color_number), sizeof(uint64_t));
 	uint counter(0),patience(0);
 	string entry;
 	if (not query.empty())

@@ -497,6 +497,7 @@ uint64_t get_color_number(string& fof)
 void read_info(uint& k, uint64_t& nb_monotig, long& eq_class_nb, uint64_t& color_number, uint& record_option, string& rd_file)
 {
 	ifstream info_file(rd_file + "_info");
+	cout << rd_file + "_info" << endl;
 	if (!info_file.is_open()) {
 		cout << "Can't open an index file" << endl;
 		exit(1);

@@ -31,7 +31,7 @@ void reindeer_index(uint k, string& fof,  string& color_dump_file, bool record_c
 
 
 
-void reindeer_query(string& output,string& output_query, bool record_counts, uint threshold,  string& query, uint threads,  bool do_query_on_disk)
+void reindeer_query(string& output,string& output_query, uint threshold,  string& query, uint threads,  bool do_query_on_disk)
 {
 	// QUERY //
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
@@ -39,10 +39,7 @@ void reindeer_query(string& output,string& output_query, bool record_counts, uin
 	string color_dump_file("");
 	string color_load_file;
 	string matrix_name;
-	uint64_t nb_colors, nb_monotig ;
-	uint k, record_option;
-	long eq_class_nb;
-	read_info(k, nb_monotig, eq_class_nb, nb_colors, record_option, matrix_name);
+
 	if (do_query_on_disk)
 	{
 		color_load_file = getRealPath("reindeer_matrix_eqc", output);
@@ -54,7 +51,15 @@ void reindeer_query(string& output,string& output_query, bool record_counts, uin
 		size_t wo_ext = color_load_file.find_last_of("."); 
 		matrix_name = color_load_file.substr(0, wo_ext); 
 	}
-	
+	uint64_t nb_colors, nb_monotig ;
+	uint k, record_option;
+	long eq_class_nb;
+	read_info(k, nb_monotig, eq_class_nb, nb_colors, record_option, matrix_name);
+	bool record_counts;
+	if (record_option == 1)
+	{
+		record_counts = true;
+	}
 	vector<unsigned char*> compr_monotig_color;
 	vector<unsigned> compr_monotig_color_sizes;
 	cout << "\n#Loading index..." << endl;

@@ -44,6 +44,6 @@ using namespace chrono;
 
 
 void reindeer_index(uint k, string& fof,  string& color_dump_file, bool record_counts,  string& output, string& color_load_file, uint threads,  bool do_query_on_disk, bool quantize, bool do_log);
-void reindeer_query(string& output, string& output_query, bool record_counts,  uint threshold,  string& query, uint threads, bool do_query_on_disk);
+void reindeer_query(string& output, string& output_query,   uint threshold,  string& query, uint threads, bool do_query_on_disk);
 
 #endif

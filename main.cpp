@@ -76,7 +76,6 @@ void PrintHelp()
             "-l                      :     Reindeer index directory (should be output_reindeer if you've not used -o during indexing)\n"
             "-q <FASTA>              :     FASTA query file with query sequences\n"
             "      * Optional parameters\n"
-            "--nocount               :     You need to specify this if the index was constructed with --nocount\n"
             "-S                      :     Threshold: at least S% of the query k-mers must be in a dataset to be reported (default: " << threshold << "%)\n"
             "-o <file>               :     Directory to write output files (default: output_reindeer/)\n"
             "--disk-query            :     On-disk query (default: in-memory). To be used for large indexes that won't fit in RAM, if the index was constructed with the same option.\n\n"
@@ -176,13 +175,12 @@ int main(int argc, char **argv)
     cout << "############# REINDEER version " << version << " #############" << endl << "Command line was: ";
     for(int i = 0; i < argc; ++i)
         cout << argv[i] << ' ';
-    cout << endl;
-    cout << endl;
+    cout << endl << endl;
     if (not dirExists(output)){
         systRet=system(("mkdir " + output).c_str());
     }
     if ( (do_Index and do_Query) or not(do_Index or do_Query) ){
-        cout << "You must choose: either indexing or querying\n" << endl;
+        cout << "You must choose: either indexing (--index) or querying (--query)\n" << endl;
         PrintHelp();
         return 0;
     }
@@ -228,7 +226,7 @@ int main(int argc, char **argv)
                 cout << "Invalid query file" << endl;
                 return 0;
 			}
-            reindeer_query(color_load_file, output_query,  record_counts,  threshold,   query, threads,  do_query_on_disk);
+            reindeer_query(color_load_file, output_query,  threshold,   query, threads,  do_query_on_disk);
         }
     }
     return 0;
