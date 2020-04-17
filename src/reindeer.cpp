@@ -17,13 +17,12 @@ uint ex(0);
 void reindeer_index(uint k, string& fof,  string& color_dump_file, bool record_counts, bool record_reads, string& output, string& color_load_file, uint threads, bool exact, bool do_query_on_disk, bool quantize, bool do_log)
 {
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
-	uint64_t color_number;
 	uint16_t c;
 	kmer_Set_Light ksl(k,m1,m2,m3,threads,bit);
 	int systemRet;
 	// BUILD THE INDEX
-	uint16_t nb_colors(get_color_number(fof));
-	build_index(k, m1, m2, m3, c, bit, color_load_file, color_dump_file, fof, record_counts, record_reads, color_number, ksl, threads, exact, output, do_query_on_disk, quantize, do_log, nb_colors);
+	uint64_t nb_colors(get_color_number(fof));
+	build_index(k, m1, m2, m3, c, bit, color_load_file, color_dump_file, fof, record_counts, record_reads, ksl, threads, exact, output, do_query_on_disk, quantize, do_log, nb_colors);
 	high_resolution_clock::time_point t12 = high_resolution_clock::now();
 	duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
 	cout<<"Index building and Coloration done total: "<< time_span12.count() << " seconds."<<endl;
@@ -41,7 +40,7 @@ void reindeer_query(uint k, string& output,string& output_query, bool record_cou
 	string color_load_file;
 	string matrix_name;
 	string color_nb_file(getRealPath("reindeer_matrix_eqc_nb_colors", output));
-	uint16_t nb_colors ;
+	uint64_t nb_colors ;//todo change 64
 	if (do_query_on_disk)
 	{
 		color_load_file = getRealPath("reindeer_matrix_eqc", output);
@@ -56,14 +55,13 @@ void reindeer_query(uint k, string& output,string& output_query, bool record_cou
 
 	string nb_eq_class_file(getRealPath("reindeer_matrix_eqc_nb_class", output));
 
-	uint64_t color_number; //virer
 	
 	vector<unsigned char*> compr_monotig_color;
 	vector<unsigned> compr_monotig_color_sizes;
 
 	cout << "\n#Loading index..." << endl;
 	long eq_class_nb(0);
-	kmer_Set_Light* ksl = load_rle_index(k, color_load_file, color_dump_file, fof, record_counts, record_reads, color_number, threads, exact, output, compr_monotig_color, compr_monotig_color_sizes, do_query_on_disk, nb_eq_class_file, color_nb_file, eq_class_nb, nb_colors);
+	kmer_Set_Light* ksl = load_rle_index(k, color_load_file, color_dump_file, fof, record_counts, record_reads, threads, exact, output, compr_monotig_color, compr_monotig_color_sizes, do_query_on_disk, nb_eq_class_file, color_nb_file, eq_class_nb, nb_colors);
 	high_resolution_clock::time_point t12 = high_resolution_clock::now();
 	duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
 	cout<<"#Index loading total: "<< time_span12.count() << " seconds."<<endl;

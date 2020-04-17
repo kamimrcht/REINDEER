@@ -90,6 +90,6 @@ uint64_t harmonic_mean(vector<uint64_t>& counts);
 
 string getRealPath(string file, string& dir);
 
-uint16_t get_color_number(string& fof);
+uint64_t get_color_number(string& fof);
 
 #endif

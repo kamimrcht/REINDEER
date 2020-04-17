@@ -477,7 +477,7 @@ string getRealPath(string file, string& dir){
 	return rp + "/" + file;
 }
 
-uint16_t get_color_number(string& fof)
+uint64_t get_color_number(string& fof)
 {	
 	uint color(0);
 	string line;
