@@ -61,7 +61,7 @@ void get_eq_classes_disk_query(string& output, robin_hood::unordered_map<string,
 }
 
 //sort count vectors by file, write one occurence per count in a new matrix file
-void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_t nb_unitigs, bool do_query_on_disk, uint64_t nb_colors)
+void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_t nb_unitigs, bool do_query_on_disk, uint64_t nb_colors, ofstream* out_info)
 {
 	cout << "Sorting datasets to find equivalence classes..." << endl;
 	vector<long> final_positions(nb_unitigs);
@@ -136,12 +136,14 @@ void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_
 		++nb;
 	}
 	delete out_position;
-	ofstream out_nbc(output + "/reindeer_matrix_eqc_nb_class");
-	out_nbc.write(reinterpret_cast<char*>(&nb_eq_class), sizeof(long));
-	out_nbc.close();
-	ofstream out_nbcol(output + "/reindeer_matrix_eqc_nb_colors");
-	out_nbcol.write(reinterpret_cast<char*>(&nb_colors), sizeof(uint64_t));
-	out_nbcol.close();
+	//~ ofstream out_nbc(output + "/reindeer_matrix_eqc_nb_class");
+	//~ out_nbc.write(reinterpret_cast<char*>(&nb_eq_class), sizeof(long));
+	//~ out_nbc.close();
+	out_info->write(reinterpret_cast<char*>(&nb_eq_class), sizeof(long));
+	//~ ofstream out_nbcol(output + "/reindeer_matrix_eqc_nb_colors");
+	//~ out_nbcol.write(reinterpret_cast<char*>(&nb_colors), sizeof(uint64_t));
+	//~ out_nbcol.close();
+	out_info->write(reinterpret_cast<char*>(&nb_colors), sizeof(uint64_t));
 	if (do_query_on_disk)
 		delete out;
 	else

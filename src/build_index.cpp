@@ -56,7 +56,8 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 	string monotigs_fn(output +"/_blmonocolor.fa"); //monotigs
 	ifstream monotigs_file(monotigs_fn);
 	uint64_t nb_monotigs(0);
-	ofstream out_nb(output_file+"_eqc_monotig_nb");
+	//~ ofstream out_nb(output_file+"_eqc_monotig_nb");
+	ofstream out_info(output_file+"_eqc_info");
 	mutex mm;
 	uint nb_treated_monotigs(0);
 	//~ #pragma omp parallel num_threads(nb_threads)
@@ -102,15 +103,16 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 		}
 		delete(in);
 	}
-	out_nb.write(reinterpret_cast<char*>(&nb_monotigs),sizeof(uint64_t)); //TODO NB COLOR + /!\ relecture
+	//~ out_nb.write(reinterpret_cast<char*>(&nb_monotigs),sizeof(uint64_t)); 
+	out_info.write(reinterpret_cast<char*>(&nb_monotigs),sizeof(uint64_t));  // in info: 1/nb monotigs, 2/nb eq classes, 3/nb colors
 	//close files
-	out_nb.close();
+	//~ out_nb.close();
 	for (uint i(0); i < all_files.size(); ++i)
 	{
 		all_files[i]->close();
 	}
 	// compute final equivalence class and write them
-	write_eq_class_matrix(output, all_files, nb_monotigs, do_query_on_disk, nb_colors);
+	write_eq_class_matrix(output, all_files, nb_monotigs, do_query_on_disk, nb_colors, &out_info);
 	// remove bucket files
 	for (uint i(0); i < all_files.size(); ++i)
 	{
@@ -119,6 +121,7 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 		remove(&name[0]);
 		delete all_files[i];
 	}
+	out_info.close();
 }
 
 
