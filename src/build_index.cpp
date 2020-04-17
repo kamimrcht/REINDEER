@@ -201,59 +201,77 @@ kmer_Set_Light* load_rle_index(uint k, string& color_load_file, string& color_du
 
 
 // build index from new file
-void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, string& color_load_file, string& color_dump_file, string& fof, bool record_counts,  kmer_Set_Light& ksl, uint nb_threads,  string& output, bool do_query_on_disk, bool quantize, bool do_log, uint64_t nb_colors)
+void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, string& color_load_file, string& color_dump_file, string& fof, bool record_counts,  kmer_Set_Light* ksl, uint nb_threads,  string& output, bool do_query_on_disk, bool quantize, bool do_log, uint64_t nb_colors)
 {
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
 	//~ bool delete_monotig_file(true);
+	bool dont_dump(false);
 	if (not exists_test(output +"/_blmonocolor.fa"))
 	{
-		
-		cout << "Minitigs and index constuction..."<< endl;
-		// apply monotig merge (-> MMM) with rule regarding colors or counts
-		if (record_counts)
-		{
-			if (quantize)
+			cout << "Minitigs and index constuction..."<< endl;
+			// apply monotig merge (-> MMM) with rule regarding colors or counts
+			if (record_counts)
 			{
-				ksl.construct_index_fof(fof, output, 2);
+				if (quantize)
+				{
+					ksl->construct_index_fof(fof, output, 2);
+				}
+				else
+				{
+					if (do_log)
+						ksl->construct_index_fof(fof, output, 3);
+					else
+						ksl->construct_index_fof(fof, output, 1);
+				}
 			}
 			else
 			{
-				if (do_log)
-					ksl.construct_index_fof(fof, output, 3);
-				else
-					ksl.construct_index_fof(fof, output, 1);
+				ksl->construct_index_fof(fof, output, 0);
 			}
-		}
-		else
-		{
-			ksl.construct_index_fof(fof, output, 0);
-		}
 	} 
 	else 
 	{
-		cout << "Warning , monotig file (_blmonocolor.fa) was found in output dir, I will use it and I won't delete it" << endl;
-		ksl.construct_index(output + "/_blmonocolor.fa",output);
+		cerr << "[Warning] monotig file (_blmonocolor.fa) was found in output dir, I will use it and I won't delete it" << endl;
+		cout << "Warning monotig file (_blmonocolor.fa) was found in output dir, I will use it and I won't delete it" << endl;
 		DELE_MONOTIG_FILE = false;
+		if (not exists_test(output +"/reindeer_index.gz"))
+		{
+			ksl->construct_index(output + "/_blmonocolor.fa",output);
+		}
+		else
+		{
+			dont_dump = true;
+			cerr << "[Warning] index file (reindeer_index.gz) was found in output dir, I will use it and I won't delete it" << endl;
+			cout << "Warning monotig file (reindeer_index.gz) was found in output dir, I will use it and I won't delete it" << endl;
+			ksl = new kmer_Set_Light(output + "/reindeer_index.gz");
+		}
 	}
 	vector<unsigned char*>compr_monotig_color;
 	vector<unsigned> compr_monotig_color_size;
 	long eq_class_nb(0);
+	
+	if (! dont_dump)
+	{
+		cout << "Dumping index..."<< endl;
+		ksl->dump_disk(output + "/reindeer_index.gz");
+	}
+	high_resolution_clock::time_point t13 = high_resolution_clock::now();
+	
 	cout << "Building colors and equivalence classes matrix to be written on disk..." << endl;
-	do_coloring(color_load_file, color_dump_file, fof, &ksl, record_counts,  k,  nb_threads,  output, compr_monotig_color, compr_monotig_color_size, do_query_on_disk, eq_class_nb, nb_colors,   quantize,  do_log);
+	do_coloring(color_load_file, color_dump_file, fof, ksl, record_counts,  k,  nb_threads,  output, compr_monotig_color, compr_monotig_color_size, do_query_on_disk, eq_class_nb, nb_colors,   quantize,  do_log);
 	high_resolution_clock::time_point t12 = high_resolution_clock::now();
 	duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
 	cout<<"Matrix done: "<< time_span12.count() << " seconds."<<endl;
 	high_resolution_clock::time_point t2 = high_resolution_clock::now();
 	
-	cout << "Dumping index..."<< endl;
-	ksl.dump_disk(output + "/reindeer_index.gz");
-	high_resolution_clock::time_point t13 = high_resolution_clock::now();
+	
+	
+	duration<double> time_span13 = duration_cast<duration<double>>(t13 - t2);
+	cout<<"Index written on disk: "<< time_span13.count() << " seconds."<<endl;
 	if (DELE_MONOTIG_FILE)
 	{
 		string cmd("rm -f " + output +"/_blmonocolor.fa");
 		int sysRet(system(cmd.c_str()));
 	}
-	duration<double> time_span13 = duration_cast<duration<double>>(t13 - t2);
-	cout<<"Index written on disk: "<< time_span13.count() << " seconds."<<endl;
 }
 

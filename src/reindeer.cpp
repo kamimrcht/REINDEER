@@ -22,7 +22,7 @@ void reindeer_index(uint k, string& fof,  string& color_dump_file, bool record_c
 	int systemRet;
 	// BUILD THE INDEX
 	uint64_t nb_colors(get_color_number(fof));
-	build_index(k, m1, m2, m3, c, bit, color_load_file, color_dump_file, fof, record_counts,  ksl, threads,  output, do_query_on_disk, quantize, do_log, nb_colors);
+	build_index(k, m1, m2, m3, c, bit, color_load_file, color_dump_file, fof, record_counts, &ksl, threads,  output, do_query_on_disk, quantize, do_log, nb_colors);
 	high_resolution_clock::time_point t12 = high_resolution_clock::now();
 	duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
 	cout<<"Index building and Coloration done total: "<< time_span12.count() << " seconds."<<endl;
