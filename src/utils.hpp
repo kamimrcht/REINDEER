@@ -40,10 +40,15 @@
 using namespace std;
 
 
+void throw_character_issue() ;
+void throw_size_issue() ;
+bool check_character(string& s);
+
 uint64_t xorshift ( uint64_t x );
 
 string getLineFasta_buffer(ifstream* in);
 
+vector<string> getLineFasta_buffer2(ifstream* in, uint stop, uint k);
 
 bool is_empty_file(ifstream& file);
 
