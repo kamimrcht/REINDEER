@@ -226,7 +226,7 @@ int main(int argc, char **argv)
                 cout << "Invalid query file" << endl;
                 return 0;
             }
-            reindeer_query(k, color_load_file, output_query,  record_counts,  record_reads,  threshold,  bgreat_paths_fof,  query, threads, exact, do_query_on_disk);
+            reindeer_query(color_load_file, output_query,  record_counts,  record_reads,  threshold,  bgreat_paths_fof,  query, threads, exact, do_query_on_disk);
         }
     }
     return 0;
