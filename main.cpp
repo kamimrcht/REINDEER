@@ -35,6 +35,9 @@
 using namespace std;
 using namespace chrono;
 
+
+string version("v1.0.2");
+
 char ch;
 string query,fof(""), color_dump_file("reindeer_matrix"), color_load_file(""), output_bcalm("bcalm_out"),output_union_bcalm("bcalm_union_out"),output("output_reindeer"), output_index("index_out");
 uint k(31), threads(1);
@@ -45,7 +48,7 @@ uint threshold(40);
 void PrintHelp()
 {
     cout <<
-            "******************* REINDEER v1.0.2**********************************\n"
+            "******************* REINDEER "<< version << "**********************************\n"
             "******************* REad Index for abuNDancE quERy ******************\n\n"
             
             "                    INDEX BUILDING\n\n"
@@ -170,7 +173,11 @@ int main(int argc, char **argv)
 {
     int systRet;
     ProcessArgs(argc, argv);
-    
+    cout << "############# REINDEER version " << version << " #############" << endl << "Command line was: ";
+    for(int i = 0; i < argc; ++i)
+        cout << argv[i] << ' ';
+    cout << endl;
+    cout << endl;
     if (not dirExists(output)){
         systRet=system(("mkdir " + output).c_str());
     }

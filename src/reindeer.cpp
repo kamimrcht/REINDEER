@@ -39,7 +39,6 @@ void reindeer_query(string& output,string& output_query, bool record_counts, uin
 	string color_dump_file("");
 	string color_load_file;
 	string matrix_name;
-	//~ string color_nb_file(getRealPath("reindeer_matrix_eqc_nb_colors", output));
 	uint64_t nb_colors, nb_monotig ;
 	uint k, record_option;
 	long eq_class_nb;
@@ -55,13 +54,9 @@ void reindeer_query(string& output,string& output_query, bool record_counts, uin
 		size_t wo_ext = color_load_file.find_last_of("."); 
 		matrix_name = color_load_file.substr(0, wo_ext); 
 	}
-
-	//~ string nb_eq_class_file(getRealPath("reindeer_matrix_eqc_nb_class", output));
-
 	
 	vector<unsigned char*> compr_monotig_color;
 	vector<unsigned> compr_monotig_color_sizes;
-
 	cout << "\n#Loading index..." << endl;
 	//~ long eq_class_nb(0);
 	bool quantize, log;
