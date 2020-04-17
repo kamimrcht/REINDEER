@@ -492,3 +492,19 @@ uint64_t get_color_number(string& fof)
 	}
 	return color;
 }
+
+
+void read_info(uint& k, uint64_t& nb_monotig, long& eq_class_nb, uint64_t& color_number, uint& record_option, string& rd_file)
+{
+	ifstream info_file(rd_file + "_info");
+	if (!info_file.is_open()) {
+		cout << "Can't open an index file" << endl;
+		exit(1);
+	}
+	//get nb of monotigs, nb of eq_classes, nb_of colors
+	info_file.read(reinterpret_cast<char *>(&nb_monotig), sizeof(uint64_t));
+	info_file.read(reinterpret_cast<char *>(&k), sizeof(uint));
+	info_file.read(reinterpret_cast<char *>(&record_option), sizeof(uint));
+	info_file.read(reinterpret_cast<char *>(&eq_class_nb), sizeof(long));
+	info_file.read(reinterpret_cast<char *>(&color_number), sizeof(uint64_t));
+}

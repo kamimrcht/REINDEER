@@ -43,7 +43,7 @@ vector<uint16_t> get_counts_monotigs(string& line)
 
 
 // dispatch count vectors in files. Similar counts go in similar files
-void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_file, string& fof, kmer_Set_Light* ksl, bool record_counts, bool record_reads, uint k, uint nb_threads, bool exact, string& output, vector <unsigned char*>& compressed_colors, vector <unsigned>& compressed_colors_size, string& output_file, bool do_query_on_disk, uint64_t nb_colors )
+void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_file, string& fof, kmer_Set_Light* ksl, bool record_counts, bool record_reads, uint k, uint nb_threads, bool exact, string& output, vector <unsigned char*>& compressed_colors, vector <unsigned>& compressed_colors_size, string& output_file, bool do_query_on_disk, uint64_t nb_colors, bool quantize, bool log )
 {
 	//create bucket files for partitionning the compressed counts -> finding eq classes
 	vector<ofstream*> all_files;
@@ -104,7 +104,29 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 		delete(in);
 	}
 	//~ out_nb.write(reinterpret_cast<char*>(&nb_monotigs),sizeof(uint64_t)); 
-	out_info.write(reinterpret_cast<char*>(&nb_monotigs),sizeof(uint64_t));  // in info: 1/nb monotigs, 2/nb eq classes, 3/nb colors
+	out_info.write(reinterpret_cast<char*>(&nb_monotigs),sizeof(uint64_t)); 
+	out_info.write(reinterpret_cast<char*>(&k),sizeof(uint));  // in info: 1/nb monotigs, 2/k 3/record option 4/nb eq classes, 5/nb colors
+	uint val(1);
+	if (! record_counts)
+	{
+		val = 0;
+	} 
+	else 
+	{
+		if (quantize)
+		{
+			val = 2;
+		}
+		else if (log)
+		{
+			val = 3;
+		}
+		else
+		{
+			val = 1;
+		}
+	}
+	out_info.write(reinterpret_cast<char*>(&val),sizeof(uint));
 	//close files
 	//~ out_nb.close();
 	for (uint i(0); i < all_files.size(); ++i)
@@ -128,20 +150,11 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 
 
 // color using monotig file: either build and dump the color matrix during the index construction, or load it during the query
-void do_coloring(string& color_load_file, string& color_dump_file, string& fof, kmer_Set_Light* ksl, bool record_counts, bool record_reads, uint k, uint nb_threads, bool exact, string& output, vector<unsigned char*>& compr_monotig_color,vector<unsigned>& compr_monotig_color_size, bool do_query_on_disk, string& nb_eq_class_file, string& nb_color_file, long& eq_class_nb, uint64_t& nb_colors)
+void do_coloring(string& color_load_file, string& color_dump_file, string& fof, kmer_Set_Light* ksl, bool record_counts, bool record_reads, uint k, uint nb_threads, bool exact, string& output, vector<unsigned char*>& compr_monotig_color,vector<unsigned>& compr_monotig_color_size, bool do_query_on_disk,  long& eq_class_nb, uint64_t& nb_colors, bool quantize, bool log)
 {
 	vector <string> file_names;
-
-	//~ color_number = file_names.size();
-	
 	if (not color_load_file.empty()) //query
 	{
-		ifstream nb_eq_f(nb_eq_class_file);
-		nb_eq_f.read(reinterpret_cast<char *>(&eq_class_nb), sizeof(long));
-		nb_eq_f.close();
-		ifstream nb_colors_f(nb_color_file);
-		nb_colors_f.read(reinterpret_cast<char *>(&nb_colors), sizeof(uint64_t));
-		nb_colors_f.close();
 		if (not do_query_on_disk)
 		{
 			uint64_t color_number;
@@ -167,16 +180,16 @@ void do_coloring(string& color_load_file, string& color_dump_file, string& fof, 
 		}else{
 			cout<<"File of file problem"<<endl;
 		}
-		write_matrix_in_bucket_files(color_load_file,  color_dump_file,  fof,  ksl,  record_counts, record_reads,  k,  nb_threads,  exact, output, compr_monotig_color, compr_monotig_color_size, color_dump_file, do_query_on_disk, nb_colors); 
+		write_matrix_in_bucket_files(color_load_file,  color_dump_file,  fof,  ksl,  record_counts, record_reads,  k,  nb_threads,  exact, output, compr_monotig_color, compr_monotig_color_size, color_dump_file, do_query_on_disk, nb_colors,  quantize, log); 
 	}
 }
 
 
 // load dumped index(+colors)
-kmer_Set_Light* load_rle_index(uint k, string& color_load_file, string& color_dump_file, string& fof, bool record_counts, bool record_reads,  uint nb_threads, bool exact, string& output, vector<unsigned char*> &compr_monotig_color,  vector<unsigned>& compr_monotig_color_sizes, bool do_query_on_disk, string& nb_eq_class_file, string& nb_colors_file, long& eq_class_nb, uint64_t& nb_colors)
+kmer_Set_Light* load_rle_index(uint k, string& color_load_file, string& color_dump_file, string& fof, bool record_counts, bool record_reads,  uint nb_threads, bool exact, string& output, vector<unsigned char*> &compr_monotig_color,  vector<unsigned>& compr_monotig_color_sizes, bool do_query_on_disk, long& eq_class_nb, uint64_t& nb_colors,  bool quantize, bool log)
 {
 	kmer_Set_Light* ksl= new kmer_Set_Light(output + "/reindeer_index.gz");
-	do_coloring(color_load_file, color_dump_file, fof, ksl, record_counts, record_reads, k,  nb_threads, exact, output, compr_monotig_color, compr_monotig_color_sizes, do_query_on_disk, nb_eq_class_file, nb_colors_file, eq_class_nb, nb_colors);
+	do_coloring(color_load_file, color_dump_file, fof, ksl, record_counts, record_reads, k,  nb_threads, exact, output, compr_monotig_color, compr_monotig_color_sizes, do_query_on_disk,  eq_class_nb, nb_colors,   quantize,  log);
 	if (DELE_MONOTIG_FILE)
 	{
 		string cmd("rm -f " + output +"/_blmonocolor.fa");
@@ -225,9 +238,8 @@ void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, string& colo
 	vector<unsigned char*>compr_monotig_color;
 	vector<unsigned> compr_monotig_color_size;
 	long eq_class_nb(0);
-	string s("");
 	cout << "Building colors and equivalence classes matrix to be written on disk..." << endl;
-	do_coloring(color_load_file, color_dump_file, fof, &ksl, record_counts, record_reads, k,  nb_threads, exact, output, compr_monotig_color, compr_monotig_color_size, do_query_on_disk, s, s, eq_class_nb, nb_colors);
+	do_coloring(color_load_file, color_dump_file, fof, &ksl, record_counts, record_reads, k,  nb_threads, exact, output, compr_monotig_color, compr_monotig_color_size, do_query_on_disk, eq_class_nb, nb_colors,   quantize,  do_log);
 	high_resolution_clock::time_point t12 = high_resolution_clock::now();
 	duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
 	cout<<"Matrix done: "<< time_span12.count() << " seconds."<<endl;

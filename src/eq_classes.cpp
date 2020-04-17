@@ -144,6 +144,7 @@ void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_
 	//~ out_nbcol.write(reinterpret_cast<char*>(&nb_colors), sizeof(uint64_t));
 	//~ out_nbcol.close();
 	out_info->write(reinterpret_cast<char*>(&nb_colors), sizeof(uint64_t));
+	
 	if (do_query_on_disk)
 		delete out;
 	else

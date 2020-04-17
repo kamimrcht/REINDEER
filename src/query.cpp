@@ -340,19 +340,19 @@ void query_by_file(uint& counter, string& entry, kmer_Set_Light& ksl, uint64_t& 
 }
 
 
-void perform_query(kmer_Set_Light& ksl, uint64_t& color_number,  uint k, bool record_counts, bool record_reads, uint threshold, string& bgreat_paths_fof, string& query, string& output, uint nb_threads, bool exact, vector<unsigned char*>& compr_monotig_color,  vector<unsigned>& compr_monotig_color_size, bool do_query_on_disk, string& rd_file, long eq_class_nb)
+void perform_query(kmer_Set_Light& ksl, uint64_t& color_number,  uint k, bool record_counts, bool record_reads, uint threshold, string& bgreat_paths_fof, string& query, string& output, uint nb_threads, bool exact, vector<unsigned char*>& compr_monotig_color,  vector<unsigned>& compr_monotig_color_size, bool do_query_on_disk, string& rd_file, long eq_class_nb, uint64_t nb_monotig)
 {
-	uint64_t nb_monotig;
-	//~ ifstream nb_minit_f(rd_file + "_monotig_nb");
-	ifstream info_file(rd_file + "_info");
-	//~ if (!nb_minit_f.is_open()) {
-	if (!info_file.is_open()) {
-		cout << "Can't open an index file" << endl;
-		exit(1);
-	}
-	info_file.read(reinterpret_cast<char *>(&nb_monotig), sizeof(uint64_t));
-	info_file.read(reinterpret_cast<char *>(&eq_class_nb), sizeof(long));
-	info_file.read(reinterpret_cast<char *>(&color_number), sizeof(uint64_t));
+	//~ uint64_t nb_monotig;
+	//~ ifstream info_file(rd_file + "_info");
+	//~ if (!info_file.is_open()) {
+		//~ cout << "Can't open an index file" << endl;
+		//~ exit(1);
+	//~ }
+	//~ //get nb of monotigs, nb of eq_classes, nb_of colors
+	//~ info_file.read(reinterpret_cast<char *>(&nb_monotig), sizeof(uint64_t));
+	//~ info_file.read(reinterpret_cast<char *>(&k), sizeof(uint));
+	//~ info_file.read(reinterpret_cast<char *>(&eq_class_nb), sizeof(long));
+	//~ info_file.read(reinterpret_cast<char *>(&color_number), sizeof(uint64_t));
 	uint counter(0),patience(0);
 	vector<string> bgreat_files;
 	string entry;
