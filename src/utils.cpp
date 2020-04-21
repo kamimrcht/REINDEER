@@ -56,8 +56,9 @@ vector<string> getLineFasta_buffer2(ifstream* in, uint stop, uint k) {
 	string line, result;
 	uint i(0);
 	bool error(false);
-	char c = static_cast<char>(in->peek());
-	while (not (i > stop or in->eof()))
+	char c;
+	c = static_cast<char>(in->peek()); 
+	while (not (i >= stop or in->eof()))
 	{
 		++i;
 		if (c == '>' ) // header
