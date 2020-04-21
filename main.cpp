@@ -35,22 +35,20 @@
 using namespace std;
 using namespace chrono;
 
+
+string version("v1.0.2");
+
 char ch;
-string query,fof(""), color_dump_file("reindeer_matrix"), color_load_file(""), bgreat_paths_fof(""), output_bcalm("bcalm_out"),output_union_bcalm("bcalm_union_out"),output("output_reindeer"), output_index("index_out");
+string query,fof(""), color_dump_file("reindeer_matrix"), color_load_file(""), output_bcalm("bcalm_out"),output_union_bcalm("bcalm_union_out"),output("output_reindeer"), output_index("index_out");
 uint k(31), threads(1);
-bool record_counts(true);
-bool record_reads(false);
-bool exact(false);
-bool quantize(false);
-bool do_query_on_disk(false);
-bool bcalm(false), do_Index(false), do_Query(false), PE(false);
+bool record_counts(true), quantize(false), do_query_on_disk(false), bcalm(false), do_Index(false), do_Query(false), PE(false), do_log(false);
 uint threshold(40);
-bool do_log(false);
+
 
 void PrintHelp()
 {
     cout <<
-            "******************* REINDEER v1.0.2**********************************\n"
+            "******************* REINDEER "<< version << "**********************************\n"
             "******************* REad Index for abuNDancE quERy ******************\n\n"
             
             "                    INDEX BUILDING\n\n"
@@ -78,7 +76,6 @@ void PrintHelp()
             "-l                      :     Reindeer index directory (should be output_reindeer if you've not used -o during indexing)\n"
             "-q <FASTA>              :     FASTA query file with query sequences\n"
             "      * Optional parameters\n"
-            "--nocount               :     You need to specify this if the index was constructed with --nocount\n"
             "-S                      :     Threshold: at least S% of the query k-mers must be in a dataset to be reported (default: " << threshold << "%)\n"
             "-o <file>               :     Directory to write output files (default: output_reindeer/)\n"
             "--disk-query            :     On-disk query (default: in-memory). To be used for large indexes that won't fit in RAM, if the index was constructed with the same option.\n\n"
@@ -175,12 +172,15 @@ int main(int argc, char **argv)
 {
     int systRet;
     ProcessArgs(argc, argv);
-    
+    cout << "############# REINDEER version " << version << " #############" << endl << "Command line was: ";
+    for(int i = 0; i < argc; ++i)
+        cout << argv[i] << ' ';
+    cout << endl << endl;
     if (not dirExists(output)){
         systRet=system(("mkdir " + output).c_str());
     }
     if ( (do_Index and do_Query) or not(do_Index or do_Query) ){
-        cout << "You must choose: either indexing or querying\n" << endl;
+        cout << "You must choose: either indexing (--index) or querying (--query)\n" << endl;
         PrintHelp();
         return 0;
     }
@@ -207,7 +207,7 @@ int main(int argc, char **argv)
         bcalm_cleanup();
         cout << "Indexing k-mers...\n\n" << endl;
         color_dump_file = output + "/" + color_dump_file;
-        reindeer_index(k, fof, color_dump_file, record_counts,record_reads, output, cl, threads, exact, do_query_on_disk, quantize, do_log);
+        reindeer_index(k, fof, color_dump_file, record_counts, output, cl, threads,  do_query_on_disk, quantize, do_log);
         cout << "INDEX BUILDING = THE END" <<endl;
     } else {
         if (color_load_file.empty())
@@ -225,8 +225,8 @@ int main(int argc, char **argv)
             {   
                 cout << "Invalid query file" << endl;
                 return 0;
-            }
-            reindeer_query(k, color_load_file, output_query,  record_counts,  record_reads,  threshold,  bgreat_paths_fof,  query, threads, exact, do_query_on_disk);
+			}
+            reindeer_query(color_load_file, output_query,  threshold,   query, threads,  do_query_on_disk);
         }
     }
     return 0;

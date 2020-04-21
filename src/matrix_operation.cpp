@@ -21,7 +21,7 @@ void dump_compressed_vector_buff(vector<uint16_t>& counts, int64_t monotig_id, s
 // load rle encoded matrix from disk (keep compressed in ram)
 vector<unsigned char*> load_compressed_vectors(const string& input_file, vector<unsigned>&vector_sizes, uint64_t& color_number, uint64_t& monotig_number, long eq_class_nb)
 {
-	ifstream in_nb(input_file + "_monotig_nb");
+	//~ ifstream in_nb(input_file + "_monotig_nb");
 	auto in = new zstr::ifstream(input_file);
 	if(not exists_test(input_file))
 	{
@@ -30,7 +30,7 @@ vector<unsigned char*> load_compressed_vectors(const string& input_file, vector<
 	}
 	int64_t rank;
 	unsigned line_size;
-	in_nb.read(reinterpret_cast<char *>(&monotig_number), sizeof(uint64_t));
+	//~ in_nb.read(reinterpret_cast<char *>(&monotig_number), sizeof(uint64_t));
 	in->read(reinterpret_cast<char *>(&color_number), sizeof(uint64_t));
 	vector<unsigned char*> out; //todo resize when loading eq class
 	uint t(0);
@@ -44,7 +44,7 @@ vector<unsigned char*> load_compressed_vectors(const string& input_file, vector<
 		out.push_back(c);
 		++t;
 	}
-	in_nb.close();
+	//~ in_nb.close();
 	delete in;
 	return out;
 }
@@ -57,18 +57,10 @@ void dump_compressed_vector_bucket_disk_query(vector<uint16_t>& counts, int64_t 
 	int64_t tw(monotig_id);
 	if (record_counts)
 	{
-		cout << "COUNTS " << monotig_id << endl;
-		for (auto && c: counts)
-			cout << c << " ";
-		cout << endl;
 		uint n(counts.size()*2);
 		uint nn(counts.size()*2 + 1024);
 		comp = RLE16C(counts); //homemade RLE with escape character 255
 		vector<uint16_t> decomp = RLE16D(comp);
-		cout << "decomp " << monotig_id << endl;
-		for (auto && c: decomp)
-			cout << c << " ";
-		cout << endl;
 		
 	}
 	else

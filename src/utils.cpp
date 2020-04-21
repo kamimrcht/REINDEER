@@ -12,6 +12,19 @@ uint64_t xorshift ( uint64_t x ) {
 }
 
 
+
+void throw_character_issue() {
+	cerr << "[Warning] Sequence containing a 'N' character or invalid header is disregarded." << endl;
+}
+
+void throw_size_issue() {
+	cerr << "[Warning] Sequence smaller than k is disregarded." << endl;
+}
+
+void throw_empty_issue() {
+	cerr << "[Warning] Query file contains empty lines. Please amend it before querying REINDEER" << endl;
+}
+
 //~ void getLineFasta(ifstream* in, string& fasta, string& header) {
 //~ void getLineFasta_buffer(ifstream* in, string& fasta, string& header, uint buffer) {
 string getLineFasta_buffer(ifstream* in) {
@@ -24,15 +37,110 @@ string getLineFasta_buffer(ifstream* in) {
 	}
 	else
 	{
-		result += line;
+		if (not check_character(line))
+			result += line;
 		while (c != '>' and c != EOF ) 
 		{
 			getline(*in, line);
-			result += line;
+			if (not check_character(line))
+				result += line;
 			c = static_cast<char>(in->peek());
 		}
 		return result;
 	}
+}
+
+
+vector<string> getLineFasta_buffer2(ifstream* in, uint stop, uint k) {
+	vector <string> lines;
+	string line, result;
+	uint i(0);
+	bool error(false);
+	char c;
+	c = static_cast<char>(in->peek()); 
+	while (not (i >= stop or in->eof()))
+	{
+		++i;
+		if (c == '>' ) // header
+		{
+			if (not result.empty())
+			{
+				if (result.size() >= k)
+				{
+					lines.push_back(result);
+				}
+				else 
+				{
+					lines.pop_back(); //remove last header corresponding to too small sequence
+					throw_size_issue();
+				}
+				result = "";
+			}
+			getline(*in, line);
+			if (line.empty()){throw_empty_issue(); break;};
+			c = static_cast<char>(in->peek());
+			lines.push_back(line);
+			error = false;
+		}
+		else // sequence
+		{
+			while (c != '>' and c != EOF ) 
+			{
+				getline(*in, line);
+				if (line.empty()){throw_empty_issue(); break;};
+				{
+					
+					if (check_character(line))//invalid character, do no include read
+					{
+						lines.pop_back(); //remove last header corresponding to an erroneous sequence
+						result = "";
+						throw_character_issue();
+						c = static_cast<char>(in->peek());
+						error = true;
+						break;
+					}
+					else 
+					{
+						if (lines.back()[0] == '>' and (not error))
+							result += line;
+					}
+				}
+				
+				
+				c = static_cast<char>(in->peek());
+			}
+		}
+	}
+	if (not lines.empty())
+	{
+		if (lines.back()[0] == '>')
+		{
+			if (not result.empty())
+			{
+				if (result.size() >= k)
+				{
+					lines.push_back(result);
+					result = "";
+				}
+				else 
+				{
+					lines.pop_back(); //remove last header corresponding to too small sequence
+					throw_size_issue();
+				}
+			} 
+			else 
+			{
+				lines.pop_back();
+			}
+		}
+		if (lines.back().size() < k )
+		{
+			lines.pop_back();
+			lines.pop_back();
+			throw_size_issue();
+		}
+	}
+	return lines;
 }
 
 bool is_empty_file(ifstream& file)
@@ -53,6 +161,22 @@ int dirExists(string& path)
     }
 
     return ( info.st_mode & S_IFDIR ) ? 1 : 0;
+}
+
+
+bool check_character(string& s)
+{
+	if (s[0] != '>')
+	{
+		for (auto && c : s)
+		{
+			if (c != 'A' and c != 'T' and c!= 'G' and c != 'C')
+			{
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
 //~ inline bool exists_test(const string& name) {
@@ -354,7 +478,7 @@ string getRealPath(string file, string& dir){
 	return rp + "/" + file;
 }
 
-uint16_t get_color_number(string& fof)
+uint64_t get_color_number(string& fof)
 {	
 	uint color(0);
 	string line;
@@ -368,4 +492,21 @@ uint16_t get_color_number(string& fof)
 		}
 	}
 	return color;
+}
+
+
+void read_info(uint& k, uint64_t& nb_monotig, long& eq_class_nb, uint64_t& color_number, uint& record_option, string& rd_file)
+{
+	ifstream info_file(rd_file + "_info");
+	cout << rd_file + "_info" << endl;
+	if (!info_file.is_open()) {
+		cout << "Can't open an index file" << endl;
+		exit(1);
+	}
+	//get nb of monotigs, nb of eq_classes, nb_of colors
+	info_file.read(reinterpret_cast<char *>(&nb_monotig), sizeof(uint64_t));
+	info_file.read(reinterpret_cast<char *>(&k), sizeof(uint));
+	info_file.read(reinterpret_cast<char *>(&record_option), sizeof(uint));
+	info_file.read(reinterpret_cast<char *>(&eq_class_nb), sizeof(long));
+	info_file.read(reinterpret_cast<char *>(&color_number), sizeof(uint64_t));
 }

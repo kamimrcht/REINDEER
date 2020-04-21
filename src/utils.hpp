@@ -40,10 +40,15 @@
 using namespace std;
 
 
+void throw_character_issue() ;
+void throw_size_issue() ;
+bool check_character(string& s);
+
 uint64_t xorshift ( uint64_t x );
 
 string getLineFasta_buffer(ifstream* in);
 
+vector<string> getLineFasta_buffer2(ifstream* in, uint stop, uint k);
 
 bool is_empty_file(ifstream& file);
 
@@ -74,7 +79,7 @@ vector<uint8_t> RLE8C(const vector<uint8_t>&V);
 
 vector<uint8_t> RLE8D(const vector<uint8_t>&V);
 
-
+void read_info(uint& k, uint64_t& nb_monotig, long& eq_class_nb, uint64_t& color_number, uint& record_option, string& rd_file);
 
 void new_paired_end_file(string& input, string& input2, string& output_file, bool fastq);
 
@@ -85,6 +90,6 @@ uint64_t harmonic_mean(vector<uint64_t>& counts);
 
 string getRealPath(string file, string& dir);
 
-uint16_t get_color_number(string& fof);
+uint64_t get_color_number(string& fof);
 
 #endif

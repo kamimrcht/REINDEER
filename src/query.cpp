@@ -6,7 +6,7 @@ using namespace chrono;
 
 
 // decode rl encoded vector (color/count of ONE monotig)
-unsigned char* decode_vector(unsigned char* monotig_counts, unsigned vector_size, uint16_t color_number, bool record_counts)
+unsigned char* decode_vector(unsigned char* monotig_counts, unsigned vector_size, uint64_t color_number, bool record_counts)
 {
 	unsigned char* decoded_vector;
 	unsigned sz;
@@ -46,7 +46,7 @@ return counts;
 }
 
 // for ONE monotig, get a vector of its counts/colors (uint) from the rle encoded matrix
-vector<uint16_t> get_count_monotig(unsigned char* monotig_counts, unsigned vector_size, uint16_t color_number, bool record_counts)
+vector<uint16_t> get_count_monotig(unsigned char* monotig_counts, unsigned vector_size, uint64_t color_number, bool record_counts)
 {
 	unsigned char* decoded(decode_vector(monotig_counts, vector_size,color_number, record_counts));
 	vector<uint16_t> counts (count_string_to_count_vector(decoded, color_number*2));
@@ -88,7 +88,7 @@ long get_matrix_line_query(int64_t	rank, unsigned char* color, unsigned& line_si
 	return pos;
 }
 
-void get_colors_counts_query_eq_classes(vector<int64_t>& kmer_ids,   uint16_t color_number, vector<vector<uint16_t>>& query_counts,  vector<unsigned char*>& compr_monotig_color, vector<unsigned>&compr_monotig_color_size,vector<long>& position_in_file, bool record_counts, vector<vector<uint8_t>>& query_colors, bool do_query_on_disk, string& rd_file)
+void get_colors_counts_query_eq_classes(vector<int64_t>& kmer_ids,   uint64_t color_number, vector<vector<uint16_t>>& query_counts,  vector<unsigned char*>& compr_monotig_color, vector<unsigned>&compr_monotig_color_size,vector<long>& position_in_file, bool record_counts, vector<vector<uint8_t>>& query_colors, bool do_query_on_disk, string& rd_file)
 {
 	ifstream in(rd_file);
 	unsigned char* color;
@@ -132,7 +132,7 @@ void get_colors_counts_query_eq_classes(vector<int64_t>& kmer_ids,   uint16_t co
 					vector<uint8_t> qcounts8 = count_string_to_count_vector8(lo, compr_monotig_color_size[pos]);
 					copy(qcounts8.begin(), qcounts8.end(), back_inserter(qcounts));
 				}
-				delete lo;	
+				delete []lo;	
 				lastV = qcounts;
 				if (not qcounts.empty())
 				{
@@ -141,13 +141,13 @@ void get_colors_counts_query_eq_classes(vector<int64_t>& kmer_ids,   uint16_t co
 			}
 		}
 	}
-	delete color;
+	delete []color;
 	in.close();
 }
 
 
 // for all queried k-mers, get the colors/counts in vector<vector<uint16_t>>& query_counts
-void get_colors_counts(vector<int64_t>& kmer_ids, bool record_counts, uint16_t color_number, vector<int64_t>& kmers_colors, vector<vector<uint16_t>>& query_counts, vector<unsigned char*>& compr_monotig_color, vector<unsigned>&compr_monotig_color_size, vector<long>& position_in_file)
+void get_colors_counts(vector<int64_t>& kmer_ids, bool record_counts, uint64_t color_number, vector<int64_t>& kmers_colors, vector<vector<uint16_t>>& query_counts, vector<unsigned char*>& compr_monotig_color, vector<unsigned>&compr_monotig_color_size, vector<long>& position_in_file)
 {
 	vector<uint16_t> counts;
 	int64_t lastId(-1);
@@ -177,7 +177,7 @@ void get_colors_counts(vector<int64_t>& kmer_ids, bool record_counts, uint16_t c
 
 
 // compute a string that sums up the count(s) for each dataset
-void write_count_output(bool record_counts, vector<vector<uint16_t>>& query_counts, uint16_t color_number , vector<string>& toW, vector<string>& color_counts)
+void write_count_output(bool record_counts, vector<vector<uint16_t>>& query_counts, uint64_t color_number , vector<string>& toW, vector<string>& color_counts)
 {
 	string nc("*");
 	vector<string> last(color_number,"*");
@@ -215,7 +215,7 @@ void write_count_output(bool record_counts, vector<vector<uint16_t>>& query_coun
 	}
 }
 
-void write_results_above_threshold(string& toWrite, vector<vector<uint16_t>>& query_counts, uint16_t color_number , vector<string>& toW, vector<string>& color_counts,  string& header, bool record_counts, uint threshold, string& line, uint k)
+void write_results_above_threshold(string& toWrite, vector<vector<uint16_t>>& query_counts, uint64_t color_number , vector<string>& toW, vector<string>& color_counts,  string& header, bool record_counts, uint threshold, string& line, uint k)
 {
 	vector<double_t> percent(color_number, 0);
 	
@@ -245,7 +245,7 @@ void write_results_above_threshold(string& toWrite, vector<vector<uint16_t>>& qu
 	toWrite += "\n";
 }
 
-void write_output(vector<int64_t>& kmers_colors, string& toWrite, bool record_reads, bool record_counts, vector<vector<uint32_t>>& query_unitigID,vector<vector<uint32_t>>& query_unitigID_tmp,  uint16_t& color_number, string& header, string& line, uint k, uint threshold,  vector<vector<uint16_t>>& query_counts, vector<vector<uint8_t>>& query_colors)
+void write_output(vector<int64_t>& kmers_colors, string& toWrite,bool record_counts, vector<vector<uint32_t>>& query_unitigID,vector<vector<uint32_t>>& query_unitigID_tmp,  uint64_t& color_number, string& header, string& line, uint k, uint threshold,  vector<vector<uint16_t>>& query_counts, vector<vector<uint8_t>>& query_colors)
 {
 	vector<string> color_counts;
 	vector<string> toW(color_number,"");
@@ -258,7 +258,7 @@ void write_output(vector<int64_t>& kmers_colors, string& toWrite, bool record_re
 
 
 
-void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint16_t& color_number, uint k, bool record_counts, bool record_reads, uint threshold,vector<vector<uint32_t>>& query_unitigID, uint nb_threads, bool exact, vector<unsigned char*>& compr_monotig_color, vector<unsigned >& compr_monotig_color_size, bool do_query_on_disk, string& rd_file, long eq_class_nb, uint64_t nb_monotig){
+void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t& color_number, uint k, bool record_counts, uint threshold,vector<vector<uint32_t>>& query_unitigID, uint nb_threads,  vector<unsigned char*>& compr_monotig_color, vector<unsigned >& compr_monotig_color_size, bool do_query_on_disk, string& rd_file, long eq_class_nb, uint64_t nb_monotig){
 
 	ifstream query_file(input);
 	ofstream out(name);
@@ -271,28 +271,18 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint16_t& color_n
 	// FOR EACH LINE OF THE QUERY FILE
 	string position_file_name(rd_file+"_position.gz");
 	get_position_vector_query_disk(position_in_file,  position_file_name,nb_monotig);
+	bool first(true);
 	while(not query_file.eof()){
 		
 		{
 			
 			{
-				uint i(0);
-				do 
-				{
-					//~ cout << i<< endl;
-					qline = getLineFasta_buffer(&query_file);//read multi fasta
-					//~ cout << qline << endl;
-				//~ for(uint i(0);i<4000;++i){
-					//~ getline(query_file,qline);
-					//~ getline(query_file,qline);
-					if(qline.empty()){break;}
-					lines.push_back(qline);
-					++i;
-				} while(not(lines.back()[0] == '>' and i > 4000));
+				//~ uint i(0);
+				lines = getLineFasta_buffer2(&query_file, 4000, k);
 			}
 			uint i;
-			
-			for(i=(0);i<lines.size();i+=2){
+			for(i=(0);i<lines.size();i+=2)
+			{
 				uint j(i);
 				
 				if (i%1000 == 0)
@@ -302,7 +292,7 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint16_t& color_n
 				while (j < i+2)
 				{
 					string line=lines[j];
-					if(line[0]=='A' or line[0]=='C' or line[0]=='G' or line[0]=='T')
+					if (j%2 == 1)
 					{
 						vector<int64_t> kmers_colors;
 						vector<string> color_counts;
@@ -312,13 +302,12 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint16_t& color_n
 						vector<vector<uint8_t>> query_colors;
 						get_colors_counts_query_eq_classes( kmer_ids, color_number, query_counts,  compr_monotig_color, compr_monotig_color_size, position_in_file, record_counts, query_colors, do_query_on_disk, rd_file);
 						mm.lock();
-						write_output( kmers_colors, toWrite,  record_reads,  record_counts,  query_unitigID,query_unitigID_tmp,  color_number, header, line, k, threshold, query_counts, query_colors);
+						write_output( kmers_colors, toWrite,  record_counts,  query_unitigID,query_unitigID_tmp,  color_number, header, line, k, threshold, query_counts, query_colors);
 						mm.unlock();
-					} 
+					}
 					else 
 					{
-						if (line[0]=='>')
-							header = line;
+						header = line;
 					}
 					j++;
 				}
@@ -343,29 +332,25 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint16_t& color_n
 
 
 
-void query_by_file(uint& counter, string& entry, kmer_Set_Light& ksl, uint16_t& color_number,   uint k, bool record_counts, bool record_reads, uint threshold, vector<string>& bgreat_files, string& output, uint nb_threads, bool exact, vector<unsigned char*>& compr_monotig_color, vector<unsigned >& compr_monotig_color_size, bool do_query_on_disk, string& rd_file, long eq_class_nb, uint64_t	 nb_monotig)
+void query_by_file(uint& counter, string& entry, kmer_Set_Light& ksl, uint64_t& color_number,   uint k, bool record_counts, uint threshold, string& output, uint nb_threads,  vector<unsigned char*>& compr_monotig_color, vector<unsigned >& compr_monotig_color_size, bool do_query_on_disk, string& rd_file, long eq_class_nb, uint64_t	 nb_monotig)
 {
 	string outName(output + "/out_query_Reindeer" + to_string(counter) + ".out");
 	vector<vector<uint32_t>> query_unitigID(color_number,{0});
-	doQuery(entry, outName, ksl, color_number,  k, record_counts, record_reads, threshold, query_unitigID, nb_threads, exact,  compr_monotig_color, compr_monotig_color_size, do_query_on_disk, rd_file, eq_class_nb,  nb_monotig);
+	doQuery(entry, outName, ksl, color_number,  k, record_counts, threshold, query_unitigID, nb_threads, compr_monotig_color, compr_monotig_color_size, do_query_on_disk, rd_file, eq_class_nb,  nb_monotig);
 	counter++;
 }
 
 
-void perform_query(kmer_Set_Light& ksl, uint16_t& color_number,  uint k, bool record_counts, bool record_reads, uint threshold, string& bgreat_paths_fof, string& query, string& output, uint nb_threads, bool exact, vector<unsigned char*>& compr_monotig_color,  vector<unsigned>& compr_monotig_color_size, bool do_query_on_disk, string& rd_file, long eq_class_nb)
+void perform_query(kmer_Set_Light& ksl, uint64_t& color_number,  uint k, bool record_counts,  uint threshold, string& query, string& output, uint nb_threads,  vector<unsigned char*>& compr_monotig_color,  vector<unsigned>& compr_monotig_color_size, bool do_query_on_disk, string& rd_file, long eq_class_nb, uint64_t nb_monotig)
 {
-	uint64_t nb_monotig;
-	ifstream nb_minit_f(rd_file + "_monotig_nb");
-	nb_minit_f.read(reinterpret_cast<char *>(&nb_monotig), sizeof(uint64_t));
 	uint counter(0),patience(0);
-	vector<string> bgreat_files;
 	string entry;
 	if (not query.empty())
 	{
 		if(exists_test(query))
 		{
 			high_resolution_clock::time_point t121 = high_resolution_clock::now();
-			query_by_file(counter, query, ksl, color_number, k, record_counts, record_reads,  threshold, bgreat_files, output, nb_threads, exact, compr_monotig_color, compr_monotig_color_size, do_query_on_disk, rd_file, eq_class_nb, nb_monotig);
+			query_by_file(counter, query, ksl, color_number, k, record_counts,  threshold,  output, nb_threads,  compr_monotig_color, compr_monotig_color_size, do_query_on_disk, rd_file, eq_class_nb, nb_monotig);
 			high_resolution_clock::time_point t13 = high_resolution_clock::now();
 			duration<double> time_span13 = duration_cast<duration<double>>(t13 - t121);
 			cout<<"Query done: "<< time_span13.count() << " seconds."<<endl;
@@ -394,7 +379,7 @@ void perform_query(kmer_Set_Light& ksl, uint16_t& color_number,  uint k, bool re
 				patience=0;
 				if(exists_test(entry)){
 					high_resolution_clock::time_point t121 = high_resolution_clock::now();
-					query_by_file(counter, entry, ksl, color_number,   k, record_counts, record_reads,  threshold, bgreat_files,output, nb_threads, exact,  compr_monotig_color, compr_monotig_color_size, do_query_on_disk, rd_file, eq_class_nb, nb_monotig);
+					query_by_file(counter, entry, ksl, color_number,   k, record_counts,   threshold, output, nb_threads, compr_monotig_color, compr_monotig_color_size, do_query_on_disk, rd_file, eq_class_nb, nb_monotig);
 					memset(str, 0, 255);
 					high_resolution_clock::time_point t13 = high_resolution_clock::now();
 					duration<double> time_span13 = duration_cast<duration<double>>(t13 - t121);
