@@ -55,7 +55,7 @@ void reindeer_query(string& output,string& output_query, uint threshold,  string
 	uint k, record_option;
 	long eq_class_nb;
 	read_info(k, nb_monotig, eq_class_nb, nb_colors, record_option, matrix_name);
-	bool record_counts;
+	bool record_counts(0);
 	if (record_option == 1)
 	{
 		record_counts = true;
