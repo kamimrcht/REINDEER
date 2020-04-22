@@ -26,6 +26,8 @@ void reindeer_index(uint k, string& fof,  string& color_dump_file, bool record_c
 	high_resolution_clock::time_point t12 = high_resolution_clock::now();
 	duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
 	cout<<"Index building and Coloration done total: "<< time_span12.count() << " seconds."<<endl;
+	uint64_t mem(getMemorySelfMaxUsed());
+	cout<<"Max Memory used: "<< mem  << endl;
 }
 
 

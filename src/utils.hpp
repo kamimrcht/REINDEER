@@ -32,12 +32,19 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <linux/limits.h>
+#include <unistd.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 #ifndef UTILS
 #define UTILS
 
 
 using namespace std;
+
+
+uint64_t getMemorySelfUsed ();
+uint64_t getMemorySelfMaxUsed () ;
 
 
 void throw_character_issue() ;

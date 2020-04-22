@@ -4,6 +4,42 @@ using namespace std;
 
 
 
+uint64_t getMemorySelfUsed () 
+{
+    u_int64_t result = 0;
+    FILE* file = fopen("/proc/self/status", "r");
+    if (file)
+    {
+        char line[128];
+
+        while (fgets(line, 128, file) != NULL)
+        {
+            if (strncmp(line, "VmRSS:", 6) == 0)
+            {
+                char* loop = line;
+                result = strlen(line);
+                while (*loop < '0' || *loop > '9') loop++;
+                loop[result-3] = '\0';
+                result = atoi(loop);
+                break;
+            }
+        }
+        fclose(file);
+    }
+    else
+        cout << "warning: could not fopen /proc/self/status" << std::endl;
+    return result;
+}
+
+
+uint64_t getMemorySelfMaxUsed () 
+{
+    u_int64_t result = 0;
+    struct rusage usage;
+    if (getrusage(RUSAGE_SELF, &usage)==0)  {  result = usage.ru_maxrss;  }
+    return result;
+}
+
 uint64_t xorshift ( uint64_t x ) {
 	x = ( ( x >> 32 ) ^ x ) * 0xCFEE444D8B59A89B;
 	x = ( ( x >> 32 ) ^ x ) * 0xCFEE444D8B59A89B;
