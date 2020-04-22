@@ -84,13 +84,13 @@ uint reindeer_query(string& output,string& output_query, uint threshold,  string
 	kmer_Set_Light* ksl = load_rle_index(k, color_load_file, color_dump_file, fof, record_counts,  threads,  output, compr_monotig_color, compr_monotig_color_sizes, do_query_on_disk,  eq_class_nb, nb_colors,   quantize,  log);
 	high_resolution_clock::time_point t12 = high_resolution_clock::now();
 	duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
-	cout<<"#Index loading total: "<< time_span12.count() << " seconds."<<endl;
+	cout<<"Index loading total: "<< time_span12.count() << " seconds."<<endl;
 	cout << "\n#Computing query..." << endl;
 	high_resolution_clock::time_point tnew = high_resolution_clock::now();
 	perform_query(*ksl, nb_colors, k, record_counts,  threshold,  query, output_query, threads,  compr_monotig_color, compr_monotig_color_sizes, do_query_on_disk, matrix_name, eq_class_nb, nb_monotig);
 	high_resolution_clock::time_point tnew2 = high_resolution_clock::now();
 	duration<double> time_spannew2 = duration_cast<duration<double>>(tnew2 - tnew);
-	cout<<"#Querying sequences took "<< time_spannew2.count() << " seconds in total."<<endl;
+	cout<<"Querying sequences took "<< time_spannew2.count() << " seconds in total."<<endl;
 	uint64_t mem(getMemorySelfMaxUsed());
 	cout<<"Max Memory used: "<< mem  << endl;
 	return 0;
