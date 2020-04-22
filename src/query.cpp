@@ -129,7 +129,7 @@ void get_colors_counts_query_eq_classes(vector<int64_t>& kmer_ids,   uint64_t co
 				else
 				{
 					qcounts = {};
-					vector<uint8_t> qcounts8 = count_string_to_count_vector8(lo, compr_monotig_color_size[pos]);
+					vector<uint8_t> qcounts8 = count_string_to_count_vector8(lo, color_number);
 					copy(qcounts8.begin(), qcounts8.end(), back_inserter(qcounts));
 				}
 				delete []lo;	

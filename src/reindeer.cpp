@@ -77,5 +77,8 @@ void reindeer_query(string& output,string& output_query, uint threshold,  string
 	high_resolution_clock::time_point tnew2 = high_resolution_clock::now();
 	duration<double> time_spannew2 = duration_cast<duration<double>>(tnew2 - tnew);
 	cout<<"#Querying sequences took "<< time_spannew2.count() << " seconds in total."<<endl;
+	uint64_t mem(getMemorySelfMaxUsed());
+	cout<<"Max Memory used: "<< mem  << endl;
 }
+
 

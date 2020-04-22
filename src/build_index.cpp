@@ -11,9 +11,14 @@ vector<uint8_t>  get_colors_monotigs(string& line)
 {
 	vector<uint8_t> colors;
 	vector<string> colors_monotig = split_utils(line,':');
+	uint value;
 	for (uint c(1); c < colors_monotig.size(); ++c) // convert the bit string to a bit vector
 	{
-		colors.push_back((uint8_t) (stoi(colors_monotig[c]) > 0));
+		value = stoi(colors_monotig[c]) ;
+		if (value > 0)
+			colors.push_back(1);
+		else
+			colors.push_back(0);
 	}
 	return colors;
 }
@@ -78,7 +83,6 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 				counts = get_counts_monotigs(header);
 			else
 				colors = get_colors_monotigs(header);
-			
 			monotig_id.clear();
 			if (monotig[0] == 'A' or monotig[0] == 'C' or monotig[0] == 'G' or monotig[0] == 'T')
 			{
@@ -208,7 +212,7 @@ void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, string& colo
 	bool dont_dump(false);
 	if (not exists_test(output +"/_blmonocolor.fa"))
 	{
-			cout << "Minitigs and index constuction..."<< endl;
+			cout << "Monotigs and index constuction..."<< endl;
 			// apply monotig merge (-> MMM) with rule regarding colors or counts
 			if (record_counts)
 			{
