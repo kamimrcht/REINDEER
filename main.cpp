@@ -223,7 +223,7 @@ int main(int argc, char **argv)
             }
             if (not(query.empty() or exists_test(query)))
             {   
-                cout << "Invalid query file" << endl;
+                cout << "[ERROR] Invalid query file" << endl;
                 return 0;
 			}
             reindeer_query(color_load_file, output_query,  threshold,   query, threads,  do_query_on_disk);
