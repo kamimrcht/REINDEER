@@ -33,7 +33,7 @@ void reindeer_index(uint k, string& fof,  string& color_dump_file, bool record_c
 
 
 
-void reindeer_query(string& output,string& output_query, uint threshold,  string& query, uint threads,  bool do_query_on_disk)
+uint reindeer_query(string& output,string& output_query, uint threshold,  string& query, uint threads,  bool do_query_on_disk)
 {
 	// QUERY //
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
@@ -41,6 +41,20 @@ void reindeer_query(string& output,string& output_query, uint threshold,  string
 	string color_dump_file("");
 	string color_load_file;
 	string matrix_name;
+
+	//check if loading directory exists and all reindeer files are present
+	if (dirExists(output))
+	{
+		if ( not (exists_test(output + "/reindeer_matrix_eqc.gz") and exists_test(output + "/reindeer_matrix_eqc_info") and exists_test(output + "/reindeer_index.gz") and exists_test(output + "/reindeer_matrix_eqc_position.gz")))
+		{
+			cerr << "[ERROR] REINDEER index files are missing. Stopped."<< endl; 
+			return 0;
+		}
+	} else 
+	{
+		cerr << "[ERROR] REINDEER index directory is missing (or path in -l is wrong). Stopped." << endl;
+		return 0;
+	}
 
 	if (do_query_on_disk)
 	{
@@ -79,6 +93,7 @@ void reindeer_query(string& output,string& output_query, uint threshold,  string
 	cout<<"#Querying sequences took "<< time_spannew2.count() << " seconds in total."<<endl;
 	uint64_t mem(getMemorySelfMaxUsed());
 	cout<<"Max Memory used: "<< mem  << endl;
+	return 0;
 }
 
 
