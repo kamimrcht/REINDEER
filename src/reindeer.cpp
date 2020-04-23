@@ -26,12 +26,14 @@ void reindeer_index(uint k, string& fof,  string& color_dump_file, bool record_c
 	high_resolution_clock::time_point t12 = high_resolution_clock::now();
 	duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
 	cout<<"Index building and Coloration done total: "<< time_span12.count() << " seconds."<<endl;
+	uint64_t mem(getMemorySelfMaxUsed());
+	cout<<"Max Memory used: "<< mem  << endl;
 }
 
 
 
 
-void reindeer_query(string& output,string& output_query, uint threshold,  string& query, uint threads,  bool do_query_on_disk)
+uint reindeer_query(string& output,string& output_query, uint threshold,  string& query, uint threads,  bool do_query_on_disk)
 {
 	// QUERY //
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
@@ -39,6 +41,20 @@ void reindeer_query(string& output,string& output_query, uint threshold,  string
 	string color_dump_file("");
 	string color_load_file;
 	string matrix_name;
+
+	//check if loading directory exists and all reindeer files are present
+	if (dirExists(output))
+	{
+		if ( not (exists_test(output + "/reindeer_matrix_eqc.gz") and exists_test(output + "/reindeer_matrix_eqc_info") and exists_test(output + "/reindeer_index.gz") and exists_test(output + "/reindeer_matrix_eqc_position.gz")))
+		{
+			cerr << "[ERROR] REINDEER index files are missing. Stopped."<< endl; 
+			return 0;
+		}
+	} else 
+	{
+		cerr << "[ERROR] REINDEER index directory is missing (or path in -l is wrong). Stopped." << endl;
+		return 0;
+	}
 
 	if (do_query_on_disk)
 	{
@@ -66,14 +82,21 @@ void reindeer_query(string& output,string& output_query, uint threshold,  string
 	//~ long eq_class_nb(0);
 	bool quantize, log;
 	kmer_Set_Light* ksl = load_rle_index(k, color_load_file, color_dump_file, fof, record_counts,  threads,  output, compr_monotig_color, compr_monotig_color_sizes, do_query_on_disk,  eq_class_nb, nb_colors,   quantize,  log);
+	vector<long> position_in_file;
+	string position_file_name(matrix_name + "_position.gz");
+	get_position_vector_query_disk(position_in_file,  position_file_name,nb_monotig);
 	high_resolution_clock::time_point t12 = high_resolution_clock::now();
 	duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
-	cout<<"#Index loading total: "<< time_span12.count() << " seconds."<<endl;
+	cout<<"Index loading total: "<< time_span12.count() << " seconds."<<endl;
 	cout << "\n#Computing query..." << endl;
 	high_resolution_clock::time_point tnew = high_resolution_clock::now();
-	perform_query(*ksl, nb_colors, k, record_counts,  threshold,  query, output_query, threads,  compr_monotig_color, compr_monotig_color_sizes, do_query_on_disk, matrix_name, eq_class_nb, nb_monotig);
+	perform_query(*ksl, nb_colors, k, record_counts,  threshold,  query, output_query, threads,  compr_monotig_color, compr_monotig_color_sizes, do_query_on_disk, matrix_name, eq_class_nb, nb_monotig, position_in_file);
 	high_resolution_clock::time_point tnew2 = high_resolution_clock::now();
 	duration<double> time_spannew2 = duration_cast<duration<double>>(tnew2 - tnew);
-	cout<<"#Querying sequences took "<< time_spannew2.count() << " seconds in total."<<endl;
+	cout<<"Querying sequences took "<< time_spannew2.count() << " seconds in total."<<endl;
+	uint64_t mem(getMemorySelfMaxUsed());
+	cout<<"Max Memory used: "<< mem  << endl;
+	return 0;
 }
+
 

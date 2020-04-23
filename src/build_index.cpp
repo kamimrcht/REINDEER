@@ -11,9 +11,14 @@ vector<uint8_t>  get_colors_monotigs(string& line)
 {
 	vector<uint8_t> colors;
 	vector<string> colors_monotig = split_utils(line,':');
+	uint value;
 	for (uint c(1); c < colors_monotig.size(); ++c) // convert the bit string to a bit vector
 	{
-		colors.push_back((uint8_t) (stoi(colors_monotig[c]) > 0));
+		value = stoi(colors_monotig[c]) ;
+		if (value > 0)
+			colors.push_back(1);
+		else
+			colors.push_back(0);
 	}
 	return colors;
 }
@@ -78,7 +83,6 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 				counts = get_counts_monotigs(header);
 			else
 				colors = get_colors_monotigs(header);
-			
 			monotig_id.clear();
 			if (monotig[0] == 'A' or monotig[0] == 'C' or monotig[0] == 'G' or monotig[0] == 'T')
 			{
@@ -173,12 +177,12 @@ void do_coloring(string& color_load_file, string& color_dump_file, string& fof, 
 					if(exists_test(file_name)){
 						file_names.push_back(file_name);
 					}else{
-						cout<<file_name<<" is not here"<<endl;
+						cout<< "[ERROR] " << file_name<<" is not here"<<endl;
 					}
 				}
 			}
 		}else{
-			cout<<"File of file problem"<<endl;
+			cout<<"[ERROR] File of file problem"<<endl;
 		}
 		write_matrix_in_bucket_files(color_load_file,  color_dump_file,  fof,  ksl,  record_counts, k,  nb_threads, output, compr_monotig_color, compr_monotig_color_size, color_dump_file, do_query_on_disk, nb_colors,  quantize, log); 
 	}
@@ -208,7 +212,7 @@ void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, string& colo
 	bool dont_dump(false);
 	if (not exists_test(output +"/_blmonocolor.fa"))
 	{
-			cout << "Minitigs and index constuction..."<< endl;
+			cout << "#Monotigs and index constuction..."<< endl;
 			// apply monotig merge (-> MMM) with rule regarding colors or counts
 			if (record_counts)
 			{
@@ -232,7 +236,6 @@ void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, string& colo
 	else 
 	{
 		cerr << "[Warning] monotig file (_blmonocolor.fa) was found in output dir, I will use it and I won't delete it" << endl;
-		cout << "Warning monotig file (_blmonocolor.fa) was found in output dir, I will use it and I won't delete it" << endl;
 		DELE_MONOTIG_FILE = false;
 		if (not exists_test(output +"/reindeer_index.gz"))
 		{
@@ -242,7 +245,6 @@ void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, string& colo
 		{
 			dont_dump = true;
 			cerr << "[Warning] index file (reindeer_index.gz) was found in output dir, I will use it and I won't delete it" << endl;
-			cout << "Warning monotig file (reindeer_index.gz) was found in output dir, I will use it and I won't delete it" << endl;
 			ksl = new kmer_Set_Light(output + "/reindeer_index.gz");
 		}
 	}
@@ -252,22 +254,18 @@ void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, string& colo
 	
 	if (! dont_dump)
 	{
-		cout << "Dumping index..."<< endl;
+		cout << "#Dumping index..."<< endl;
 		ksl->dump_disk(output + "/reindeer_index.gz");
+		high_resolution_clock::time_point t2 = high_resolution_clock::now();
+		duration<double> time_span12 = duration_cast<duration<double>>(t2 - t1);
+		cout<<"Index written on disk: "<< time_span12.count() << " seconds."<<endl;
 	}
-	high_resolution_clock::time_point t13 = high_resolution_clock::now();
-	
-	cout << "Building colors and equivalence classes matrix to be written on disk..." << endl;
+	cout << "#Building colors and equivalence classes matrix to be written on disk..." << endl;
+	high_resolution_clock::time_point t3 = high_resolution_clock::now();
 	do_coloring(color_load_file, color_dump_file, fof, ksl, record_counts,  k,  nb_threads,  output, compr_monotig_color, compr_monotig_color_size, do_query_on_disk, eq_class_nb, nb_colors,   quantize,  do_log);
-	high_resolution_clock::time_point t12 = high_resolution_clock::now();
-	duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
-	cout<<"Matrix done: "<< time_span12.count() << " seconds."<<endl;
-	high_resolution_clock::time_point t2 = high_resolution_clock::now();
-	
-	
-	
-	duration<double> time_span13 = duration_cast<duration<double>>(t13 - t2);
-	cout<<"Index written on disk: "<< time_span13.count() << " seconds."<<endl;
+	high_resolution_clock::time_point t4 = high_resolution_clock::now();
+	duration<double> time_span34 = duration_cast<duration<double>>(t4 - t3);
+	cout<<"Matrix done: "<< time_span34.count() << " seconds."<<endl;
 	if (DELE_MONOTIG_FILE)
 	{
 		string cmd("rm -f " + output +"/_blmonocolor.fa");
