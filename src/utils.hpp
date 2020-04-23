@@ -54,6 +54,8 @@ uint64_t xorshift ( uint64_t x );
 
 string getLineFasta_buffer(ifstream* in);
 
+string get_file_name(string& path);
+
 vector<string> getLineFasta_buffer2(ifstream* in, uint stop, uint k);
 
 bool is_empty_file(ifstream& file);

@@ -229,6 +229,23 @@ vector<string> split_utils(const string &s, char delim){
 	return elems;
 }
 
+
+string get_file_name(string& path)
+{
+	string result(""), tmp("");
+	vector<string> split(split_utils(path,'/'));
+	if (not split.empty())
+	{
+		tmp = split.back();
+		split = split_utils(tmp, '.');
+		if (not split.empty())
+			result = split_utils(tmp, '.')[0];
+	}
+	return result;
+}
+
+
+
 ///// parse bcalm headers //////////////
 double parseCoverage_utils(const string& str){
 	size_t pos(str.find("km:f:"));
@@ -531,10 +548,12 @@ uint64_t get_color_number(string& fof)
 }
 
 
+
+
+
 void read_info(uint& k, uint64_t& nb_monotig, long& eq_class_nb, uint64_t& color_number, uint& record_option, string& rd_file)
 {
 	ifstream info_file(rd_file + "_info");
-	cout << rd_file + "_info" << endl;
 	if (!info_file.is_open()) {
 		cout << "Can't open an index file" << endl;
 		exit(1);
