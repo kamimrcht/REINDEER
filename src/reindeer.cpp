@@ -79,6 +79,7 @@ uint reindeer_query(string& output,string& output_query, uint threshold,  string
 	vector<unsigned char*> compr_monotig_color;
 	vector<unsigned> compr_monotig_color_sizes;
 	cout << "\n#Loading index..." << endl;
+    std::ofstream index_loading_semaphore(output_query + "/index_loading"); // begin semaphore
 	//~ long eq_class_nb(0);
 	bool quantize, log;
 	kmer_Set_Light* ksl = load_rle_index(k, color_load_file, color_dump_file, fof, record_counts,  threads,  output, compr_monotig_color, compr_monotig_color_sizes, do_query_on_disk,  eq_class_nb, nb_colors,   quantize,  log);
@@ -88,6 +89,7 @@ uint reindeer_query(string& output,string& output_query, uint threshold,  string
 	high_resolution_clock::time_point t12 = high_resolution_clock::now();
 	duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
 	cout<<"Index loading total: "<< time_span12.count() << " seconds."<<endl;
+    std::remove(string(output_query + "/index_loading").c_str()); // end semaphore
 	cout << "\n#Computing query..." << endl;
 	high_resolution_clock::time_point tnew = high_resolution_clock::now();
 	perform_query(*ksl, nb_colors, k, record_counts,  threshold,  query, output_query, threads,  compr_monotig_color, compr_monotig_color_sizes, do_query_on_disk, matrix_name, eq_class_nb, nb_monotig, position_in_file);
