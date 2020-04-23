@@ -336,7 +336,7 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t& color_n
 
 void query_by_file(uint& counter, string& entry, kmer_Set_Light& ksl, uint64_t& color_number,   uint k, bool record_counts, uint threshold, string& output, uint nb_threads,  vector<unsigned char*>& compr_monotig_color, vector<unsigned >& compr_monotig_color_size, bool do_query_on_disk, string& rd_file, long eq_class_nb, uint64_t	 nb_monotig, vector<long>& position_in_file)
 {
-	string outName(output + "/out_query_Reindeer_" + get_file_name(entry) + "_" + to_string(counter) + ".out");
+	string outName(output + "/out_query_Reindeer_" + get_file_name(entry).substr(0,50) + "_" + to_string(counter) + ".out");
 	cout << "Result will be written in " << outName << endl;
 	vector<vector<uint32_t>> query_unitigID(color_number,{0});
 	doQuery(entry, outName, ksl, color_number,  k, record_counts, threshold, query_unitigID, nb_threads, compr_monotig_color, compr_monotig_color_size, do_query_on_disk, rd_file, eq_class_nb,  nb_monotig, position_in_file);
