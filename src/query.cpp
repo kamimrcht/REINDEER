@@ -260,21 +260,10 @@ void write_results_above_threshold(string& toWrite, vector<vector<uint16_t>>& qu
 {
 	vector<double_t> percent(color_number, 0);
 	
-	//~ for (auto&& vec_c : query_counts)
-	//~ {
-		//~ for (uint c(0); c< vec_c.size(); ++c)
-		//~ {
-			//~ if (vec_c[c] > 0)
-				//~ percent[c]++;
-		//~ }
-	//~ }
-	
 	toWrite += header.substr(0,50) ;
 	
 	for (uint cp(0); cp < covered_positions.size(); ++cp)
 	{
-		//~ cout << covered_positions[cp] << " " <<  threshold << endl;
-		//~ percent[per] = percent[per] *100 /(line.size() -k +1);
 		if (covered_positions[cp] >=  threshold )
 		{
 			if (record_counts)
