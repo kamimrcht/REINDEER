@@ -272,7 +272,7 @@ void write_results_above_threshold(string& toWrite, vector<vector<uint16_t>>& qu
 			}
 			else 
 			{
-				toWrite += "\t" + color_counts[cp] ;//TODO
+				toWrite += "\t" + to_string(covered_positions[cp]);
 			}
 		} 
 		else 
