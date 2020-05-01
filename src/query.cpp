@@ -177,8 +177,9 @@ void get_colors_counts(vector<int64_t>& kmer_ids, bool record_counts, uint64_t c
 
 
 // compute a string that sums up the count(s) for each dataset
-void write_count_output(bool record_counts, vector<vector<uint16_t>>& query_counts, uint64_t color_number , vector<string>& toW, vector<string>& color_counts, uint k_size)
+vector<uint> write_count_output(bool record_counts, vector<vector<uint16_t>>& query_counts, uint64_t color_number , vector<string>& toW, vector<string>& color_counts, uint k_size)
 {
+	vector<uint> covered_positions;
 	string nc("*");
 	vector<string> last(color_number,"*");
 	for (auto&& c: query_counts)
@@ -186,7 +187,6 @@ void write_count_output(bool record_counts, vector<vector<uint16_t>>& query_coun
 		for (uint color(0); color < c.size(); ++color)
 		{
 			nc = to_string(c[color]);
-			//~ cout << "color " << color << " nc " << nc <<  endl;
 			if (nc == "0")
 					nc = "*";
 			if (last[color] != nc )
@@ -236,64 +236,58 @@ void write_count_output(bool record_counts, vector<vector<uint16_t>>& query_coun
 		}
 		if (coords.size() >0 )
 		{
-			coords.back().first.second = query_counts.size() + k_size -1;
+			coords.back().first.second = query_counts.size() + k_size - 1;
 			coords.back().first.second --;
 		}
+		uint cov_positions(query_counts.size() + k_size - 1);
 		for (auto && coo : coords)
 		{
 			out_str +=  to_string(coo.first.first) + "-" + to_string(coo.first.second) + ":" + coo.second + ",";
+			if (coo.second == "*")
+			{
+				cov_positions -= (coo.first.second - coo.first.first +1);
+			}
 		}
 		out_str.pop_back(); //remove last comma
-		//~ out_str += " ";
 		color_counts.push_back(out_str);
+		//~ cout << cov_positions * 100/ (query_counts.size() + k_size - 1)<< endl;
+		covered_positions.push_back(cov_positions * 100/ (query_counts.size() + k_size - 1));
 	}
-	//~ out_str.pop_back(); //remove last space
-	
-	//~ cout << out_str <<endl;
-	//~ color_counts.push_back(out_str);
-	//~ for (uint str(0); str<toW.size(); ++str)
-	//~ {
-		//~ if (toW[str].empty())
-		//~ {
-			//~ color_counts.push_back("*");
-		//~ }
-		//~ else 
-		//~ {
-			//~ toW[str].pop_back();
-			//~ while (toW[str].back() == '*' and (toW[str].size() > 1))
-			//~ {
-				//~ toW[str].pop_back();
-				//~ toW[str].pop_back();
-			//~ }
-			//~ color_counts.push_back(toW[str]);
-		//~ }
-	//~ }
+	return covered_positions;
 }
 
-void write_results_above_threshold(string& toWrite, vector<vector<uint16_t>>& query_counts, uint64_t color_number , vector<string>& toW, vector<string>& color_counts,  string& header, bool record_counts, uint threshold, string& line, uint k)
+void write_results_above_threshold(string& toWrite, vector<vector<uint16_t>>& query_counts, uint64_t color_number , vector<string>& toW, vector<string>& color_counts,  string& header, bool record_counts, uint threshold, string& line, uint k, vector<uint>& covered_positions)
 {
 	vector<double_t> percent(color_number, 0);
 	
-	for (auto&& vec_c : query_counts)
-	{
-		for (uint c(0); c< vec_c.size(); ++c)
-		{
-			if (vec_c[c] > 0)
-				percent[c]++;
-		}
-	}
+	//~ for (auto&& vec_c : query_counts)
+	//~ {
+		//~ for (uint c(0); c< vec_c.size(); ++c)
+		//~ {
+			//~ if (vec_c[c] > 0)
+				//~ percent[c]++;
+		//~ }
+	//~ }
+	
 	toWrite += header.substr(0,50) ;
 	
-	for (uint per(0); per < percent.size(); ++per)
+	for (uint cp(0); cp < covered_positions.size(); ++cp)
 	{
-		percent[per] = percent[per] *100 /(line.size() -k +1);
-		if (percent[per] >= (double_t) threshold )
+		//~ cout << covered_positions[cp] << " " <<  threshold << endl;
+		//~ percent[per] = percent[per] *100 /(line.size() -k +1);
+		if (covered_positions[cp] >=  threshold )
 		{
 			if (record_counts)
-				toWrite += "\t" + color_counts[per];
+			{
+				toWrite += "\t" + color_counts[cp];
+			}
 			else 
-				toWrite += "\t" + to_string((int)(percent[per]*10)/10) ;
-		} else {
+			{
+				toWrite += "\t" + color_counts[cp] ;//TODO
+			}
+		} 
+		else 
+		{
 				toWrite += "\t*";
 		}
 	}
@@ -304,8 +298,8 @@ void write_output(vector<int64_t>& kmers_colors, string& toWrite,bool record_cou
 {
 	vector<string> color_counts;
 	vector<string> toW(color_number,"");
-	write_count_output(record_counts, query_counts, color_number, toW, color_counts,k );
-	write_results_above_threshold( toWrite,query_counts, color_number , toW,  color_counts,   header,  record_counts, threshold, line, k);
+	vector<uint> covered_positions = write_count_output(record_counts, query_counts, color_number, toW, color_counts,k );
+	write_results_above_threshold( toWrite,query_counts, color_number , toW,  color_counts,   header,  record_counts, threshold, line, k, covered_positions);
 }
 
 
