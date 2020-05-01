@@ -399,12 +399,14 @@ void perform_query(kmer_Set_Light& ksl, uint64_t& color_number,  uint k, bool re
 		
 		while(true){
 			char str[256];
-			cout << "Enter the name of the query file: ";
+			cout << "Enter the name of the query file (and optionally -P option separated by a space): ";
 
 			cin.get (str,256);
 			cin.clear();
 			cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-			entry = str;
+			//~ entry = str;
+			vector<string> entries = split_utils(str, ' ');
+			entry = entries[0];
 			if (entry == ""){
 				if(patience>0){
 					cout<<"See you soon !"<<endl;
@@ -413,16 +415,30 @@ void perform_query(kmer_Set_Light& ksl, uint64_t& color_number,  uint k, bool re
 					cout<<"Empty query file !  Type return again if you  want to quit"<<endl;
 					patience++;
 				}
-			}else{
+			}
+			else
+			{
+				uint thresh(threshold);
 				patience=0;
-				if(exists_test(entry)){
+				if(exists_test(entry))
+				{
+					if (entries.size() > 1)
+					{
+						if (entries[1] != "")
+						{
+							thresh = stoi(entries[1]);
+						}
+					}
+					cout << "Queried file: " << entry << " option -P: " << thresh << endl;
 					high_resolution_clock::time_point t121 = high_resolution_clock::now();
-					query_by_file(counter, entry, ksl, color_number,   k, record_counts,   threshold, output, nb_threads, compr_monotig_color, compr_monotig_color_size, do_query_on_disk, rd_file, eq_class_nb, nb_monotig, position_in_file);
+					query_by_file(counter, entry, ksl, color_number,   k, record_counts,   thresh, output, nb_threads, compr_monotig_color, compr_monotig_color_size, do_query_on_disk, rd_file, eq_class_nb, nb_monotig, position_in_file);
 					memset(str, 0, 255);
 					high_resolution_clock::time_point t13 = high_resolution_clock::now();
 					duration<double> time_span13 = duration_cast<duration<double>>(t13 - t121);
 					cout<<"Query done: "<< time_span13.count() << " seconds."<<endl;
-				}else{
+				}
+				else
+				{
 					cout << "The entry is not a file" << endl;
 				}
 			}
