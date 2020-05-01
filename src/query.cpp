@@ -177,7 +177,7 @@ void get_colors_counts(vector<int64_t>& kmer_ids, bool record_counts, uint64_t c
 
 
 // compute a string that sums up the count(s) for each dataset
-void write_count_output(bool record_counts, vector<vector<uint16_t>>& query_counts, uint64_t color_number , vector<string>& toW, vector<string>& color_counts)
+void write_count_output(bool record_counts, vector<vector<uint16_t>>& query_counts, uint64_t color_number , vector<string>& toW, vector<string>& color_counts, uint k_size)
 {
 	string nc("*");
 	vector<string> last(color_number,"*");
@@ -186,33 +186,88 @@ void write_count_output(bool record_counts, vector<vector<uint16_t>>& query_coun
 		for (uint color(0); color < c.size(); ++color)
 		{
 			nc = to_string(c[color]);
+			//~ cout << "color " << color << " nc " << nc <<  endl;
 			if (nc == "0")
 					nc = "*";
 			if (last[color] != nc )
 			{
-				
 				toW[color]+=nc + ":";
 				last[color] = nc;
 			}
 		}
 	}
-	for (uint str(0); str<toW.size(); ++str)
+	uint covered_pos =  0;
+	
+	for (uint color(0); color < color_number; ++color)
 	{
-		if (toW[str].empty())
+		string out_str("");
+		vector<pair<pair<uint, uint>, string>> coords;
+		
+		for (uint c(0); c < query_counts.size(); ++c)
 		{
-			color_counts.push_back("*");
-		}
-		else 
-		{
-			toW[str].pop_back();
-			while (toW[str].back() == '*' and (toW[str].size() > 1))
+			if (c == 0)
 			{
-				toW[str].pop_back();
-				toW[str].pop_back();
+				if (query_counts[c][color] == 0)
+				{
+					coords.push_back({{0,0},"*"});
+				}
+				else
+				{
+					coords.push_back({{0,0},to_string(query_counts[c][color])});
+				}
 			}
-			color_counts.push_back(toW[str]);
+			else
+			{
+				string val_str = to_string(query_counts[c][color]);
+				if (val_str == "0")
+					val_str = "*";
+				if (val_str == coords.back().second)
+				{
+					coords.back().first.second ++;
+				}
+				else
+				{
+					uint new_coord = coords.back().first.second + 1;
+					coords.push_back({{new_coord, new_coord +1},val_str});
+				}
+			}
+			
+			nc = to_string(query_counts[c][color]);
 		}
+		if (coords.size() >0 )
+		{
+			coords.back().first.second = query_counts.size() + k_size -1;
+			coords.back().first.second --;
+		}
+		for (auto && coo : coords)
+		{
+			out_str +=  to_string(coo.first.first) + "-" + to_string(coo.first.second) + ":" + coo.second + ",";
+		}
+		out_str.pop_back(); //remove last comma
+		//~ out_str += " ";
+		color_counts.push_back(out_str);
 	}
+	//~ out_str.pop_back(); //remove last space
+	
+	//~ cout << out_str <<endl;
+	//~ color_counts.push_back(out_str);
+	//~ for (uint str(0); str<toW.size(); ++str)
+	//~ {
+		//~ if (toW[str].empty())
+		//~ {
+			//~ color_counts.push_back("*");
+		//~ }
+		//~ else 
+		//~ {
+			//~ toW[str].pop_back();
+			//~ while (toW[str].back() == '*' and (toW[str].size() > 1))
+			//~ {
+				//~ toW[str].pop_back();
+				//~ toW[str].pop_back();
+			//~ }
+			//~ color_counts.push_back(toW[str]);
+		//~ }
+	//~ }
 }
 
 void write_results_above_threshold(string& toWrite, vector<vector<uint16_t>>& query_counts, uint64_t color_number , vector<string>& toW, vector<string>& color_counts,  string& header, bool record_counts, uint threshold, string& line, uint k)
@@ -249,7 +304,7 @@ void write_output(vector<int64_t>& kmers_colors, string& toWrite,bool record_cou
 {
 	vector<string> color_counts;
 	vector<string> toW(color_number,"");
-	write_count_output(record_counts, query_counts, color_number, toW, color_counts );
+	write_count_output(record_counts, query_counts, color_number, toW, color_counts,k );
 	write_results_above_threshold( toWrite,query_counts, color_number , toW,  color_counts,   header,  record_counts, threshold, line, k);
 }
 
@@ -268,10 +323,7 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t& color_n
 	mutex mm;
 	vector<string> lines;
 	vector<vector<uint32_t>> query_unitigID_tmp;
-	//~ vector<long> position_in_file;
 	// FOR EACH LINE OF THE QUERY FILE
-	//~ string position_file_name(rd_file+"_position.gz");
-	//~ get_position_vector_query_disk(position_in_file,  position_file_name,nb_monotig);
 	bool first(true);
 	while(not query_file.eof()){
 		#pragma omp parallel num_threads(nb_threads)
