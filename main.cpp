@@ -76,7 +76,7 @@ void PrintHelp()
             "-l                      :     Reindeer index directory (should be output_reindeer if you've not used -o during indexing)\n"
             "-q <FASTA>              :     FASTA query file with query sequences\n"
             "      * Optional parameters\n"
-            "-S                      :     Threshold: at least S% of the query k-mers must be in a dataset to be reported (default: " << threshold << "%)\n"
+            "-P                      :     Threshold: at least P% of the positions in the query must be covered by k-mers present in a dataset for the dataset to be reported (default: " << threshold << "%)\n"
             "-o <file>               :     Directory to write output files (default: output_reindeer/)\n"
             "--disk-query            :     On-disk query (default: in-memory). To be used for large indexes that won't fit in RAM, if the index was constructed with the same option.\n\n"
 
