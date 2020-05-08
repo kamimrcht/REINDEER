@@ -177,8 +177,9 @@ void get_colors_counts(vector<int64_t>& kmer_ids, bool record_counts, uint64_t c
 
 
 // compute a string that sums up the count(s) for each dataset
-void write_count_output(bool record_counts, vector<vector<uint16_t>>& query_counts, uint64_t color_number , vector<string>& toW, vector<string>& color_counts)
+vector<uint> write_count_output(bool record_counts, vector<vector<uint16_t>>& query_counts, uint64_t color_number , vector<string>& toW, vector<string>& color_counts, uint k_size)
 {
+	vector<uint> covered_positions;
 	string nc("*");
 	vector<string> last(color_number,"*");
 	for (auto&& c: query_counts)
@@ -190,55 +191,92 @@ void write_count_output(bool record_counts, vector<vector<uint16_t>>& query_coun
 					nc = "*";
 			if (last[color] != nc )
 			{
-				
 				toW[color]+=nc + ":";
 				last[color] = nc;
 			}
 		}
 	}
-	for (uint str(0); str<toW.size(); ++str)
+	uint covered_pos =  0;
+	
+	for (uint color(0); color < color_number; ++color)
 	{
-		if (toW[str].empty())
+		string out_str("");
+		vector<pair<pair<uint, uint>, string>> coords;
+		
+		for (uint c(0); c < query_counts.size(); ++c)
 		{
-			color_counts.push_back("*");
-		}
-		else 
-		{
-			toW[str].pop_back();
-			while (toW[str].back() == '*' and (toW[str].size() > 1))
+			if (c == 0)
 			{
-				toW[str].pop_back();
-				toW[str].pop_back();
+				if (query_counts[c][color] == 0)
+				{
+					coords.push_back({{0,0},"*"});
+				}
+				else
+				{
+					coords.push_back({{0,0},to_string(query_counts[c][color])});
+				}
 			}
-			color_counts.push_back(toW[str]);
+			else
+			{
+				string val_str = to_string(query_counts[c][color]);
+				if (val_str == "0")
+					val_str = "*";
+				if (val_str == coords.back().second)
+				{
+					coords.back().first.second ++;
+				}
+				else
+				{
+					uint new_coord = coords.back().first.second + 1;
+					coords.push_back({{new_coord, new_coord +1},val_str});
+				}
+			}
+			
+			nc = to_string(query_counts[c][color]);
 		}
+		if (coords.size() >0 )
+		{
+			coords.back().first.second = query_counts.size() + k_size - 1;
+			coords.back().first.second --;
+		}
+		uint cov_positions(query_counts.size() + k_size - 1);
+		for (auto && coo : coords)
+		{
+			out_str +=  to_string(coo.first.first) + "-" + to_string(coo.first.second) + ":" + coo.second + ",";
+			if (coo.second == "*")
+			{
+				cov_positions -= (coo.first.second - coo.first.first +1);
+			}
+		}
+		out_str.pop_back(); //remove last comma
+		color_counts.push_back(out_str);
+		//~ cout << cov_positions * 100/ (query_counts.size() + k_size - 1)<< endl;
+		covered_positions.push_back(cov_positions * 100/ (query_counts.size() + k_size - 1));
 	}
+	return covered_positions;
 }
 
-void write_results_above_threshold(string& toWrite, vector<vector<uint16_t>>& query_counts, uint64_t color_number , vector<string>& toW, vector<string>& color_counts,  string& header, bool record_counts, uint threshold, string& line, uint k)
+void write_results_above_threshold(string& toWrite, vector<vector<uint16_t>>& query_counts, uint64_t color_number , vector<string>& toW, vector<string>& color_counts,  string& header, bool record_counts, uint threshold, string& line, uint k, vector<uint>& covered_positions)
 {
 	vector<double_t> percent(color_number, 0);
 	
-	for (auto&& vec_c : query_counts)
-	{
-		for (uint c(0); c< vec_c.size(); ++c)
-		{
-			if (vec_c[c] > 0)
-				percent[c]++;
-		}
-	}
 	toWrite += header.substr(0,50) ;
 	
-	for (uint per(0); per < percent.size(); ++per)
+	for (uint cp(0); cp < covered_positions.size(); ++cp)
 	{
-		percent[per] = percent[per] *100 /(line.size() -k +1);
-		if (percent[per] >= (double_t) threshold )
+		if (covered_positions[cp] >=  threshold )
 		{
 			if (record_counts)
-				toWrite += "\t" + color_counts[per];
+			{
+				toWrite += "\t" + color_counts[cp];
+			}
 			else 
-				toWrite += "\t" + to_string((int)(percent[per]*10)/10) ;
-		} else {
+			{
+				toWrite += "\t" + to_string(covered_positions[cp]);
+			}
+		} 
+		else 
+		{
 				toWrite += "\t*";
 		}
 	}
@@ -249,8 +287,8 @@ void write_output(vector<int64_t>& kmers_colors, string& toWrite,bool record_cou
 {
 	vector<string> color_counts;
 	vector<string> toW(color_number,"");
-	write_count_output(record_counts, query_counts, color_number, toW, color_counts );
-	write_results_above_threshold( toWrite,query_counts, color_number , toW,  color_counts,   header,  record_counts, threshold, line, k);
+	vector<uint> covered_positions = write_count_output(record_counts, query_counts, color_number, toW, color_counts,k );
+	write_results_above_threshold( toWrite,query_counts, color_number , toW,  color_counts,   header,  record_counts, threshold, line, k, covered_positions);
 }
 
 
@@ -268,10 +306,7 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t& color_n
 	mutex mm;
 	vector<string> lines;
 	vector<vector<uint32_t>> query_unitigID_tmp;
-	//~ vector<long> position_in_file;
 	// FOR EACH LINE OF THE QUERY FILE
-	//~ string position_file_name(rd_file+"_position.gz");
-	//~ get_position_vector_query_disk(position_in_file,  position_file_name,nb_monotig);
 	bool first(true);
 	while(not query_file.eof()){
 		
@@ -335,7 +370,7 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t& color_n
 
 void query_by_file(uint& counter, string& entry, kmer_Set_Light& ksl, uint64_t& color_number,   uint k, bool record_counts, uint threshold, string& output, uint nb_threads,  vector<unsigned char*>& compr_monotig_color, vector<unsigned >& compr_monotig_color_size, bool do_query_on_disk, string& rd_file, long eq_class_nb, uint64_t	 nb_monotig, vector<long>& position_in_file)
 {
-	string outName(output + "/out_query_Reindeer_" + get_file_name(entry).substr(0,50) + "_" + to_string(counter) + ".out");
+	string outName(output + "/out_query_Reindeer_P" + to_string(threshold) + "_" + get_file_name(entry).substr(0,50) + "_" + to_string(counter) + ".out");
 	cout << "Result will be written in " << outName << endl;
 	vector<vector<uint32_t>> query_unitigID(color_number,{0});
 	doQuery(entry, outName, ksl, color_number,  k, record_counts, threshold, query_unitigID, nb_threads, compr_monotig_color, compr_monotig_color_size, do_query_on_disk, rd_file, eq_class_nb,  nb_monotig, position_in_file);
@@ -363,12 +398,14 @@ void perform_query(kmer_Set_Light& ksl, uint64_t& color_number,  uint k, bool re
 		
 		while(true){
 			char str[256];
-			cout << "Enter the name of the query file: ";
+			cout << "Enter the name of the query file (and optionally -P option separated by a space): ";
 
 			cin.get (str,256);
 			cin.clear();
 			cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-			entry = str;
+			//~ entry = str;
+			vector<string> entries = split_utils(str, ' ');
+			entry = entries[0];
 			if (entry == ""){
 				if(patience>0){
 					cout<<"See you soon !"<<endl;
@@ -377,16 +414,30 @@ void perform_query(kmer_Set_Light& ksl, uint64_t& color_number,  uint k, bool re
 					cout<<"Empty query file !  Type return again if you  want to quit"<<endl;
 					patience++;
 				}
-			}else{
+			}
+			else
+			{
+				uint thresh(threshold);
 				patience=0;
-				if(exists_test(entry)){
+				if(exists_test(entry))
+				{
+					if (entries.size() > 1)
+					{
+						if (entries[1] != "")
+						{
+							thresh = stoi(entries[1]);
+						}
+					}
+					cout << "Queried file: " << entry << " option -P: " << thresh << endl;
 					high_resolution_clock::time_point t121 = high_resolution_clock::now();
-					query_by_file(counter, entry, ksl, color_number,   k, record_counts,   threshold, output, nb_threads, compr_monotig_color, compr_monotig_color_size, do_query_on_disk, rd_file, eq_class_nb, nb_monotig, position_in_file);
+					query_by_file(counter, entry, ksl, color_number,   k, record_counts,   thresh, output, nb_threads, compr_monotig_color, compr_monotig_color_size, do_query_on_disk, rd_file, eq_class_nb, nb_monotig, position_in_file);
 					memset(str, 0, 255);
 					high_resolution_clock::time_point t13 = high_resolution_clock::now();
 					duration<double> time_span13 = duration_cast<duration<double>>(t13 - t121);
 					cout<<"Query done: "<< time_span13.count() << " seconds."<<endl;
-				}else{
+				}
+				else
+				{
 					cout << "The entry is not a file" << endl;
 				}
 			}

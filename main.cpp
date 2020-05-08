@@ -76,7 +76,7 @@ void PrintHelp()
             "-l                      :     Reindeer index directory (should be output_reindeer if you've not used -o during indexing)\n"
             "-q <FASTA>              :     FASTA query file with query sequences\n"
             "      * Optional parameters\n"
-            "-S                      :     Threshold: at least S% of the query k-mers must be in a dataset to be reported (default: " << threshold << "%)\n"
+            "-P                      :     Threshold: at least P% of the positions in the query must be covered by k-mers present in a dataset for the dataset to be reported (default: " << threshold << "%)\n"
             "-o <file>               :     Directory to write output files (default: output_reindeer/)\n"
             "--disk-query            :     On-disk query (default: in-memory). To be used for large indexes that won't fit in RAM, if the index was constructed with the same option.\n\n"
 
@@ -90,14 +90,14 @@ void PrintHelp()
 void ProcessArgs(int argc, char** argv)
 {
     
-    const char* const short_opts = "k:S:t:f:l:g:q:o:w:";
+    const char* const short_opts = "k:P:t:f:l:g:q:o:w:";
     const option long_opts[] = {
             {"index", no_argument, nullptr, 'i'},
             {"help", no_argument, nullptr, 'h'},
             {"nocount", no_argument, nullptr, 'c'},
             {"bcalm", no_argument, nullptr, 'b'},
             {"query", no_argument, nullptr, 'Q'},
-            {"paired-end", no_argument, nullptr, 'P'},
+            {"paired-end", no_argument, nullptr, 'p'},
             {"disk-query", no_argument, nullptr, 'd'},
             {"quantization", no_argument, nullptr, 'u'},
             {"log-count", no_argument, nullptr, 'L'},
@@ -140,10 +140,10 @@ void ProcessArgs(int argc, char** argv)
             case 'c':
                 record_counts=false;
                 break;
-            case 'P':
+            case 'p':
                 PE=true;
                 break;
-            case 'S':
+            case 'P':
                 threshold=stoi(optarg);
                 break;
             case 'l':
