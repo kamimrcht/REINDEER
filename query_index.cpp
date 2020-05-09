@@ -32,20 +32,17 @@ using namespace chrono;
 int main(int argc, char** argv) {
 	char ch;
 	string input_index_file, query;
-	uint k(31);
-	while ((ch = getopt(argc, argv, "g:q:k:")) != -1) {
+	while ((ch = getopt(argc, argv, "g:q:")) != -1) {
 		switch (ch) {
 			case 'q': query = optarg; break;
 			case 'g': input_index_file = optarg; break;
-			case 'k': k = stoi(optarg); break;
 		}
 	}
 
-	if ((input_index_file == "" or query == "") or k == 0) {
+	if (input_index_file == "" or query == "") {
 		cout << "Core arguments:" << endl
-		     << "	-g graph file" << endl
-		     << "	-q query string" << endl
-		     << "	-k k value used for graph (31) " << endl;
+		     << "	-g blight index file" << endl
+		     << "	-q query string" << endl;
 		return 0;
 	}
 
