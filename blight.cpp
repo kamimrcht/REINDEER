@@ -558,24 +558,24 @@ void kmer_Set_Light::print_kmer(kmer num, uint64_t n) {
 }
 
 string kmer_Set_Light::kmer2str(kmer num) {
-	string res;
+	string res(k,'\0');
 	Pow2<kmer> anc(2 * (k - 1));
 	for (uint64_t i(0); i < k; ++i) {
 		uint64_t nuc = num / anc;
 		num = num % anc;
 		if (nuc == 3) {
-			res += "G";
+			res[i] = 'G';
 		}
-		if (nuc == 2) {
-			res += "T";
+        else if (nuc == 2) {
+			res[i] = 'T';
 		}
-		if (nuc == 1) {
-			res += "C";
+        else if (nuc == 1) {
+			res[i] = 'C';
 		}
-		if (nuc == 0) {
-			res += "A";
+        else if (nuc == 0) {
+			res[i] = 'A';
 		}
-		if (nuc >= 4) {
+        else if (unlikely(nuc >= 4)) {
 			cout << nuc << endl;
 			cout << "WTF" << endl;
 		}
