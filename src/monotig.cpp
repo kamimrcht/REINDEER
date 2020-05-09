@@ -453,7 +453,13 @@ void kmer_Set_Light::create_super_buckets_list(const vector<string>& input_files
 	struct rlimit rl;
 	getrlimit (RLIMIT_NOFILE, &rl);
 	rl.rlim_cur = number_superbuckets.value()+10+coreNumber;
-	setrlimit (RLIMIT_NOFILE, &rl);
+
+	int res = setrlimit (RLIMIT_NOFILE, &rl);
+    if (res == -1)
+    {
+        std::cerr << "error setting rlimit to " << number_superbuckets.value()+10+coreNumber << std::endl;
+        exit(1);
+    }
 	// atomic<uint64_t> total_nuc_number(0);
 
 	vector<ostream*> out_files;

@@ -8,7 +8,7 @@ ifeq ($(DEBUG), 1)
 	DEBUG_SYMS=1
 else
 	CFLAGS+=-DNDEBUG -Ofast -flto -march=native -mtune=native -fstrict-aliasing 
-	CFLAGS2+=-DNDEBUG -Ofast -flto -march=native -mtune=native -fstrict-aliasing 
+	CFLAGS2+=-DNDEBUG -Ofast -flto -march=native -mtune=native -fstrict-aliasing  
 	#WARNS=-Wfatal-errors
 endif
 
