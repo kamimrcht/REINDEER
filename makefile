@@ -19,6 +19,9 @@ EXEC= bench_minitig bench_blight
 
 all: $(EXEC)
 
+query_index: query_index.o blight.o utils.o
+	$(CXX) -o $@ $^ $(CFLAGS)
+
 bench_blight: bench_blight.o blight.o utils.o
 	$(CXX) -o $@ $^ $(CFLAGS)
 
