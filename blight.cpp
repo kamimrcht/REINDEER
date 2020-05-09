@@ -563,23 +563,9 @@ string kmer_Set_Light::kmer2str(kmer num) {
 	for (uint64_t i(0); i < k; ++i) {
 		uint64_t nuc = num / anc;
 		num = num % anc;
-		if (nuc == 3) {
-			res[i] = 'G';
-		}
-        else if (nuc == 2) {
-			res[i] = 'T';
-		}
-        else if (nuc == 1) {
-			res[i] = 'C';
-		}
-        else if (nuc == 0) {
-			res[i] = 'A';
-		}
-        else if (unlikely(nuc >= 4)) {
-			cout << nuc << endl;
-			cout << "WTF" << endl;
-		}
-		anc >>= 2;
+        assert(nuc < 4);
+		res[i] = "ACTG"[nuc];
+        anc >>= 2;
 	}
 	return res;
 }
