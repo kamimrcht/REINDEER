@@ -248,7 +248,10 @@ vector<uint> write_count_output(bool record_counts, vector<vector<uint16_t>>& qu
 				cov_positions -= (coo.first.second - coo.first.first +1);
 			}
 		}
-		out_str.pop_back(); //remove last comma
+		if (out_str.size() > 0)
+			out_str.pop_back(); //remove last comma
+		else
+			out_str= "*";
 		color_counts.push_back(out_str);
 		//~ cout << cov_positions * 100/ (query_counts.size() + k_size - 1)<< endl;
 		covered_positions.push_back(cov_positions * 100/ (query_counts.size() + k_size - 1));

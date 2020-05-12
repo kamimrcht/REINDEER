@@ -66,7 +66,7 @@ void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_
 	cout << "Sorting datasets to find equivalence classes..." << endl;
 	vector<long> final_positions(nb_unitigs);
 	zstr::ofstream * outz;
-	ofstream *out;
+	ofstream *out = nullptr;
 	if (do_query_on_disk)
 	{
 		out = new ofstream(output + "/reindeer_matrix_eqc");
