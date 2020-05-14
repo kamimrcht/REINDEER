@@ -12,20 +12,20 @@ else
 endif
 
 CFLAGS2+= -w -Wall -std=gnu99 -DUSE_THREADS  -fstrict-aliasing -Iext $(DEFS)
-CFLAGS+=-std=c++11 -pipe -lz -fopenmp -msse4 ${WARNS}
+CFLAGS+=-std=c++11 -pipe -lz -fopenmp -msse4 -Ilz4 ${WARNS}
 INC=blight.h bbhash.h common.h
 EXEC= bench_minitig bench_blight
-
+LZ4H=lz4/lz4frame.o lz4/lz4.o lz4/xxhash.o lz4/lz4hc.o
 
 all: $(EXEC)
 
-bench_blight: bench_blight.o blight.o utils.o
+bench_blight: bench_blight.o blight.o utils.o $(LZ4H)
 	$(CXX) -o $@ $^ $(CFLAGS)
 
 bench_blight.o: bench_blight.cpp $(INC)
 	$(CXX) -o $@ -c $< $(CFLAGS)
 
-bench_minitig: bench_minitig.o blight.h minitig.o    blight.o    utils.o trlec.o
+bench_minitig: bench_minitig.o blight.h minitig.o blight.o    utils.o trlec.o $(LZ4H)
 	$(CXX) -o $@ $^ $(CFLAGS)
 
 bench_minitig.o: bench_minitig.cpp $(INC)
@@ -52,6 +52,17 @@ trlec.o: trlec.c $(INC)
 trled.o: trled.c $(INC)
 	$(CC) -o $@ -c $< $(CFLAGS2)
 
+lz4/lz4frame.o: lz4/lz4frame.c $(INC)
+	$(CC) -o $@ -c $< $(CFLAGS2)
+
+lz4/lz4.o: lz4/lz4.c $(INC)
+	$(CC) -o $@ -c $< $(CFLAGS2)
+
+lz4/lz4hc.o: lz4/lz4hc.c $(INC)
+	$(CC) -o $@ -c $< $(CFLAGS2)
+	
+lz4/xxhash.o: lz4/xxhash.c $(INC)
+	$(CC) -o $@ -c $< $(CFLAGS2) 
 
 clean:
 	rm -rf *.o

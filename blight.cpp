@@ -22,6 +22,8 @@
 #include "common.h"
 #include "robin_hood.h"
 
+#include "lz4/lz4_stream.h"
+
 using namespace std;
 using namespace chrono;
 
@@ -239,7 +241,12 @@ void kmer_Set_Light::create_super_buckets(const string& input_file) {
 	rl.rlim_cur = number_superbuckets.value() + 10;
 	setrlimit(RLIMIT_NOFILE, &rl);
 	uint64_t total_nuc_number(0);
-	auto inUnitigs = new zstr::ifstream(input_file);
+    istream* inUnitigs;
+    bool is_gzip_compressed = input_file.substr(input_file.length()-2) == "gz";
+    if (is_gzip_compressed)
+        inUnitigs = new zstr::ifstream(input_file);
+    else
+        inUnitigs = new lz4_stream::istream(input_file);
 	if (not inUnitigs->good()) {
 		cout << "Problem with files opening" << endl;
 		exit(1);
@@ -268,7 +275,7 @@ void kmer_Set_Light::create_super_buckets(const string& input_file) {
 			{
 				getline(*inUnitigs, useless);
 				getline(*inUnitigs, ref);
-				if (ref.size() < k) {
+                if (ref.size() < k) {
 					ref = "";
 				} else {
 					read_kmer += ref.size() - k + 1;
@@ -400,6 +407,8 @@ void kmer_Set_Light::create_super_buckets(const string& input_file) {
 			max_bucket_mphf = 0;
 		}
 	}
+	
+
 	total_nb_minitigs = all_buckets[(uint)minimizer_number - 1].skmer_number + last_skmer_number; // total number of minitigs
 	positions.resize(total_pos_size);
 	positions_int = positions.size() / 64 + (positions.size() % 64 == 0 ? 0 : 1);
