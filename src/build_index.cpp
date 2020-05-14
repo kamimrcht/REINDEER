@@ -58,8 +58,9 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 		all_files.push_back(out); 
 	}
 	string output_file_name;
-	string monotigs_fn(output +"/_blmonocolor.fa"); //monotigs
-	ifstream monotigs_file(monotigs_fn);
+    string suffix = exists_test(output +"/_blmonocolor.fa.lz4") ? ".lz4" : "";
+	string monotigs_fn(output +"/_blmonocolor.fa" + suffix); //monotigs
+    lz4_stream::istream monotigs_file(monotigs_fn);
 	uint64_t nb_monotigs(0);
 	//~ ofstream out_nb(output_file+"_eqc_monotig_nb");
 	ofstream out_info(output_file+"_eqc_info");
@@ -71,12 +72,12 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 		vector<uint16_t> counts;
 		vector<uint8_t> colors;
 		string header,monotig, buffer;
-		unsigned char *in;
+		unsigned char *in = nullptr;
 		// record count vector for each monotig at index given by the mphf
 		while(not monotigs_file.eof())
 		{
-			getline(monotigs_file, header);
-			getline(monotigs_file, monotig);
+			getline(monotigs_file, header); // assumes headers arent longer than that
+			getline(monotigs_file, monotig); // assumes monotigs also arent longer than that
 			if(monotig.empty() or header.empty()){continue;}
 			//read bcalm header to get colors or counts
 			if (record_counts)
@@ -205,12 +206,12 @@ kmer_Set_Light* load_rle_index(uint k, string& color_load_file, string& color_du
 
 
 // build index from new file
-void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, string& color_load_file, string& color_dump_file, string& fof, bool record_counts,  kmer_Set_Light* ksl, uint nb_threads,  string& output, bool do_query_on_disk, bool quantize, bool do_log, uint64_t nb_colors)
+void build_index(uint k, uint m1,uint m2,uint m3, uint bit, string& color_load_file, string& color_dump_file, string& fof, bool record_counts,  kmer_Set_Light* ksl, uint nb_threads,  string& output, bool do_query_on_disk, bool quantize, bool do_log, uint64_t nb_colors)
 {
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
 	//~ bool delete_monotig_file(true);
 	bool dont_dump(false);
-	if (not exists_test(output +"/_blmonocolor.fa"))
+	if (not (exists_test(output +"/_blmonocolor.fa") || exists_test(output +"/_blmonocolor.fa.lz4")))
 	{
 			cout << "#Monotigs and index constuction..."<< endl;
 			// apply monotig merge (-> MMM) with rule regarding colors or counts
@@ -235,11 +236,12 @@ void build_index(uint k, uint m1,uint m2,uint m3, uint c, uint bit, string& colo
 	} 
 	else 
 	{
-		cerr << "[Warning] monotig file (_blmonocolor.fa) was found in output dir, I will use it and I won't delete it" << endl;
+		cerr << "[Warning] monotig file (_blmonocolor.fa[.lz4]) was found in output dir, I will use it and I won't delete it" << endl;
 		DELE_MONOTIG_FILE = false;
 		if (not exists_test(output +"/reindeer_index.gz"))
 		{
-			ksl->construct_index(output + "/_blmonocolor.fa",output);
+            string suffix = exists_test(output +"/_blmonocolor.fa.lz4") ? ".lz4" : "";
+			ksl->construct_index(output + "/_blmonocolor.fa" + suffix, output);
 		}
 		else
 		{
