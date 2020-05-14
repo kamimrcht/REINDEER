@@ -19,6 +19,9 @@ LZ4H=lz4/lz4frame.o lz4/lz4.o lz4/xxhash.o lz4/lz4hc.o
 
 all: $(EXEC)
 
+query_index: query_index.o blight.o utils.o
+	$(CXX) -o $@ $^ $(CFLAGS)
+
 bench_blight: bench_blight.o blight.o utils.o $(LZ4H)
 	$(CXX) -o $@ $^ $(CFLAGS)
 

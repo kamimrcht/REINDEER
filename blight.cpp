@@ -567,28 +567,14 @@ void kmer_Set_Light::print_kmer(kmer num, uint64_t n) {
 }
 
 string kmer_Set_Light::kmer2str(kmer num) {
-	string res;
+	string res(k,'\0');
 	Pow2<kmer> anc(2 * (k - 1));
 	for (uint64_t i(0); i < k; ++i) {
 		uint64_t nuc = num / anc;
 		num = num % anc;
-		if (nuc == 3) {
-			res += "G";
-		}
-		if (nuc == 2) {
-			res += "T";
-		}
-		if (nuc == 1) {
-			res += "C";
-		}
-		if (nuc == 0) {
-			res += "A";
-		}
-		if (nuc >= 4) {
-			cout << nuc << endl;
-			cout << "WTF" << endl;
-		}
-		anc >>= 2;
+        assert(nuc < 4);
+		res[i] = "ACTG"[nuc];
+        anc >>= 2;
 	}
 	return res;
 }
