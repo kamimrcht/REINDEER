@@ -210,7 +210,7 @@ void build_index(uint k, uint m1,uint m2,uint m3, uint bit, string& color_load_f
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
 	//~ bool delete_monotig_file(true);
 	bool dont_dump(false);
-	if (not exists_test(output +"/_blmonocolor.fa"))
+	if (not (exists_test(output +"/_blmonocolor.fa") || exists_test(output +"/_blmonocolor.fa.lz4")))
 	{
 			cout << "#Monotigs and index constuction..."<< endl;
 			// apply monotig merge (-> MMM) with rule regarding colors or counts
@@ -235,11 +235,12 @@ void build_index(uint k, uint m1,uint m2,uint m3, uint bit, string& color_load_f
 	} 
 	else 
 	{
-		cerr << "[Warning] monotig file (_blmonocolor.fa) was found in output dir, I will use it and I won't delete it" << endl;
+		cerr << "[Warning] monotig file (_blmonocolor.fa[.lz4]) was found in output dir, I will use it and I won't delete it" << endl;
 		DELE_MONOTIG_FILE = false;
 		if (not exists_test(output +"/reindeer_index.gz"))
 		{
-			ksl->construct_index(output + "/_blmonocolor.fa",output);
+            string suffix = exists_test(output +"/_blmonocolor.fa.lz4") ? ".lz4" : "";
+			ksl->construct_index(output + "/_blmonocolor.fa" + suffix, output);
 		}
 		else
 		{
