@@ -3,6 +3,7 @@
 #include "../blight/blight.h"
 #include "../blight/utils.h"
 #include "utils.hpp"
+#include "../blight/lz4/lz4_stream.h"
 #ifndef BUI
 #define BUI
 

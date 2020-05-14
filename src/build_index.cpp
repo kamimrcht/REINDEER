@@ -58,8 +58,9 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 		all_files.push_back(out); 
 	}
 	string output_file_name;
-	string monotigs_fn(output +"/_blmonocolor.fa"); //monotigs
-	ifstream monotigs_file(monotigs_fn);
+    string suffix = exists_test(output +"/_blmonocolor.fa.lz4") ? ".lz4" : "";
+	string monotigs_fn(output +"/_blmonocolor.fa" + suffix); //monotigs
+    lz4_stream::istream monotigs_file(monotigs_fn);
 	uint64_t nb_monotigs(0);
 	//~ ofstream out_nb(output_file+"_eqc_monotig_nb");
 	ofstream out_info(output_file+"_eqc_info");
@@ -75,8 +76,8 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 		// record count vector for each monotig at index given by the mphf
 		while(not monotigs_file.eof())
 		{
-			getline(monotigs_file, header);
-			getline(monotigs_file, monotig);
+			getline(monotigs_file, header); // assumes headers arent longer than that
+			getline(monotigs_file, monotig); // assumes monotigs also arent longer than that
 			if(monotig.empty() or header.empty()){continue;}
 			//read bcalm header to get colors or counts
 			if (record_counts)
