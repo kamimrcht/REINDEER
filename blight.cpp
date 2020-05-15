@@ -233,12 +233,14 @@ string kmer_Set_Light::compaction(const string& seq1, const string& seq2, bool r
 	return "";
 }
 
+
+
 void kmer_Set_Light::create_super_buckets(const string& input_file) {
 	struct rlimit rl;
 	getrlimit(RLIMIT_NOFILE, &rl);
 	rl.rlim_cur = number_superbuckets.value() + 10;
 	setrlimit(RLIMIT_NOFILE, &rl);
-	uint64_t total_nuc_number(0);
+	//~ uint64_t total_nuc_number(0);
 	auto inUnitigs = new zstr::ifstream(input_file);
 	if (not inUnitigs->good()) {
 		cout << "Problem with files opening" << endl;
@@ -368,6 +370,48 @@ void kmer_Set_Light::create_super_buckets(const string& input_file) {
 		*out_files[i] << flush;
 		delete (out_files[i]);
 	}
+	//~ bucketSeq.resize(total_nuc_number * 2);
+	//~ bucketSeq.shrink_to_fit();
+	//~ uint64_t i(0), total_pos_size(0);
+	//~ uint32_t max_bucket_mphf(0);
+	//~ uint64_t hash_base(0), old_hash_base(0), nb_skmer_before(0), last_skmer_number(0);
+	//~ for (uint64_t BC(0); BC < minimizer_number.value(); ++BC) {
+		//~ start_bucket[BC] = i;
+		//~ current_pos[BC] = i;
+		//~ i += nuc_minimizer[BC];
+		//~ max_bucket_mphf = max(all_buckets[BC].skmer_number, max_bucket_mphf);
+		//~ if (BC == 0) {
+			//~ nb_skmer_before = 0; // I replace skmer_number by the total number of minitigs before this bucket
+		//~ } else {
+			//~ nb_skmer_before = all_buckets[BC - 1].skmer_number;
+		//~ }
+		//~ uint64_t local_skmercount(all_buckets[BC].skmer_number);
+		//~ all_buckets[BC].skmer_number = total_nb_minitigs;
+		//~ total_nb_minitigs += local_skmercount;
+		//~ if ((BC + 1) % number_bucket_per_mphf == 0) {
+			//~ int n_bits_to_encode((ceil(log2(max_bucket_mphf + 1))) - bit_saved_sub);
+			//~ if (n_bits_to_encode < 1) {
+				//~ n_bits_to_encode = 1;
+			//~ }
+			//~ all_mphf[BC / number_bucket_per_mphf].bit_to_encode = n_bits_to_encode;
+			//~ all_mphf[BC / number_bucket_per_mphf].start = total_pos_size;
+			//~ total_pos_size += (n_bits_to_encode * all_mphf[BC / number_bucket_per_mphf].mphf_size);
+			//~ hash_base += all_mphf[(BC / number_bucket_per_mphf)].mphf_size;
+			//~ all_mphf[BC / number_bucket_per_mphf].mphf_size = old_hash_base;
+			//~ old_hash_base = hash_base;
+			//~ max_bucket_mphf = 0;
+		//~ }
+	//~ }
+	//~ total_nb_minitigs = all_buckets[(uint)minimizer_number - 1].skmer_number + last_skmer_number; // total number of minitigs
+	//~ positions.resize(total_pos_size);
+	//~ positions_int = positions.size() / 64 + (positions.size() % 64 == 0 ? 0 : 1);
+	//~ positions.shrink_to_fit();
+	initialize_buckets();
+}
+
+
+void kmer_Set_Light::initialize_buckets()
+{
 	bucketSeq.resize(total_nuc_number * 2);
 	bucketSeq.shrink_to_fit();
 	uint64_t i(0), total_pos_size(0);
@@ -406,6 +450,7 @@ void kmer_Set_Light::create_super_buckets(const string& input_file) {
 	positions.shrink_to_fit();
 }
 
+
 void kmer_Set_Light::str2bool(const string& str, uint64_t mini) {
 	for (uint64_t i(0); i < str.size(); ++i) {
 		switch (str[i]) {
@@ -430,10 +475,98 @@ void kmer_Set_Light::str2bool(const string& str, uint64_t mini) {
 	current_pos[mini] += (str.size());
 }
 
+
+
+uint64_t kmer_Set_Light::get_minimizer_from_header(ifstream& in)
+{
+	unsigned compressed_header_size;
+	char c = in.get(); //read ">"
+	int32_t minimizer;
+	in.read(reinterpret_cast<char *>(&minimizer), sizeof(int32_t));// minimizer_size
+	in.read(reinterpret_cast<char *>(&compressed_header_size), sizeof(unsigned)); // size of colors/counts with rle
+	in.seekg(compressed_header_size + 1, in.cur); // rle + \n
+	return minimizer;
+}
+
+void kmer_Set_Light::read_super_buckets_reindeer(const string& input_file) 
+{
+	#pragma omp parallel num_threads(coreNumber)
+	{
+		//~ cout << input_file << endl;
+		string header, line, mini;
+		bm::bvector<> position_super_kmers_local;
+#pragma omp for
+		for (uint64_t SBC = 0; SBC < number_superbuckets.value(); ++SBC) {
+			position_super_kmers_local.init();
+			vector<uint64_t> number_kmer_accu(bucket_per_superBuckets.value(), 0);
+			uint64_t BC(SBC * bucket_per_superBuckets);
+			//~ ifstream in((input_file + to_string(SBC) + ".gz")); //TODO come back to gz
+			ifstream in((input_file + to_string(SBC)));
+			//~ cout << "input " << input_file + to_string(SBC) << endl;
+			int32_t minimizer;
+			in.seekg(0);
+			while (not in.eof() and in.good()) {
+				header = line = "";
+				minimizer = get_minimizer_from_header(in);
+				//~ cout<< "minimizer " << minimizer << endl;
+				//~ getline(in, header);
+				//~ minimizer = 0;
+				//~ cout << "here " << minimizer << endl;
+				getline(in, line); //sequence
+				//~ cout << line << endl;
+				if (not line.empty()) {
+					str2bool(line, minimizer);
+					position_super_kmers_local[number_kmer_accu[minimizer % bucket_per_superBuckets] + all_mphf[minimizer].mphf_size] = true;
+#pragma omp atomic
+					number_kmer += line.size() - k + 1;
+					number_kmer_accu[minimizer % bucket_per_superBuckets] += line.size() - k + 1;
+#pragma omp atomic
+					++number_super_kmer;
+					line.clear();
+				}
+				//~ cout << "done" << endl;
+			}
+			//~ cout << "here2" << endl;
+			//~ remove((input_file + to_string(SBC) + ".gz").c_str());
+			//~ remove((input_file + to_string(SBC) ).c_str()); //TODO ne pas effacer => utilisé par reindeer
+			create_mphf_disk(BC, BC + bucket_per_superBuckets, position_super_kmers_local);
+
+			fill_positions(BC, BC + bucket_per_superBuckets, position_super_kmers_local);
+			BC += bucket_per_superBuckets.value();
+			cout << "-" << flush;
+		}
+#pragma omp critical(PSK)
+		{ position_super_kmers.merge(position_super_kmers_local); }
+	}
+	position_super_kmers[number_kmer] = true;
+	position_super_kmers.optimize();
+	position_super_kmers.optimize_gap_size();
+	position_super_kmers_RS = new bm::bvector<>::rs_index_type();
+	position_super_kmers.build_rs_index(position_super_kmers_RS);
+	cout << endl;
+	cout << "----------------------INDEX RECAP----------------------------" << endl;
+	cout << "Kmer in graph: " << intToString(number_kmer) << endl;
+	cout << "Super Kmer in graph: " << intToString(number_super_kmer) << endl;
+	cout << "Average size of Super Kmer: " << intToString(number_kmer / (number_super_kmer)) << endl;
+	cout << "Total size of the partitionned graph: " << intToString(bucketSeq.capacity() / 2) << endl;
+	cout << "Largest MPHF: " << intToString(largest_MPHF) << endl;
+	cout << "Largest Bucket: " << intToString(largest_bucket_nuc_all) << endl;
+	cout << "Size of the partitionned graph (MBytes): " << intToString(bucketSeq.size() / (8 * 1024 * 1024)) << endl;
+	cout << "Total Positions size (MBytes): " << intToString(positions.size() / (8 * 1024 * 1024)) << endl;
+	cout << "Size of the partitionned graph (bit per kmer): " << ((double)(bucketSeq.size()) / (number_kmer)) << endl;
+	bit_per_kmer += ((double)(bucketSeq.size()) / (number_kmer));
+	cout << "Total Positions size (bit per kmer): " << ((double)positions.size() / number_kmer) << endl;
+	bit_per_kmer += ((double)positions.size() / number_kmer);
+	cout << "TOTAL Bits per kmer (without bbhash): " << bit_per_kmer << endl;
+	cout << "TOTAL Bits per kmer (with bbhash): " << bit_per_kmer + 4 << endl;
+	cout << "TOTAL Size estimated (MBytes): " << (bit_per_kmer + 4) * number_kmer / (8 * 1024 * 1024) << endl;
+}
+
+
 void kmer_Set_Light::read_super_buckets(const string& input_file) {
 #pragma omp parallel num_threads(coreNumber)
 	{
-		string useless, line;
+		string header, line, mini;
 		bm::bvector<> position_super_kmers_local;
 #pragma omp for
 		for (uint64_t SBC = 0; SBC < number_superbuckets.value(); ++SBC) {
@@ -441,14 +574,17 @@ void kmer_Set_Light::read_super_buckets(const string& input_file) {
 			position_super_kmers_local.init();
 			vector<uint64_t> number_kmer_accu(bucket_per_superBuckets.value(), 0);
 			uint64_t BC(SBC * bucket_per_superBuckets);
-			zstr::ifstream in((input_file + to_string(SBC) + ".gz"));
+			//~ zstr::ifstream in((input_file + to_string(SBC) + ".gz"));
+			ifstream in((input_file + to_string(SBC) + ".gz"));
 			while (not in.eof() and in.good()) {
-				useless = line = "";
-				getline(in, useless);
-				getline(in, line);
+				header = line = "";
+				//~ getline(in, header);
+				uint64_t minimizer = get_minimizer_from_header(in);
+				getline(in, line); //sequence
 				if (not line.empty()) {
-					useless = useless.substr(1);
-					uint64_t minimizer(stoi(useless));
+					//~ mini = header.substr(1);
+					//~ uint64_t minimizer(stoi(mini));
+					//~ uint64_t minimizer = get_minimizer_from_header(header);
 					str2bool(line, minimizer);
 					position_super_kmers_local[number_kmer_accu[minimizer % bucket_per_superBuckets] + all_mphf[minimizer].mphf_size] = true;
 #pragma omp atomic

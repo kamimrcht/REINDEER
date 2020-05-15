@@ -119,6 +119,7 @@ class kmer_Set_Light {
 	uint64_t k, m1, m2, m3, minimizer_size_graph;
 	uint64_t coreNumber;
 	uint64_t bit_saved_sub;
+	uint64_t total_nuc_number = 0;
 	int color_mode;
 	string working_dir;
 	double max_divergence_count = 0;
@@ -283,11 +284,8 @@ class kmer_Set_Light {
 	uint64_t rcb(const uint64_t&);
 	uint64_t canonize(uint64_t x, uint64_t n);
 	kmer get_kmer(uint64_t pos);
-	void merge_super_buckets_mem(const string& input_file, uint64_t number_color, ofstream* out, uint64_t number_pass = 1);
-	void get_monocolor_minitigs_mem(vector<robin_hood::unordered_node_map<kmer, kmer_context>>& min2kmer2context,
-	                                ofstream* out,
-	                                const vector<int32_t>& mini,
-	                                uint64_t number_color);
+	//~ uint64_t get_minimizer_from_header(string& header, zstr::ifstream& in);
+	
 	void str2bool(const string& str, uint64_t mini);
 	void dump_and_destroy(const string& output_file);
 	bool similar_count(const vector<uint16_t>& V1, const vector<uint16_t>& V2);
@@ -301,6 +299,19 @@ class kmer_Set_Light {
 	uint16_t parseCoverage_bin(const string& str);
 	uint16_t abundance_at(uint8_t index);
 	uint8_t return_count_bin(uint16_t abundance);
+	void initialize_buckets();
+	//Reindeer
+	void write_buffer_count(vector<string>& buffers, ofstream* out, vector<uint16_t>& headerV, string& seq2dump, int32_t minimi);
+	void write_buffer_color(vector<string>& buffers, ofstream* out, vector<uint8_t>& headerV, string& seq2dump, int32_t minimi);
+	uint64_t get_minimizer_from_header(ifstream& in);
+	void merge_super_buckets_mem(const string& input_file, uint64_t number_color, string& out_name,uint64_t number_pass=1, int colormode=1 );
+	void get_monocolor_minitigs_mem(vector<robin_hood::unordered_node_map<kmer, kmer_context>>& min2kmer2context,
+	                                ofstream* out,
+	                                const vector<int32_t>& mini,
+	                                uint64_t number_color, int colormode);
+	void read_super_buckets_reindeer(const string& input_file);
+
+
 };
 
 #endif
