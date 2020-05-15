@@ -55,8 +55,9 @@ string compress_vector(const vector<uint16_t>& V);
 void construct_index_fof(const string& input_file, const string& tmp_dir, int colormode);
 
 
-vector<uint16_t> getcolorvector(const vector< pair<uint16_t,uint16_t> >&V,uint64_t number_color);
-void merge_super_buckets_mem(const string& input_file, uint64_t number_color, ofstream* out,uint64_t number_pass );
+vector<uint16_t> get_count_vector(const vector< pair<uint16_t,uint16_t> >&V,uint64_t number_color);
+vector<uint8_t> get_color_vector(const vector< pair<uint16_t,uint16_t> >&V,uint64_t number_color);
+void merge_super_buckets_mem(const string& input_file, uint64_t number_color, string& out_name,uint64_t number_pass, int colormode );
 
 
 
@@ -67,10 +68,12 @@ void merge_super_buckets_mem(const string& input_file, uint64_t number_color, of
 kmer select_good_successor(const  robin_hood::unordered_node_map<kmer,kmer_context>& kmer2context,const kmer& start);
 
 
+void write_buffer_count(vector<string>& buffers, ofstream* out, vector<uint16_t>& headerV, string& seq2dump, int32_t minimi);
+void write_buffer_color(vector<string>& buffers, ofstream* out, vector<uint8_t>& headerV, string& seq2dump, int32_t minimi);
 
 
 
-void get_monocolor_minitigs_mem(vector<robin_hood::unordered_node_map<kmer,kmer_context>>&  min2kmer2context , ofstream* out, const vector<int32_t>& mini,uint64_t number_color);
+void get_monocolor_minitigs_mem(vector<robin_hood::unordered_node_map<kmer,kmer_context>>&  min2kmer2context , ofstream* out, const vector<int32_t>& mini,uint64_t number_color, int colormode);
 
 
 uint16_t parseCoverage(const string& str);

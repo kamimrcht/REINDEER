@@ -204,51 +204,77 @@ void kmer_Set_Light::construct_index_fof(const string& input_file, const string&
 			fnames.push_back(file);
 		}
 	}
+	// files for the _blout that contain monotigs
+	vector<ofstream*> out_blout;
+	//~ for (uint i(0); i < number_superbuckets.value(); ++i)
+	//~ {
+		//~ ofstream* out = new ofstream(working_dir + "_blout" + to_string(i));//TODO delete * //TODO replace
+		//~ out_blout.push_back(out);
+	//~ }
+			//~ cout << "here0" << endl;
 
 	create_super_buckets_list(fnames);
+	reset();
+
 	high_resolution_clock::time_point t2 = high_resolution_clock::now();
 	cout<<"Partition created	"<<intToString(read_kmer)<<" kmers read "<<endl;
 	duration<double> time_span12 = duration_cast<duration<double>>(t2 - t1);
 	cout<<time_span12.count() << " seconds."<<endl;
+	
+
 	{
-		ofstream out(working_dir+"_blmonocolor.fa");
+		//~ ofstream out(working_dir+"_blmonocolor.fa"); // TODO rm : out devient les _blout finaux
 		#pragma omp parallel for num_threads(coreNumber)
 		for(uint i_superbuckets=0; i_superbuckets<number_superbuckets.value(); ++i_superbuckets)
 		{
-			merge_super_buckets_mem(working_dir + "_blout" + to_string(i_superbuckets), fnames.size(), &out);
-			remove((working_dir + "_blout" + to_string(i_superbuckets)).c_str());
+			string in_name(working_dir + "_super_k_mers" + to_string(i_superbuckets));
+			string out_name(working_dir + "_blout" + to_string(i_superbuckets));
+			merge_super_buckets_mem(working_dir + "_super_k_mers" + to_string(i_superbuckets), fnames.size(), out_name, colormode); 
+			remove((in_name).c_str());
+
 			cout << "-" << flush;
 		}
+		
 	}
-	reset();
-
+	//~ reset();
+	initialize_buckets();
 
 	high_resolution_clock::time_point t3 = high_resolution_clock::now();
-	cout << "\nMonocolor monotig computed, now regular indexing start" << endl;
+	cout << "\nMonotigs computed, now regular indexing start" << endl;
 	duration<double> time_span32 = duration_cast<duration<double>>(t3 - t2);
 	cout << time_span32.count() << " seconds." << endl;
 
-	create_super_buckets(working_dir+"_blmonocolor.fa");
+	//~ create_super_buckets(working_dir+"_blmonocolor.fa"); 
 
-	high_resolution_clock::time_point t4 = high_resolution_clock::now();
-	duration<double> time_span43 = duration_cast<duration<double>>(t4 - t3);
-	cout << "Super buckets created: " << time_span43.count() << " seconds." << endl;
+	//~ high_resolution_clock::time_point t4 = high_resolution_clock::now();
+	//~ duration<double> time_span43 = duration_cast<duration<double>>(t4 - t3);
+	//~ cout << "Monotig created: " << time_span43.count() << " seconds." << endl;
 
-	read_super_buckets(working_dir + "_blout");
+	read_super_buckets_reindeer(working_dir + "_blout"); 
 	delete [] nuc_minimizer ;
 	delete [] start_bucket ;
 	delete [] current_pos ;
 
 	high_resolution_clock::time_point t5 = high_resolution_clock::now();
 	duration<double> time_span53 = duration_cast<duration<double>>(t5 - t3);
-	cout << "Indexes created: " << time_span53.count() << " seconds." << endl;
+	cout << "Index created: " << time_span53.count() << " seconds." << endl;
 	duration<double> time_spant = duration_cast<duration<double>>(t5 - t1);
 	cout << "The whole indexing took me " << time_spant.count() << " seconds." << endl;
 }
 
 
 // from the vector of pairs that stores colors in the kmers in the super buckets (during monotig construction), builds the real color vector (a vector of size c with c datasets)
-vector<uint16_t> getcolorvector(const vector< pair<uint16_t,uint16_t> >&V,uint64_t number_color)
+vector<uint8_t> get_color_vector(const vector< pair<uint16_t,uint16_t> >&V,uint64_t number_color)
+{
+	vector<uint8_t> res(number_color,0);
+	for(uint64_t i(0); i < V.size(); ++i)
+	{
+		res[V[i].first] = (uint8_t)V[i].second;
+	}
+	return res;
+}
+// from the vector of pairs that stores colors in the kmers in the super buckets (during monotig construction), builds the real color vector (a vector of size c with c datasets)
+vector<uint16_t> get_count_vector(const vector< pair<uint16_t,uint16_t> >&V,uint64_t number_color)
 {
 	vector<uint16_t> res(number_color,0);
 	for(uint64_t i(0); i < V.size(); ++i)
@@ -260,8 +286,9 @@ vector<uint16_t> getcolorvector(const vector< pair<uint16_t,uint16_t> >&V,uint64
 
 
 // build monotigs within a super bucket
-void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t number_color, ofstream* out,uint64_t number_pass )
+void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t number_color, string& out_name,uint64_t number_pass, int colormode )
 {
+	ofstream* out = new ofstream(out_name);//TODO delete 
 	bool toobig(false);
 	for(uint pass(0);pass<number_pass;++pass)
 	{
@@ -338,14 +365,17 @@ void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t 
 		}
 		if (not toobig)
 		{
-			get_monocolor_minitigs_mem(min2kmer2context,out,minimizers,number_color);
+			
+			get_monocolor_minitigs_mem(min2kmer2context,out,minimizers,number_color, colormode);
 		}
 	}
 	number_pass*=2;
 	if( toobig)
 	{
-		merge_super_buckets_mem(input_file, number_color, out,number_pass);
+		merge_super_buckets_mem(input_file, number_color, out_name,number_pass, colormode);
 	}
+	out->close();
+	delete out;
 }
 
 
@@ -376,15 +406,66 @@ kmer kmer_Set_Light::select_good_successor(const  robin_hood::unordered_node_map
 }
 
 
+void kmer_Set_Light::write_buffer_count(vector<string>& buffers, ofstream* out, vector<uint16_t>& headerV, string& seq2dump, int32_t minimi)
+{
+	string tmp_buffer("");
+	uint n = headerV.size()*2;
+	uint nn(n + 1024);
+	unsigned char comp[nn];
+	unsigned char* in = (unsigned char*)&headerV[0];
+	unsigned compr_header_size = trlec(in, n, comp);
+	tmp_buffer += ">";
+	//~ uint64_t id_size(to_string(minimi).size());
+	tmp_buffer.append(reinterpret_cast<char*> (&minimi), sizeof(int32_t)); //minimizer 
+	tmp_buffer.append(reinterpret_cast<char*> (&compr_header_size), sizeof(unsigned)) ; //size of compressed rle colors
+	tmp_buffer.append((char*)&comp[0], compr_header_size); //rle colors
+	tmp_buffer += "\n"+seq2dump+"\n"; // sequence
+	buffers[minimi%number_superbuckets.value()] += tmp_buffer;
+	#pragma omp critical (monocolorFile)
+	if (buffers[minimi%number_superbuckets.value()].size() > 8000)
+	{
+		{
+			*out<<buffers[minimi%number_superbuckets.value()];
+		}
+		buffers[minimi%number_superbuckets.value()].clear();
+	}
+}
 
+void kmer_Set_Light::write_buffer_color(vector<string>& buffers, ofstream* out, vector<uint8_t>& headerV, string& seq2dump, int32_t minimi)
+{
+	string tmp_buffer("");
+	uint n = headerV.size();
+	uint nn(n + 1024);
+	unsigned char comp[nn];
+	unsigned char* in = (unsigned char*)&headerV[0];
+	unsigned compr_header_size = trlec(in, n, comp);
+	////
+	tmp_buffer += ">";
+	size_t id_size(to_string(minimi).size());
+	tmp_buffer.append(reinterpret_cast<char*> (&id_size), sizeof(size_t)); //id size 
+	tmp_buffer += to_string(minimi); //id
+	tmp_buffer.append(reinterpret_cast<char*> (&compr_header_size), sizeof(unsigned)) ; //size of compressed rle colors
+	tmp_buffer.append((char*)&comp[0], compr_header_size); //rle colors
+	tmp_buffer += "\n"+seq2dump+"\n"; // sequence
+	buffers[minimi%number_superbuckets.value()] += tmp_buffer;
+	#pragma omp critical (monocolorFile)
+	if (buffers[minimi%number_superbuckets.value()].size() > 8000) //TODO parallel : write in several files at a time
+	{
+		{
+			*out<<buffers[minimi%number_superbuckets.value()];
+		}
+		buffers[minimi%number_superbuckets.value()].clear();
+	}
+}
 
 
 //writes the final monotigs in _blmonocolor
-void kmer_Set_Light::get_monocolor_minitigs_mem(vector<robin_hood::unordered_node_map<kmer,kmer_context>>&  min2kmer2context , ofstream* out, const vector<int32_t>& mini,uint64_t number_color)
+void kmer_Set_Light::get_monocolor_minitigs_mem(vector<robin_hood::unordered_node_map<kmer,kmer_context>>&  min2kmer2context , ofstream* out, const vector<int32_t>& mini,uint64_t number_color, int colormode) 
 {
     // #pragma omp parallel num_threads(coreNumber)
     {
-    	string sequence, buffer,seq2dump,compact;
+		vector<string> buffers(mini.size(), "");
+    	string sequence,seq2dump,compact;
     	uint64_t ms=min2kmer2context.size();
     	// #pragma omp for schedule(static,ms/coreNumber)
     	for(uint i_set=(0); i_set < ms; i_set++)
@@ -416,24 +497,45 @@ void kmer_Set_Light::get_monocolor_minitigs_mem(vector<robin_hood::unordered_nod
     					start = rcb(it.first);
     					seq2dump = revComp(seq2dump);
     				}
-    				buffer += ">"+to_string(mini[i_set])+color_coverage2str(getcolorvector(colorV2dump,number_color))+"\n"+seq2dump+"\n";
-    				if (buffer.size() > 8000)
+    				// compress colors in monotigs headers
+    				#pragma omp atomic
+						nuc_minimizer[mini[i_set]] += seq2dump.size();
+					#pragma omp atomic
+						all_buckets[mini[i_set]].skmer_number++;
+					#pragma omp atomic
+						all_mphf[mini[i_set] / number_bucket_per_mphf].mphf_size += seq2dump.size() - k + 1;
+						all_mphf[mini[i_set] / number_bucket_per_mphf].empty = false;
+					#pragma omp atomic
+						total_nuc_number += seq2dump.size();
+    				vector<uint16_t> headerV_count;
+    				vector<uint8_t> headerV_color;
+    				if (mini[i_set] >= 0)
     				{
-    					#pragma omp critical (monocolorFile)
-    					{
-    						*out<<buffer;
-    					}
-    					buffer.clear();
-    				}
+						if (color_mode == 0) // colors
+						{
+							headerV_color= get_color_vector(colorV2dump,number_color);
+							write_buffer_color(buffers, out, headerV_color, seq2dump, mini[i_set]);
+						}
+						else // counts or others
+						{
+							headerV_count= get_count_vector(colorV2dump,number_color);
+							write_buffer_count(buffers, out, headerV_count, seq2dump, mini[i_set]);
+						}
+					}
     			}
     		}
     	}
     	#pragma omp critical (monocolorFile)
+    	for(uint i_set=(0); i_set < ms; i_set++)
     	{
-    		*out << buffer << flush;
+			if (mini[i_set] >= 0)
+			{
+				*out << buffers[mini[i_set]%number_superbuckets.value()] << flush; //TODO replace
+			}
     	}
-    	buffer.clear();
+    	//~ buffer.clear();
     }
+    
 }
 
 
@@ -465,7 +567,7 @@ void kmer_Set_Light::create_super_buckets_list(const vector<string>& input_files
 	vector<ostream*> out_files;
 	for(uint64_t i(0);i<number_superbuckets;++i)
 	{
-		auto out =new  ofstream(working_dir+"_blout"+to_string(i),ofstream::app);
+		auto out =new  ofstream(working_dir+"_super_k_mers"+to_string(i),ofstream::app);
 		out_files.push_back(out);
 	}
 	omp_lock_t lock[number_superbuckets.value()];
@@ -482,7 +584,6 @@ void kmer_Set_Light::create_super_buckets_list(const vector<string>& input_files
     		auto inUnitigsread=new zstr::ifstream(input_files[i_file]);
     		if(not inUnitigsread->good())
     		{
-    			cout<<"Problem with files opening"<<endl;
                 delete inUnitigsread;
     			continue;
     		}

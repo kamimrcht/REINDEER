@@ -209,6 +209,7 @@ void build_index(uint k, uint m1,uint m2,uint m3, uint bit, string& color_load_f
 {
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
 	//~ bool delete_monotig_file(true);
+	cout << "FOF " << fof << endl;
 	bool dont_dump(false);
 	if (not exists_test(output +"/_blmonocolor.fa"))
 	{
@@ -260,16 +261,16 @@ void build_index(uint k, uint m1,uint m2,uint m3, uint bit, string& color_load_f
 		duration<double> time_span12 = duration_cast<duration<double>>(t2 - t1);
 		cout<<"Index written on disk: "<< time_span12.count() << " seconds."<<endl;
 	}
-	cout << "#Building colors and equivalence classes matrix to be written on disk..." << endl;
-	high_resolution_clock::time_point t3 = high_resolution_clock::now();
-	do_coloring(color_load_file, color_dump_file, fof, ksl, record_counts,  k,  nb_threads,  output, compr_monotig_color, compr_monotig_color_size, do_query_on_disk, eq_class_nb, nb_colors,   quantize,  do_log);
-	high_resolution_clock::time_point t4 = high_resolution_clock::now();
-	duration<double> time_span34 = duration_cast<duration<double>>(t4 - t3);
-	cout<<"Matrix done: "<< time_span34.count() << " seconds."<<endl;
-	if (DELE_MONOTIG_FILE)
-	{
-		string cmd("rm -f " + output +"/_blmonocolor.fa");
-		int sysRet(system(cmd.c_str()));
-	}
+	//~ cout << "#Building colors and equivalence classes matrix to be written on disk..." << endl;
+	//~ high_resolution_clock::time_point t3 = high_resolution_clock::now();
+	//~ do_coloring(color_load_file, color_dump_file, fof, ksl, record_counts,  k,  nb_threads,  output, compr_monotig_color, compr_monotig_color_size, do_query_on_disk, eq_class_nb, nb_colors,   quantize,  do_log);
+	//~ high_resolution_clock::time_point t4 = high_resolution_clock::now();
+	//~ duration<double> time_span34 = duration_cast<duration<double>>(t4 - t3);
+	//~ cout<<"Matrix done: "<< time_span34.count() << " seconds."<<endl;
+	//~ if (DELE_MONOTIG_FILE)
+	//~ {
+		//~ string cmd("rm -f " + output +"/_blmonocolor.fa");
+		//~ int sysRet(system(cmd.c_str()));
+	//~ }
 }
 
