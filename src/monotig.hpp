@@ -22,6 +22,7 @@
 #include "../blight/common.h"
 #include "../blight/robin_hood.h"
 #include "../trle/trle.h"
+#include "utils.hpp"
 
 #ifndef MINIT
 #define MINIT

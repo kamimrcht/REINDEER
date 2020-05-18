@@ -4,6 +4,39 @@ using namespace std;
 
 
 
+void get_all_blout(string& path, vector<string>& files)
+{
+    DIR* dirp = opendir(path.c_str());
+    struct dirent * dp;
+    while ((dp = readdir(dirp)) != NULL) 
+    {
+			files.push_back(dp->d_name);
+    }
+    closedir(dirp);
+}
+
+// convert char [] counts/colors to uint
+vector<uint16_t> count_string_to_count_vector(unsigned char* count_char_monotig, unsigned size)
+{
+	vector<uint16_t> counts;
+	for (uint i(0); i < size -1 ; i+=2)
+	{
+		counts.push_back((uint16_t)count_char_monotig[i] + (uint16_t)count_char_monotig[i+1]*256);
+	}
+return counts;
+}
+
+// convert char [] counts/colors to uint
+vector<uint8_t> count_string_to_count_vector8(unsigned char* count_char_monotig, unsigned size)
+{
+	vector<uint8_t> counts;
+	for (uint i(0); i < size  ; i++)
+	{
+		counts.push_back((uint8_t)count_char_monotig[i]);
+	}
+return counts;
+}
+
 uint64_t getMemorySelfUsed () 
 {
     u_int64_t result = 0;

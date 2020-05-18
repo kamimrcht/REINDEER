@@ -23,6 +23,8 @@
 #include <set>
 #include <mutex>
 #include <ctype.h>
+#include <dirent.h> 
+#include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -93,5 +95,14 @@ uint64_t harmonic_mean(vector<uint64_t>& counts);
 string getRealPath(string file, string& dir);
 
 uint64_t get_color_number(string& fof);
+
+void get_all_blout(string& path, vector<string>& files);
+
+
+// convert char [] counts/colors to uint
+vector<uint16_t> count_string_to_count_vector(unsigned char* count_char_monotig, unsigned size);
+
+// convert char [] counts/colors to uint
+vector<uint8_t> count_string_to_count_vector8(unsigned char* count_char_monotig, unsigned size);
 
 #endif

@@ -16,8 +16,9 @@ vector<unsigned char*> load_compressed_vectors(const string& input_file, vector<
 
 
 void dump_compressed_vector_bucket_disk_query(vector<uint16_t>& counts, int64_t monotig_id, unsigned char *in,vector<ofstream*>& bucket_files,  vector<uint8_t>& colors, bool record_counts);
-void dump_compressed_vector_bucket(vector<uint16_t>& counts, int64_t monotig_id, unsigned char *in,  vector<ofstream*>& bucket_files, vector<uint8_t>& colors, bool record_counts );
+//~ void dump_compressed_vector_bucket(vector<uint16_t>& counts, int64_t monotig_id, unsigned char *in,  vector<ofstream*>& bucket_files, vector<uint8_t>& colors, bool record_counts );
 
+void dump_compressed_vector_bucket(int64_t monotig_id, vector<ofstream*>& bucket_files, string& header );
 
 
 void read_matrix_compressed_line(ifstream& in, int64_t& rank, char* comp, unsigned& comp_size);

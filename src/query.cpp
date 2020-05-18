@@ -23,27 +23,7 @@ unsigned char* decode_vector(unsigned char* monotig_counts, unsigned vector_size
 	return decoded_vector;
 }
 
-// convert char [] counts/colors to uint
-vector<uint16_t> count_string_to_count_vector(unsigned char* count_char_monotig, unsigned size)
-{
-	vector<uint16_t> counts;
-	for (uint i(0); i < size -1 ; i+=2)
-	{
-		counts.push_back((uint16_t)count_char_monotig[i] + (uint16_t)count_char_monotig[i+1]*256);
-	}
-return counts;
-}
 
-// convert char [] counts/colors to uint
-vector<uint8_t> count_string_to_count_vector8(unsigned char* count_char_monotig, unsigned size)
-{
-	vector<uint8_t> counts;
-	for (uint i(0); i < size  ; i++)
-	{
-		counts.push_back((uint8_t)count_char_monotig[i]);
-	}
-return counts;
-}
 
 // for ONE monotig, get a vector of its counts/colors (uint) from the rle encoded matrix
 vector<uint16_t> get_count_monotig(unsigned char* monotig_counts, unsigned vector_size, uint64_t color_number, bool record_counts)

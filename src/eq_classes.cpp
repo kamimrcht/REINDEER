@@ -94,15 +94,31 @@ void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_
 		string compressed;
 		ifstream in(output + "/matrix_bucket_"+ to_string(i)); //TODO zstr??
 		if (not is_empty_file(in)){
+			in.peek();
 			while (not in.eof() and not in.fail())
 			{
+				//~ cout << "matrix file " + output + "/matrix_bucket_"+ to_string(i) << endl;
+				//~ cout << "position in file: " << in.tellg() << endl;
 				//read file and store each vector in struct
 				read_matrix_compressed_line(in, rank, comp, comp_size);
+				//~ cout << "****** " << rank << " " << comp_size << endl;
 				compressed.assign(comp, comp_size);
 				count_vector v({comp_size, rank, compressed});
+				//// debug
+				//~ unsigned char *decoded2;
+				//~ decoded2 = new unsigned char [2*2 + 4096];
+				//~ unsigned sz2 = trled((unsigned char*)comp, comp_size, decoded2, 2*2);
+				//~ vector <uint16_t> decomp_count2 = count_string_to_count_vector(decoded2, sz2);
+				//~ cout << "check eq class rle (decoded): " ; 
+				//~ for (uint i(0); i < decomp_count2.size() ; ++i)
+					//~ cout << decomp_count2[i] << " " ;
+				//~ cout << endl;
+				//// /debug
 				// insert a single class representant in hash map
 				if (not bucket_class.count(v.compressed))
 				{
+					//~ cout << "HAPPENS" << endl;
+					//~ cin.get();
 					vector<uint64_t> vv;
 					vv.push_back(v.monotig_rank);
 					pair<count_vector, vector<uint64_t>> p (v,vv);
@@ -114,16 +130,15 @@ void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_
 					bucket_class[v.compressed].second.push_back(v.monotig_rank);
 				}
 				in.peek();
-
 			}
-			
 			mm.lock();
 			if (do_query_on_disk)
 				get_eq_classes_disk_query(output, bucket_class,  nb_unitigs, nb_colors, final_positions, prev_pos, out);
 			else
 				get_eq_classes(output, bucket_class,  nb_unitigs, nb_colors, final_positions, prev_pos, outz);
 			mm.unlock();
-		}
+		} 
+			
 		in.close();
 	}
 	long nb_eq_class(prev_pos + 1);
