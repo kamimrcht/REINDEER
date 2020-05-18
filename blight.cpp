@@ -484,7 +484,16 @@ uint64_t kmer_Set_Light::get_minimizer_from_header(ifstream& in)
 	int32_t minimizer;
 	in.read(reinterpret_cast<char *>(&minimizer), sizeof(int32_t));// minimizer_size
 	in.read(reinterpret_cast<char *>(&compressed_header_size), sizeof(unsigned)); // size of colors/counts with rle
-	in.seekg(compressed_header_size + 1, in.cur); // rle + \n
+	unsigned char *comp;
+	comp = new unsigned char[compressed_header_size + 4096];
+	in.seekg(compressed_header_size +1 , in.cur); // rle + \n
+	//// debug
+	//~ cout << c << endl;
+	//~ cout << "minimizer read: " << minimizer << endl;
+	//~ cout << "compressed size read: " << compressed_header_size << endl;
+	//~ cout<< "position in file: " << in.tellg() << endl;
+	//~ cin.get() ; 
+	//// /debug
 	return minimizer;
 }
 
@@ -500,21 +509,22 @@ void kmer_Set_Light::read_super_buckets_reindeer(const string& input_file)
 			position_super_kmers_local.init();
 			vector<uint64_t> number_kmer_accu(bucket_per_superBuckets.value(), 0);
 			uint64_t BC(SBC * bucket_per_superBuckets);
-			//~ ifstream in((input_file + to_string(SBC) + ".gz")); //TODO come back to gz
 			ifstream in((input_file + to_string(SBC)));
-			//~ cout << "input " << input_file + to_string(SBC) << endl;
 			int32_t minimizer;
-			in.seekg(0);
-			while (not in.eof() and in.good()) {
+			in.peek();
+			while (not in.eof() and in.good()) 
+			{
+				//// debug
+				//~ cout << endl << "FILE " << input_file + to_string(SBC) << endl;
+				//// /debug
 				header = line = "";
 				minimizer = get_minimizer_from_header(in);
-				//~ cout<< "minimizer " << minimizer << endl;
-				//~ getline(in, header);
-				//~ minimizer = 0;
-				//~ cout << "here " << minimizer << endl;
 				getline(in, line); //sequence
-				//~ cout << line << endl;
-				if (not line.empty()) {
+				//// debug
+				//~ cout << "sequence: " << line << endl;
+				//// /debug
+				if (not line.empty()) 
+				{
 					str2bool(line, minimizer);
 					position_super_kmers_local[number_kmer_accu[minimizer % bucket_per_superBuckets] + all_mphf[minimizer].mphf_size] = true;
 #pragma omp atomic
@@ -524,13 +534,9 @@ void kmer_Set_Light::read_super_buckets_reindeer(const string& input_file)
 					++number_super_kmer;
 					line.clear();
 				}
-				//~ cout << "done" << endl;
+				in.peek();
 			}
-			//~ cout << "here2" << endl;
-			//~ remove((input_file + to_string(SBC) + ".gz").c_str());
-			//~ remove((input_file + to_string(SBC) ).c_str()); //TODO ne pas effacer => utilisé par reindeer
 			create_mphf_disk(BC, BC + bucket_per_superBuckets, position_super_kmers_local);
-
 			fill_positions(BC, BC + bucket_per_superBuckets, position_super_kmers_local);
 			BC += bucket_per_superBuckets.value();
 			cout << "-" << flush;
