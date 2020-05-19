@@ -287,7 +287,7 @@ class kmer_Set_Light {
 	uint64_t canonize(uint64_t x, uint64_t n);
 	kmer get_kmer(uint64_t pos);
 	//~ uint64_t get_minimizer_from_header(string& header, zstr::ifstream& in);
-	
+
 	void str2bool(const string& str, uint64_t mini);
 	void dump_and_destroy(const string& output_file);
 	bool similar_count(const vector<uint16_t>& V1, const vector<uint16_t>& V2);
@@ -305,7 +305,7 @@ class kmer_Set_Light {
 	//Reindeer
 	void write_buffer_count(vector<string>& buffers, ofstream* out, vector<uint16_t>& headerV, string& seq2dump, int32_t minimi);
 	void write_buffer_color(vector<string>& buffers, ofstream* out, vector<uint8_t>& headerV, string& seq2dump, int32_t minimi);
-	uint64_t get_minimizer_from_header(ifstream& in);
+	uint64_t get_minimizer_from_header(zstr::ifstream& in);
 	void merge_super_buckets_mem(const string& input_file, uint64_t number_color, string& out_name,uint64_t number_pass=1, int colormode=1 );
 	void get_monocolor_minitigs_mem(vector<robin_hood::unordered_node_map<kmer, kmer_context>>& min2kmer2context,
 	                                ofstream* out,
