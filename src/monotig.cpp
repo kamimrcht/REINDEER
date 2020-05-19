@@ -275,7 +275,7 @@ vector<uint16_t> get_count_vector(const vector< pair<uint16_t,uint16_t> >&V,uint
 // build monotigs within a super bucket
 void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t number_color, string& out_name,uint64_t number_pass, int colormode )
 {
-	zstr::ofstream* out = new zstr::ofstream(out_name);
+	zstr::ofstream* out = new zstr::ofstream(out_name); // todo lz4
 	bool toobig(false);
 	for(uint pass(0);pass<number_pass;++pass)
 	{
@@ -556,7 +556,7 @@ void kmer_Set_Light::create_super_buckets_list(const vector<string>& input_files
 	vector<ostream*> out_files;
 	for(uint64_t i(0);i<number_superbuckets;++i)
 	{
-		auto out = new zstr::ofstream(working_dir+"_super_k_mers"+to_string(i) + ".gz",zstr::ofstream::app);
+		auto out = new zstr::ofstream(working_dir+"_super_k_mers"+to_string(i) + ".gz",zstr::ofstream::app); //todo lz4
 		out_files.push_back(out);
 	}
 	omp_lock_t lock[number_superbuckets.value()];
@@ -570,7 +570,7 @@ void kmer_Set_Light::create_super_buckets_list(const vector<string>& input_files
         #pragma omp for
     	for(uint32_t i_file=0;i_file<input_files.size();++i_file)
     	{
-    		auto inUnitigsread=new zstr::ifstream(input_files[i_file]);
+    		auto inUnitigsread=new zstr::ifstream(input_files[i_file]); //todo lz4
     		if(not inUnitigsread->good())
     		{
                 delete inUnitigsread;

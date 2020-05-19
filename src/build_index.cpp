@@ -265,6 +265,7 @@ void build_index(uint k, uint m1,uint m2,uint m3, uint bit, string& color_load_f
 			string m_folder(output +"/monotig_files/");
 			string fof_blout(do_fof(m_folder, output));
 			ksl->construct_index_fof(fof_blout,output, color_mode); //todo + .lz4
+			//todo could be optimized: blight needs to update some initialized variables and could take these directly as input super kmers
 			remove((output + "/fof_blout").c_str());
 		}
 		else
