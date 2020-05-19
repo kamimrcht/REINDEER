@@ -120,7 +120,6 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 			monotigs_file.peek();
 			while(not monotigs_file.eof())
 			{
-				//~ cout << "MONOTIG file " << fname << endl;
 				get_header_monotig_file(monotigs_file, header);
 				getline(monotigs_file, monotig);
 				//~ cout << "sequence monotig: " << monotig << endl;
@@ -206,20 +205,28 @@ void do_coloring(string& color_load_file, string& color_dump_file, string& fof, 
 	} 
 	else  //indexing
 	{
-		if(exists_test(fof)){
+		if(exists_test(fof))
+		{
 			ifstream fofin(fof);
 			string file_name;
-			while(not fofin.eof()){
+			while(not fofin.eof())
+			{
 				getline(fofin,file_name);
-				if(not file_name.empty()){
-					if(exists_test(file_name)){
+				if(not file_name.empty())
+				{
+					if(exists_test(file_name))
+					{
 						file_names.push_back(file_name);
-					}else{
+					}
+					else
+					{
 						cerr<< "[ERROR] " << file_name<<" is not here"<<endl;
 					}
 				}
 			}
-		}else{
+		}
+		else
+		{
 			cerr<<"[ERROR] File of file problem"<<endl;
 		}
 		write_matrix_in_bucket_files(color_load_file,  color_dump_file,  fof,  ksl,  record_counts, k,  nb_threads, output, compr_monotig_color, compr_monotig_color_size, color_dump_file, do_query_on_disk, nb_colors,  quantize, log); 
@@ -248,26 +255,36 @@ void build_index(uint k, uint m1,uint m2,uint m3, uint bit, string& color_load_f
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
 	bool dont_dump(false);
 	string in_name(output +"/monotig_files");
-	if (not dirExists(in_name)) 
+	int color_mode;
+	if (not dirExists(in_name)) //todo
 	{
 			cout << "#Monotigs and index constuction..."<< endl;
 			// apply monotig merge (-> MMM) with rule regarding colors or counts
+			// color 0, count 1, quantize 2, log 3
 			if (record_counts)
 			{
 				if (quantize)
 				{
+					color_mode = 2;
 					ksl->construct_index_fof(fof, output, 2);
 				}
 				else
 				{
 					if (do_log)
+					{
+						color_mode = 3;
 						ksl->construct_index_fof(fof, output, 3);
+					}
 					else
+					{
+						color_mode = 1; 
 						ksl->construct_index_fof(fof, output, 1);
+					}
 				}
 			}
 			else
 			{
+				color_mode = 0;
 				ksl->construct_index_fof(fof, output, 0);
 			}
 	} 
@@ -277,6 +294,7 @@ void build_index(uint k, uint m1,uint m2,uint m3, uint bit, string& color_load_f
 		DELE_MONOTIG_FILE = false;
 		if (not exists_test(output +"/reindeer_index.gz"))
 		{
+			// color 0, count 1, quantize 2, log 3
 			ksl->construct_index(output +"/monotig_files",output);//todo 
 		}
 		else
