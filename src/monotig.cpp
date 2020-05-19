@@ -223,9 +223,9 @@ void kmer_Set_Light::construct_index_fof(const string& input_file, const string&
 		#pragma omp parallel for num_threads(coreNumber)
 		for(uint i_superbuckets=0; i_superbuckets<number_superbuckets.value(); ++i_superbuckets)
 		{
-			string in_name(working_dir + "_super_k_mers" + to_string(i_superbuckets));
-			string out_name(monotig_folder + "_blout" + to_string(i_superbuckets));
-			merge_super_buckets_mem(working_dir + "_super_k_mers" + to_string(i_superbuckets), fnames.size(), out_name, 1, colormode); 
+			string in_name(working_dir + "_super_k_mers" + to_string(i_superbuckets) +".gz");
+			string out_name(monotig_folder + "_blout" + to_string(i_superbuckets) +".gz");
+			merge_super_buckets_mem(in_name, fnames.size(), out_name, 1, colormode); 
 			remove((in_name).c_str());
 			cout << "-" << flush;
 		}
@@ -273,14 +273,14 @@ vector<uint16_t> get_count_vector(const vector< pair<uint16_t,uint16_t> >&V,uint
 // build monotigs within a super bucket
 void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t number_color, string& out_name,uint64_t number_pass, int colormode )
 {
-	ofstream* out = new ofstream(out_name);
+	zstr::ofstream* out = new zstr::ofstream(out_name);
 	bool toobig(false);
 	for(uint pass(0);pass<number_pass;++pass)
 	{
 		vector<robin_hood::unordered_node_map<kmer,kmer_context>> min2kmer2context(minimizer_number.value()/number_superbuckets.value());
 		uint64_t mms=min2kmer2context.size();
 		vector<int32_t> minimizers(mms,-1);
-		ifstream in(input_file);
+		zstr::ifstream in(input_file);
 		uint64_t inserted_elements(0);
 
 		// #pragma omp parallel num_threads(coreNumber)
@@ -359,7 +359,7 @@ void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t 
 	{
 		merge_super_buckets_mem(input_file, number_color, out_name,number_pass, colormode);
 	}
-	out->close();
+	//~ out->close();
 	delete out;
 }
 
@@ -391,7 +391,7 @@ kmer kmer_Set_Light::select_good_successor(const  robin_hood::unordered_node_map
 }
 
 
-void kmer_Set_Light::write_buffer_count(vector<string>& buffers, ofstream* out, vector<uint16_t>& headerV, string& seq2dump, int32_t minimi)
+void kmer_Set_Light::write_buffer_count(vector<string>& buffers, zstr::ofstream* out, vector<uint16_t>& headerV, string& seq2dump, int32_t minimi)
 {
 	string tmp_buffer("");
 	uint n = headerV.size()*2;
@@ -447,7 +447,7 @@ void kmer_Set_Light::write_buffer_count(vector<string>& buffers, ofstream* out, 
 }
 
 
-void kmer_Set_Light::write_buffer_color(vector<string>& buffers, ofstream* out, vector<uint8_t>& headerV, string& seq2dump, int32_t minimi)
+void kmer_Set_Light::write_buffer_color(vector<string>& buffers, zstr::ofstream* out, vector<uint8_t>& headerV, string& seq2dump, int32_t minimi)
 {
 	//// debug
 	//~ cout << "here " << endl;
@@ -527,7 +527,7 @@ void kmer_Set_Light::write_buffer_color(vector<string>& buffers, ofstream* out, 
 
 
 //writes the final monotigs in _blmonocolor
-void kmer_Set_Light::get_monocolor_minitigs_mem(vector<robin_hood::unordered_node_map<kmer,kmer_context>>&  min2kmer2context , ofstream* out, const vector<int32_t>& mini,uint64_t number_color, int colormode) 
+void kmer_Set_Light::get_monocolor_minitigs_mem(vector<robin_hood::unordered_node_map<kmer,kmer_context>>&  min2kmer2context , zstr::ofstream* out, const vector<int32_t>& mini,uint64_t number_color, int colormode) 
 {
     // #pragma omp parallel num_threads(coreNumber)
     {
@@ -641,7 +641,7 @@ void kmer_Set_Light::create_super_buckets_list(const vector<string>& input_files
 	vector<ostream*> out_files;
 	for(uint64_t i(0);i<number_superbuckets;++i)
 	{
-		auto out =new  ofstream(working_dir+"_super_k_mers"+to_string(i),ofstream::app);
+		auto out = new zstr::ofstream(working_dir+"_super_k_mers"+to_string(i) + ".gz",zstr::ofstream::app);
 		out_files.push_back(out);
 	}
 	omp_lock_t lock[number_superbuckets.value()];

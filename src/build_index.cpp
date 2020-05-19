@@ -44,11 +44,14 @@ vector<uint16_t> get_counts_monotigs(string& line)
 
 
 
-void get_header_monotig_file(ifstream& in, string& header)
+void get_header_monotig_file(zstr::ifstream& in, string& header)
 {
 	unsigned compressed_header_size;
 	header = "";
-	in.seekg(5, in.cur);// ">" and minimizer
+	unsigned char* trash; //todo optim
+	trash = new unsigned char[5];
+	in.read((char*)trash, 5);// ">" and minimizer
+	
 	//~ cout << "position in file: " << in.tellg() << endl;
 	//~ cout << "header capacity: " << header.capacity() << " header size before: " << header.size() << endl;
 	in.read(reinterpret_cast<char *>(&compressed_header_size), sizeof(unsigned)); // size of colors/counts with rle
@@ -113,7 +116,7 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 		{
 //~ <<<<<<< HEAD
 			fname = output + "/monotig_files/" + fname;
-			ifstream monotigs_file(fname);
+			zstr::ifstream monotigs_file(fname);
 			if(not exists_test(fname)){cerr << "File problem\n"; continue;}
 			vector<int64_t> monotig_id;
 			vector<uint16_t> counts;
@@ -160,7 +163,8 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 				}
 				monotigs_file.peek();
 			}
-			//~ remove(fname.c_str()); //TODO uncomment
+			if (DELE_MONOTIG_FILE)
+				remove(fname.c_str()); 
 		}
 	}
 	for (uint i(0); i < all_files.size(); ++i)
