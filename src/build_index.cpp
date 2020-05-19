@@ -61,23 +61,6 @@ void get_header_monotig_file(zstr::ifstream& in, string& header)
 		header.reserve(header.size() + sizeof(unsigned) + compressed_header_size +1024); //todo ok ?
 	header.resize(sizeof(unsigned) + compressed_header_size );
 	in.read((char*)(&header[sizeof(unsigned)]), compressed_header_size); //rle
-	//~ cout << "header size after: " << header.size() << endl;
-	//~ cout << "bytes header: " << (int)header[0] << " " << (int)header[1] <<" " <<(int)header[2]<< " " << (int)header[3]<<" " <<(int)header[4] << " " << (int)header[5] << endl; 
-	//// debug
-	//~ cout << "rd read comp header size: " << compressed_header_size << endl;
-	//~ unsigned char *comp_written;
-	//~ comp_written = new unsigned char[compressed_header_size];
-	//~ cout << "size of unsigned: " << sizeof(unsigned) << endl;
-	//~ comp_written = (unsigned char *)&header[sizeof(unsigned)];
-	//~ unsigned char *decoded2;
-	//~ decoded2 = new unsigned char [2*2 + 4096];
-	//~ unsigned sz2 = trled(comp_written, compressed_header_size, decoded2, 2*2);
-	//~ vector <uint16_t> decomp_count2 = count_string_to_count_vector(decoded2, sz2);
-	//~ cout << "rd rle read (decoded): " ; 
-	//~ for (uint i(0); i < decomp_count2.size() ; ++i)
-		//~ cout << decomp_count2[i] << " " ;
-	//~ cout << endl;
-	//// /debug
 	char c = in.get(); // \n
 }
 
@@ -94,15 +77,9 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 		all_files.push_back(out); 
 	}
 	string output_file_name;
-//~ <<<<<<< HEAD
 	vector<string> monotig_files_names;
 	string monotig_folder(output + "/monotig_files/");
 	get_all_blout(monotig_folder, monotig_files_names); //todo .lz4
-//~ =======
-    //~ string suffix = exists_test(output +"/_blmonocolor.fa.lz4") ? ".lz4" : "";
-	//~ string monotigs_fn(output +"/_blmonocolor.fa" + suffix); //monotigs
-    //~ lz4_stream::istream monotigs_file(monotigs_fn);
-//~ >>>>>>> 48c66834f4bb1cb1015115803a7b9ba115851ed5
 	uint64_t nb_monotigs(0);
 	ofstream out_info(output_file+"_eqc_info");
 	mutex mm;
@@ -114,7 +91,6 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 		fname = monotig_files_names[i];
 		if (fname != "." and fname != "..")
 		{
-//~ <<<<<<< HEAD
 			fname = output + "/monotig_files/" + fname;
 			zstr::ifstream monotigs_file(fname);
 			if(not exists_test(fname)){cerr << "File problem\n"; continue;}
@@ -127,35 +103,21 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 			// record count vector for each monotig at index given by the mphf
 			monotigs_file.peek();
 			while(not monotigs_file.eof())
-//~ =======
-			//~ getline(monotigs_file, header); // assumes headers arent longer than that
-			//~ getline(monotigs_file, monotig); // assumes monotigs also arent longer than that
-			//~ if(monotig.empty() or header.empty()){continue;}
-			//~ //read bcalm header to get colors or counts
-			//~ if (record_counts)
-				//~ counts = get_counts_monotigs(header);
-			//~ else
-				//~ colors = get_colors_monotigs(header);
-			//~ monotig_id.clear();
-			//~ if (monotig[0] == 'A' or monotig[0] == 'C' or monotig[0] == 'G' or monotig[0] == 'T')
-//~ >>>>>>> 48c66834f4bb1cb1015115803a7b9ba115851ed5
 			{
 				get_header_monotig_file(monotigs_file, header);
 				getline(monotigs_file, monotig);
-				//~ cout << "sequence monotig: " << monotig << endl;
 				if(monotig.empty() or header.empty()){continue;}
 				monotig_id.clear();
 				if (monotig[0] == 'A' or monotig[0] == 'C' or monotig[0] == 'G' or monotig[0] == 'T')
 				{
 					mm.lock();
 					++nb_monotigs;
-					// get index form MPHF
+					// get index from MPHF
 					monotig_id=ksl->get_rank_query(monotig.substr(0,k)); // all kmers have the same id so we only query one
 					mm.unlock();
 					if((not monotig_id.empty()) and monotig_id.back()>=0)
 					{
 						mm.lock();
-						//~ dump_compressed_vector_bucket(counts, monotig_id.back(), in, all_files,  colors, record_counts);
 						dump_compressed_vector_bucket(monotig_id.back(), all_files, header);
 						nb_treated_monotigs++;
 						mm.unlock();
@@ -172,7 +134,6 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 		all_files[i]->flush();
 		all_files[i]->close();
 	}
-	//~ out_nb.write(reinterpret_cast<char*>(&nb_monotigs),sizeof(uint64_t)); 
 	out_info.write(reinterpret_cast<char*>(&nb_monotigs),sizeof(uint64_t)); 
 	out_info.write(reinterpret_cast<char*>(&k),sizeof(uint));  // in info: 1/nb monotigs, 2/k 3/record option 4/nb eq classes, 5/nb colors
 	uint val(1);
@@ -275,13 +236,9 @@ void build_index(uint k, uint m1,uint m2,uint m3, uint bit, string& color_load_f
 {
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
 	bool dont_dump(false);
-//~ <<<<<<< HEAD
 	string in_name(output +"/monotig_files");
 	int color_mode;
 	if (not dirExists(in_name)) //todo
-//~ =======
-	//~ if (not (exists_test(output +"/_blmonocolor.fa") || exists_test(output +"/_blmonocolor.fa.lz4")))
-//~ >>>>>>> 48c66834f4bb1cb1015115803a7b9ba115851ed5
 	{
 			cout << "#Monotigs and index constuction..."<< endl;
 			// apply monotig merge (-> MMM) with rule regarding colors or counts
@@ -315,21 +272,12 @@ void build_index(uint k, uint m1,uint m2,uint m3, uint bit, string& color_load_f
 	} 
 	else 
 	{
-//~ <<<<<<< HEAD
 		cerr << "[Warning] monotig files (monotig_files) were found in output dir, I will use them and I won't delete them" << endl;
 		DELE_MONOTIG_FILE = false;
 		if (not exists_test(output +"/reindeer_index.gz"))
 		{
 			// color 0, count 1, quantize 2, log 3
 			ksl->construct_index(output +"/monotig_files",output);//todo  + .lz4
-//~ =======
-		//~ cerr << "[Warning] monotig file (_blmonocolor.fa[.lz4]) was found in output dir, I will use it and I won't delete it" << endl;
-		//~ DELE_MONOTIG_FILE = false;
-		//~ if (not exists_test(output +"/reindeer_index.gz"))
-		//~ {
-            //~ string suffix = exists_test(output +"/_blmonocolor.fa.lz4") ? ".lz4" : "";
-			//~ ksl->construct_index(output + "/_blmonocolor.fa" + suffix, output);
-//~ >>>>>>> 48c66834f4bb1cb1015115803a7b9ba115851ed5
 		}
 		else
 		{

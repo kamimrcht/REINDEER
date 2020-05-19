@@ -399,42 +399,11 @@ void kmer_Set_Light::write_buffer_count(vector<string>& buffers, zstr::ofstream*
 	unsigned char comp[nn];
 	unsigned char* in = (unsigned char*)&headerV[0];
 	unsigned compr_header_size = trlec(in, n, comp);
-	//// debug
-	//~ unsigned char *decoded;
-	//~ decoded = new unsigned char [nn + 4096];
-	//~ unsigned sz = trled(comp, compr_header_size, decoded, headerV.size()*2);
-	//~ cout << "check trlec: " << endl;
-	//~ vector <uint16_t> decomp_count = count_string_to_count_vector(decoded, sz);
-	//~ for (uint i(0); i < decomp_count.size() ; ++i)
-		//~ cout << decomp_count[i] << " " ;
-	//~ cout << endl;
-	//// /debug
 	tmp_buffer += ">";
-	//~ uint64_t id_size(to_string(minimi).size());
 	tmp_buffer.append(reinterpret_cast<char*> (&minimi), sizeof(int32_t)); //minimizer 
 	tmp_buffer.append(reinterpret_cast<char*> (&compr_header_size), sizeof(unsigned)) ; //size of compressed rle colors
 	tmp_buffer.append((char*)&comp[0], compr_header_size); //rle colors
 	tmp_buffer += "\n"+seq2dump+"\n"; // sequence
-	//// debug
-	//~ cout << "check buffer blout" << endl;
-	//~ string buff_test(">");
-	//~ buff_test.append(reinterpret_cast<char*> (&minimi), sizeof(int32_t)); //minimizer 
-	//~ buff_test.append(reinterpret_cast<char*> (&compr_header_size), sizeof(unsigned)) ; //size of compressed rle colors
-	//~ buff_test.append((char*)&comp[0], compr_header_size); //rle colors
-	//~ cout << minimi << " minimizer written: " << (uint8_t)buff_test[1] + (uint8_t)buff_test[2]*256 + (uint8_t)buff_test[3]*256*256 + (uint8_t)buff_test[4]*256*256*256 << endl;
-	//~ cout << compr_header_size <<  " comp size written: " << (uint8_t)buff_test[5] + (uint8_t)buff_test[6]*256 + (uint8_t)buff_test[7]*256*256 + (uint8_t)buff_test[8]*256*256*256 << endl;
-	//~ unsigned char *comp_written;
-	//~ comp_written = new unsigned char[compr_header_size];
-	//~ comp_written = (unsigned char *)&buff_test[9];
-	//~ unsigned char *decoded2;
-	//~ decoded2 = new unsigned char [nn + 4096];
-	//~ unsigned sz2 = trled(comp_written, compr_header_size, decoded2, headerV.size()*2);
-	//~ vector <uint16_t> decomp_count2 = count_string_to_count_vector(decoded2, sz2);
-	//~ cout << "rle written (decoded): " ; 
-	//~ for (uint i(0); i < decomp_count2.size() ; ++i)
-		//~ cout << decomp_count2[i] << " " ;
-	//~ cout << endl;
-	//// /debug
 	buffers[minimi%number_superbuckets.value()] += tmp_buffer;
 	#pragma omp critical (monocolorFile)
 	if (buffers[minimi%number_superbuckets.value()].size() > 8000)
@@ -449,19 +418,10 @@ void kmer_Set_Light::write_buffer_count(vector<string>& buffers, zstr::ofstream*
 
 void kmer_Set_Light::write_buffer_color(vector<string>& buffers, zstr::ofstream* out, vector<uint8_t>& headerV, string& seq2dump, int32_t minimi)
 {
-	//// debug
-	//~ cout << "here " << endl;
-	//~ cin.get();
-	//~ cout << "check color info before: " ;
-	//~ for (auto&& c: headerV)
-		//~ cout << (int) c << " ";
-	//~ cout << endl;
-	//// /debug
 	string tmp_buffer("");
 	uint n = headerV.size();
 	uint nn(n + 4096);
 	unsigned char comp[nn];
-	
 	unsigned char* in = (unsigned char*)&headerV[0];
 	unsigned compr_header_size = trlec(in, n, comp);
 	unsigned char *decoded;
@@ -469,51 +429,11 @@ void kmer_Set_Light::write_buffer_color(vector<string>& buffers, zstr::ofstream*
 	unsigned char *comp_written0;
 	comp_written0 = new unsigned char[compr_header_size];
 	unsigned sz = trled(comp_written0, compr_header_size, decoded, headerV.size());
-	
-	//// debug
-	//~ cout << "size before compression: " << headerV.size() << endl;
-	//~ cout << "uncompressed size init: " << sz << endl; 
-	//~ cout << "check compr size info before: " << compr_header_size<< endl; ;
-	//~ unsigned char *decoded;
-	//~ decoded = new unsigned char [nn + 4096];
-	//~ unsigned sz = trled(comp, compr_header_size, decoded, headerV.size()*2);
-	//~ cout << "check trlec: " << endl;
-	//~ vector <uint16_t> decomp_count = count_string_to_count_vector(decoded, sz);
-	//~ for (uint i(0); i < decomp_count.size() ; ++i)
-		//~ cout << decomp_count[i] << " " ;
-	//~ cout << endl;
-	//// /debug
 	tmp_buffer += ">";
-	//~ uint64_t id_size(to_string(minimi).size());
 	tmp_buffer.append(reinterpret_cast<char*> (&minimi), sizeof(int32_t)); //minimizer 
 	tmp_buffer.append(reinterpret_cast<char*> (&compr_header_size), sizeof(unsigned)) ; //size of compressed rle colors
 	tmp_buffer.append((char*)&comp[0], compr_header_size); //rle colors
 	tmp_buffer += "\n"+seq2dump+"\n"; // sequence
-	//// debug
-	//~ cout << "check buffer blout" << endl;
-	//~ string buff_test(">");
-	//~ buff_test.append(reinterpret_cast<char*> (&minimi), sizeof(int32_t)); //minimizer 
-	//~ cout << "1er byte :" <<  (uint32_t)buff_test[1] << endl;
-	//~ cout << "2er byte :" <<  (uint32_t)buff_test[2] << endl;
-	//~ buff_test.append(reinterpret_cast<char*> (&compr_header_size), sizeof(unsigned)) ; //size of compressed rle colors
-	//~ buff_test.append((char*)&comp[0], compr_header_size); //rle colors
-	//~ cout << minimi << " minimizer written: " << (uint8_t)buff_test[1] + (uint8_t)buff_test[2]*256 + (uint8_t)buff_test[3]*256*256 + (uint8_t)buff_test[4]*256*256*256 << endl;
-	//~ cout << compr_header_size <<  " comp size written: " << (uint8_t)buff_test[5] + (uint8_t)buff_test[6]*256 + (uint8_t)buff_test[7]*256*256 + (uint8_t)buff_test[8]*256*256*256 << endl;
-	//~ unsigned char *comp_written;
-	//~ comp_written = new unsigned char[compr_header_size];
-	//~ comp_written = (unsigned char *)&buff_test[9];
-	//~ cout << "bytes :" << (int)buff_test[9] << " " << (int)buff_test[10] << endl;
-	//~ unsigned char *decoded2;
-	//~ decoded2 = new unsigned char [nn + 4096];
-	//~ unsigned sz2 = trled(comp_written, compr_header_size, decoded2, headerV.size());
-	//~ cout << "uncompressed size: " << sz2 << endl; 
-	//~ vector <uint8_t> decomp_count2 = count_string_to_count_vector8(decoded2, sz2);
-	//~ cout << "rle written (decoded): " ; 
-	//~ for (uint i(0); i < decomp_count2.size() ; ++i)
-		//~ cout << (int)decomp_count2[i] << " " ;
-	//~ cout << endl;
-	//~ cout << "************" << endl;
-	//// /debug
 	buffers[minimi%number_superbuckets.value()] += tmp_buffer;
 	#pragma omp critical (monocolorFile)
 	if (buffers[minimi%number_superbuckets.value()].size() > 8000)
@@ -586,14 +506,6 @@ void kmer_Set_Light::get_monocolor_minitigs_mem(vector<robin_hood::unordered_nod
 						else // counts or others
 						{
 							headerV_count= get_count_vector(colorV2dump,number_color);
-							//// debug
-							//~ cout << "read: " << seq2dump << endl;
-							//~ cout << "to write: count minimizer ";
-							//~ for (auto&& c: headerV_count)
-								//~ cout << c << " " ;
-							//~ cout << mini[i_set] ;
-							//~ cout << endl;
-							///// /debug
 							write_buffer_count(buffers, out, headerV_count, seq2dump, mini[i_set]);
 						}
 					}

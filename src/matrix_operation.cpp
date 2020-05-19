@@ -30,7 +30,6 @@ vector<unsigned char*> load_compressed_vectors(const string& input_file, vector<
 	}
 	int64_t rank;
 	unsigned line_size;
-	//~ in_nb.read(reinterpret_cast<char *>(&monotig_number), sizeof(uint64_t));
 	in->read(reinterpret_cast<char *>(&color_number), sizeof(uint64_t));
 	vector<unsigned char*> out; //todo resize when loading eq class
 	uint t(0);
@@ -44,7 +43,6 @@ vector<unsigned char*> load_compressed_vectors(const string& input_file, vector<
 		out.push_back(c);
 		++t;
 	}
-	//~ in_nb.close();
 	delete in;
 	return out;
 }
@@ -91,57 +89,29 @@ void dump_compressed_vector_bucket_disk_query(vector<uint16_t>& counts, int64_t 
 
 
 //write count vectors in buckets to compare them and de-duplicate the count matrix
-//~ void dump_compressed_vector_bucket(vector<uint16_t>& counts, int64_t monotig_id, unsigned char *in,  vector<ofstream*>& bucket_files, vector<uint8_t>& colors, bool record_counts )
 void dump_compressed_vector_bucket(int64_t monotig_id, vector<ofstream*>& bucket_files, string& header )
 {
 	//get the bucket number
 	uint32_t bucket_nb;
 	// hash bit from the compressed counts to choose the bucket
-	//~ if (compr_vector_size >= 8)
 	if (header.size() >= 12)
 	{
-		//~ bucket_nb = (xorshift((uint64_t)comp[0] + (uint64_t)comp[1]*256 +  (uint64_t)comp[2]*256*256 + (uint64_t)comp[3]*256*256*256 + (uint64_t)comp[4]*256*256*256*256 + (uint64_t)comp[5]*256*256*256*256*256 + (uint64_t)comp[6]*256*256*256*256*256*256 + (uint64_t)comp[7]*256*256*256*256*256*256*256 ) % bucket_files.size());
 		bucket_nb = (xorshift((uint8_t)(header[4]) + (uint8_t)(header[5])*256 +  (uint8_t)(header[6])*256*256 + (uint8_t)(header[7])*256*256*256   + (uint8_t)(header[8])*256*256*256*256 + (uint8_t)(header[9])*256*256*256*256*256 + (uint8_t)(header[10])*256*256*256*256*256*256 + (uint8_t)(header[11])*256*256*256*256*256*256*256 ) % bucket_files.size());
 	
 	}
-	//~ else if (compr_vector_size >= 4)
 	else if (header.size() >= 8)
 	{
 		//~ #pragma GCC diagnostic ignored "-fpermissive"
-		//~ bucket_nb = (xorshift((uint64_t)comp[0] + (uint64_t)comp[1]*256 +  (uint64_t)comp[2]*256*256 + (uint64_t)comp[3]*256*256*256  ) % bucket_files.size());
 		bucket_nb = (xorshift((uint8_t)(header[4]) + (uint8_t)(header[5])*256 +  (uint8_t)(header[6])*256*256 + (uint8_t)(header[7])*256*256*256  ) % bucket_files.size()) ;
-		//~ cout << "Xorshift: " << (xorshift((uint8_t)(&header[4]) + (uint8_t)(&header[5])*256 +  (uint8_t)(&header[6])*256*256 + (uint8_t)(&header[7])*256*256*256  ) % bucket_files.size()) << endl;
-		//~ cout << "In Xorshift: " << ((uint8_t)(&header[4]) + (uint8_t)(&header[5])*256 +  (uint8_t)(&header[6])*256*256 + (uint8_t)(&header[7])*256*256*256  ) % bucket_files.size() << endl;
-		//~ cout<<reinterpret_cast<uint8_t>(&header[4])<<endl;
-		//~ cout<<(uint8_t)(header[4])<<endl;
 	}
 	else
 	{
 		bucket_nb = (xorshift((uint8_t)(header[4])) % bucket_files.size());
 		
 	}
-	
 	//write info in the bucket
 	bucket_files[bucket_nb]->write((const char*) (&header[0]), header.size()); // size of compressed rle + rle 
 	bucket_files[bucket_nb]->write(reinterpret_cast<char*>(&monotig_id),sizeof(int64_t)); //index
-	//// debug 
-	//~ cout << "bucket nb: " << bucket_nb << endl;
-	//~ cout << "header size: " << header.size() << endl;
-	//~ cout << "check bucket written monotig id " << monotig_id << endl;
-	//~ cout << "check bucket written rle size " ;
-	//~ cout  << (uint32_t)header[0] + (uint32_t)header[1]*256 + (uint32_t)header[2]*256*256 + (uint32_t)header[3]*256*256*256 << endl;
-	//~ unsigned char *comp_written;
-	//~ cout << "bucket bytes: " << (int)header[4] << " " << (int)header[5] << endl;
-	//~ comp_written = (unsigned char *)&header[4];
-	//~ unsigned char *decoded2;
-	//~ decoded2 = new unsigned char [2*2 + 4096];
-	//~ unsigned sz2 = trled(comp_written, 4, decoded2, 2*2);
-	//~ vector <uint16_t> decomp_count2 = count_string_to_count_vector(decoded2, sz2);
-	//~ cout << "check bucket rle written (decoded): " ; 
-	//~ for (uint i(0); i < decomp_count2.size() ; ++i)
-		//~ cout << decomp_count2[i] << " " ;
-	//~ cout << endl;
-	//// /debug
 }
 
 
@@ -151,22 +121,7 @@ void read_matrix_compressed_line(ifstream& in, int64_t& rank, char* comp, unsign
 {
 	in.read(reinterpret_cast<char *>(&comp_size), sizeof(unsigned));
 	in.read((char*)(comp) , comp_size);
-	//~ cout << "bytes: " << (int)comp[0] << " " << (int)comp[1] << endl;
-	//~ cout << "rank before: " << rank << endl;
 	in.read(reinterpret_cast<char *>(&rank), sizeof(int64_t));
-	//// debug 
-	//~ cout << "check matrix rle size "  << comp_size << endl;
-	//~ unsigned char *decoded2;
-	//~ decoded2 = new unsigned char [2*2 + 4096];
-	//~ unsigned sz2 = trled((unsigned char*)comp, comp_size, decoded2, 2*2);
-	//~ vector <uint16_t> decomp_count2 = count_string_to_count_vector(decoded2, sz2);
-	//~ cout << "check matrix rle (decoded): " ; 
-	//~ for (uint i(0); i < decomp_count2.size() ; ++i)
-		//~ cout << decomp_count2[i] << " " ;
-	//~ cout << endl;
-	//~ cout << "check matrix line monotig id " << rank << endl;
-	//// /debug
-	
 }
 
 

@@ -97,28 +97,13 @@ void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_
 			in.peek();
 			while (not in.eof() and not in.fail())
 			{
-				//~ cout << "matrix file " + output + "/matrix_bucket_"+ to_string(i) << endl;
-				//~ cout << "position in file: " << in.tellg() << endl;
 				//read file and store each vector in struct
 				read_matrix_compressed_line(in, rank, comp, comp_size);
-				//~ cout << "****** " << rank << " " << comp_size << endl;
 				compressed.assign(comp, comp_size);
 				count_vector v({comp_size, rank, compressed});
-				//// debug
-				//~ unsigned char *decoded2;
-				//~ decoded2 = new unsigned char [2*2 + 4096];
-				//~ unsigned sz2 = trled((unsigned char*)comp, comp_size, decoded2, 2*2);
-				//~ vector <uint16_t> decomp_count2 = count_string_to_count_vector(decoded2, sz2);
-				//~ cout << "check eq class rle (decoded): " ; 
-				//~ for (uint i(0); i < decomp_count2.size() ; ++i)
-					//~ cout << decomp_count2[i] << " " ;
-				//~ cout << endl;
-				//// /debug
 				// insert a single class representant in hash map
 				if (not bucket_class.count(v.compressed))
 				{
-					//~ cout << "HAPPENS" << endl;
-					//~ cin.get();
 					vector<uint64_t> vv;
 					vv.push_back(v.monotig_rank);
 					pair<count_vector, vector<uint64_t>> p (v,vv);
@@ -151,13 +136,7 @@ void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_
 		++nb;
 	}
 	delete out_position;
-	//~ ofstream out_nbc(output + "/reindeer_matrix_eqc_nb_class");
-	//~ out_nbc.write(reinterpret_cast<char*>(&nb_eq_class), sizeof(long));
-	//~ out_nbc.close();
 	out_info->write(reinterpret_cast<char*>(&nb_eq_class), sizeof(long));
-	//~ ofstream out_nbcol(output + "/reindeer_matrix_eqc_nb_colors");
-	//~ out_nbcol.write(reinterpret_cast<char*>(&nb_colors), sizeof(uint64_t));
-	//~ out_nbcol.close();
 	out_info->write(reinterpret_cast<char*>(&nb_colors), sizeof(uint64_t));
 	
 	if (do_query_on_disk)
