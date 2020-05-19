@@ -497,9 +497,10 @@ uint64_t kmer_Set_Light::get_minimizer_from_header(zstr::ifstream& in) {
 	int32_t minimizer;
 	in.read(reinterpret_cast<char*>(&minimizer), sizeof(int32_t));               // minimizer_size
 	in.read(reinterpret_cast<char*>(&compressed_header_size), sizeof(unsigned)); // size of colors/counts with rle
-	unsigned char* comp;
-	comp = new unsigned char[compressed_header_size + 4096];
-	in.seekg(compressed_header_size + 1, in.cur); // rle + \n
+	unsigned char* comp; //todo optim
+	comp = new unsigned char[compressed_header_size + 1];
+	//~ in.seekg(compressed_header_size + 1, in.cur); // rle + \n
+	in.read((char*) comp, compressed_header_size + 1);
 	return minimizer;
 }
 

@@ -303,12 +303,12 @@ class kmer_Set_Light {
 	uint8_t return_count_bin(uint16_t abundance);
 	void initialize_buckets();
 	//Reindeer
-	void write_buffer_count(vector<string>& buffers, ofstream* out, vector<uint16_t>& headerV, string& seq2dump, int32_t minimi);
-	void write_buffer_color(vector<string>& buffers, ofstream* out, vector<uint8_t>& headerV, string& seq2dump, int32_t minimi);
+	void write_buffer_count(vector<string>& buffers, zstr::ofstream* out, vector<uint16_t>& headerV, string& seq2dump, int32_t minimi);
+	void write_buffer_color(vector<string>& buffers, zstr::ofstream* out, vector<uint8_t>& headerV, string& seq2dump, int32_t minimi);
 	uint64_t get_minimizer_from_header(zstr::ifstream& in);
 	void merge_super_buckets_mem(const string& input_file, uint64_t number_color, string& out_name,uint64_t number_pass=1, int colormode=1 );
 	void get_monocolor_minitigs_mem(vector<robin_hood::unordered_node_map<kmer, kmer_context>>& min2kmer2context,
-	                                ofstream* out,
+	                                zstr::ofstream* out,
 	                                const vector<int32_t>& mini,
 	                                uint64_t number_color, int colormode);
 	void read_super_buckets_reindeer(const string& input_file);
