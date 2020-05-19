@@ -15,6 +15,20 @@ void get_all_blout(string& path, vector<string>& files)
     closedir(dirp);
 }
 
+
+string do_fof(string& path, string& output)
+{
+	vector <string> bloutv;
+	get_all_blout(path, bloutv);
+	string fname(output + "/fof_blout");
+	ofstream out(fname);
+	for (auto&& f: bloutv)
+		if (f != "." and f!= "..")
+			out << path  + f << endl;
+	out.close();
+	return fname;
+}
+
 // convert char [] counts/colors to uint
 vector<uint16_t> count_string_to_count_vector(unsigned char* count_char_monotig, unsigned size)
 {

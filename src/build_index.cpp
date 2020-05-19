@@ -223,7 +223,7 @@ kmer_Set_Light* load_rle_index(uint k, string& color_load_file, string& color_du
 	do_coloring(color_load_file, color_dump_file, fof, ksl, record_counts, k,  nb_threads, output, compr_monotig_color, compr_monotig_color_sizes, do_query_on_disk,  eq_class_nb, nb_colors,   quantize,  log);
 	if (DELE_MONOTIG_FILE)
 	{
-		string cmd("rm -f " + output +"/_blmonocolor.fa"); //todo change
+		string cmd("rm -rf " + output +"/monotig_files"); 
 		int sysRet(system(cmd.c_str()));
 	}
 	return ksl;
@@ -238,37 +238,22 @@ void build_index(uint k, uint m1,uint m2,uint m3, uint bit, string& color_load_f
 	bool dont_dump(false);
 	string in_name(output +"/monotig_files");
 	int color_mode;
-	if (not dirExists(in_name)) //todo
+	if (record_counts)
+		if (quantize)
+			color_mode = 2;
+		else
+			if (do_log)
+				color_mode = 3;
+			else
+				color_mode = 1;
+	else 
+		color_mode = 0;
+	if (not dirExists(in_name))
 	{
 			cout << "#Monotigs and index constuction..."<< endl;
 			// apply monotig merge (-> MMM) with rule regarding colors or counts
 			// color 0, count 1, quantize 2, log 3
-			if (record_counts)
-			{
-				if (quantize)
-				{
-					color_mode = 2;
-					ksl->construct_index_fof(fof, output, 2);
-				}
-				else
-				{
-					if (do_log)
-					{
-						color_mode = 3;
-						ksl->construct_index_fof(fof, output, 3);
-					}
-					else
-					{
-						color_mode = 1; 
-						ksl->construct_index_fof(fof, output, 1);
-					}
-				}
-			}
-			else
-			{
-				color_mode = 0;
-				ksl->construct_index_fof(fof, output, 0);
-			}
+			ksl->construct_index_fof(fof, output, color_mode);
 	} 
 	else 
 	{
@@ -277,7 +262,10 @@ void build_index(uint k, uint m1,uint m2,uint m3, uint bit, string& color_load_f
 		if (not exists_test(output +"/reindeer_index.gz"))
 		{
 			// color 0, count 1, quantize 2, log 3
-			ksl->construct_index(output +"/monotig_files",output);//todo  + .lz4
+			string m_folder(output +"/monotig_files/");
+			string fof_blout(do_fof(m_folder, output));
+			ksl->construct_index_fof(fof_blout,output, color_mode); //todo + .lz4
+			remove((output + "/fof_blout").c_str());
 		}
 		else
 		{

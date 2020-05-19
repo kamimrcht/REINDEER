@@ -99,6 +99,7 @@ uint64_t get_color_number(string& fof);
 
 void get_all_blout(string& path, vector<string>& files);
 
+string do_fof(string& path, string& output);
 
 // convert char [] counts/colors to uint
 vector<uint16_t> count_string_to_count_vector(unsigned char* count_char_monotig, unsigned size);

@@ -165,6 +165,8 @@ uint64_t min_size_superbucket(10000000000);
 
 
 
+
+
 // builds blight index from fof
 void kmer_Set_Light::construct_index_fof(const string& input_file, const string& tmp_dir, int colormode)
 {
@@ -446,7 +448,7 @@ void kmer_Set_Light::write_buffer_color(vector<string>& buffers, zstr::ofstream*
 }
 
 
-//writes the final monotigs in _blmonocolor
+//writes the final monotigs 
 void kmer_Set_Light::get_monocolor_minitigs_mem(vector<robin_hood::unordered_node_map<kmer,kmer_context>>&  min2kmer2context , zstr::ofstream* out, const vector<int32_t>& mini,uint64_t number_color, int colormode) 
 {
     // #pragma omp parallel num_threads(coreNumber)
@@ -484,7 +486,7 @@ void kmer_Set_Light::get_monocolor_minitigs_mem(vector<robin_hood::unordered_nod
     					start = rcb(it.first);
     					seq2dump = revComp(seq2dump);
     				}
-    				// compress colors in monotigs headers
+    				// mandatory updates for the index
     				#pragma omp atomic
 						nuc_minimizer[mini[i_set]] += seq2dump.size();
 					#pragma omp atomic
@@ -494,6 +496,7 @@ void kmer_Set_Light::get_monocolor_minitigs_mem(vector<robin_hood::unordered_nod
 						all_mphf[mini[i_set] / number_bucket_per_mphf].empty = false;
 					#pragma omp atomic
 						total_nuc_number += seq2dump.size();
+    				// compress colors in monotigs headers
     				vector<uint16_t> headerV_count;
     				vector<uint8_t> headerV_color;
     				if (mini[i_set] >= 0)
