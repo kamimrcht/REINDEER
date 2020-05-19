@@ -61,6 +61,7 @@ string get_file_name(string& path);
 vector<string> getLineFasta_buffer2(ifstream* in, uint stop, uint k);
 
 bool is_empty_file(ifstream& file);
+bool is_empty_zfile(zstr::ifstream& file);
 
 int dirExists(string& path);
 

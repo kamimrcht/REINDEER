@@ -217,6 +217,11 @@ bool is_empty_file(ifstream& file)
 	return file.peek() == ifstream::traits_type::eof();
 }
 
+bool is_empty_zfile(zstr::ifstream& file)
+{
+	return file.peek() == zstr::ifstream::traits_type::eof();
+}
+
 int dirExists(string& path)
 {
     struct stat info;
