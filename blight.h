@@ -178,7 +178,8 @@ class kmer_Set_Light {
 	  , minimizer_number_graph(2 * minimizer_size_graph)
 	  , number_bucket_per_mphf(2 * (m1 - m2))
 	  , bucket_per_superBuckets(2 * (m1 - m3))
-	  , positions_to_check(bit_to_save) {
+	  , positions_to_check(bit_to_save)
+      , position_super_kmers_RS(nullptr) {
 
 		all_buckets = new bucket_minimizer[minimizer_number.value()]();
 		all_mphf = new info_mphf[mphf_number.value()];
@@ -197,7 +198,8 @@ class kmer_Set_Light {
 	kmer_Set_Light(const string& index_file);
 
 	~kmer_Set_Light() {
-		delete position_super_kmers_RS;
+        if (position_super_kmers_RS)
+    		delete position_super_kmers_RS;
 		delete[] all_buckets;
 
 		for (uint64_t i(0); i < mphf_number.value(); ++i) {
