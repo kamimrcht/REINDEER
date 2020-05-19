@@ -84,10 +84,11 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 	ofstream out_info(output_file+"_eqc_info");
 	mutex mm;
 	uint nb_treated_monotigs(0);
-	//~ #pragma omp parallel num_threads(nb_threads)
-	string fname;
-	for (uint i(0); i < monotig_files_names.size(); ++i)//loop on _blout files
+	uint i;
+	#pragma omp parallel for num_threads(nb_threads)
+	for (i=0; i < monotig_files_names.size(); ++i)//loop on _blout files
 	{
+		string fname;
 		fname = monotig_files_names[i];
 		if (fname != "." and fname != "..")
 		{
@@ -110,11 +111,10 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 				monotig_id.clear();
 				if (monotig[0] == 'A' or monotig[0] == 'C' or monotig[0] == 'G' or monotig[0] == 'T')
 				{
-					mm.lock();
+					#pragma omp atomic
 					++nb_monotigs;
 					// get index from MPHF
 					monotig_id=ksl->get_rank_query(monotig.substr(0,k)); // all kmers have the same id so we only query one
-					mm.unlock();
 					if((not monotig_id.empty()) and monotig_id.back()>=0)
 					{
 						mm.lock();
