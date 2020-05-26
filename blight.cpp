@@ -501,6 +501,7 @@ uint64_t kmer_Set_Light::get_minimizer_from_header(zstr::ifstream& in) {
 	comp = new unsigned char[compressed_header_size + 1];
 	//~ in.seekg(compressed_header_size + 1, in.cur); // rle + \n
 	in.read((char*) comp, compressed_header_size + 1);
+	delete [] comp ;
 	return minimizer;
 }
 
