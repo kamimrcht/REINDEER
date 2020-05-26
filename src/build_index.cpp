@@ -51,7 +51,7 @@ void get_header_monotig_file(zstr::ifstream& in, string& header)
 	unsigned char* trash; //todo optim
 	trash = new unsigned char[5];
 	in.read((char*)trash, 5);// ">" and minimizer
-	
+	delete [] trash ;
 	//~ cout << "position in file: " << in.tellg() << endl;
 	//~ cout << "header capacity: " << header.capacity() << " header size before: " << header.size() << endl;
 	in.read(reinterpret_cast<char *>(&compressed_header_size), sizeof(unsigned)); // size of colors/counts with rle
