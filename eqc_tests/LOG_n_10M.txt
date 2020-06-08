@@ -1,0 +1,73 @@
+l= 24                                                                                                                                                                                                                                               [155/1984]
+generated 16777216 equivalence classes
+write 8388608 kmers to dataset 0
+write 8388608 kmers to dataset 1
+write 8388608 kmers to dataset 2
+write 8388608 kmers to dataset 3
+write 8388608 kmers to dataset 4
+write 8388608 kmers to dataset 5
+write 8388608 kmers to dataset 6
+write 8388608 kmers to dataset 7
+write 8388608 kmers to dataset 8
+write 8388608 kmers to dataset 9
+write 8388608 kmers to dataset 10
+write 8388608 kmers to dataset 11
+write 8388608 kmers to dataset 12
+write 8388608 kmers to dataset 13
+write 8388608 kmers to dataset 14
+write 8388608 kmers to dataset 15
+write 8388608 kmers to dataset 16
+write 8388608 kmers to dataset 17
+write 8388608 kmers to dataset 18
+write 8388608 kmers to dataset 19
+write 8388608 kmers to dataset 20
+write 8388608 kmers to dataset 21
+write 8388608 kmers to dataset 22
+write 8388608 kmers to dataset 23
+############# REINDEER version v1.0.2 #############
+Command line was: /pasteur/homes/rchikhi/tools/REINDEER/Reindeer --index -f 10000000_eqc_list.txt -k 24 -o 10000000_eqc_index -t 20
+
+Indexing k-mers...
+
+
+#Monotigs and index constuction...
+Partition created       201,326,592 kmers read
+49.5886 seconds.
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+--------
+Monotigs computed, now regular indexing start
+30.5993 seconds.
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+--------
+----------------------INDEX RECAP----------------------------
+Kmer in graph: 16,777,215
+Super Kmer in graph: 16,777,215
+Average size of Super Kmer: 1
+Total size of the partitionned graph: 402,653,184
+Largest MPHF: 24,576
+Largest Bucket: 589,824
+Size of the partitionned graph (MBytes): 95
+Total Positions size (MBytes): 27
+Size of the partitionned graph (bit per kmer): 48
+Total Positions size (bit per kmer): 13.9045
+TOTAL Bits per kmer (without bbhash): 61.9045
+TOTAL Bits per kmer (with bbhash): 65.9045
+TOTAL Size estimated (MBytes): 131.809
+Index created: 37.187 seconds.
+The whole indexing took me 117.375 seconds.
+#Dumping index...
+Index written on disk: 124.658 seconds.
+#Building colors and equivalence classes matrix to be written on disk...
+Sorting datasets to find equivalence classes...
+Number of equivalence classes found: 5586944
+Matrix done: 51.3781 seconds.
+Index building and Coloration done total: 176.156 seconds.
+Max Memory used: 5027644
+INDEX BUILDING = THE END
+
