@@ -15,4 +15,4 @@ function log2 {
 k=$(log2 n)
 mkdir -p "$n"_eqc_datasets
 python generate_eqc.py $n
-rm -Rf "$n"_eqc_index/ && ~/tools/REINDEER/Reindeer  --index -f "$n"_eqc_list.txt -k $k -o "$n"_eqc_index -t 20
+rm -Rf "$n"_eqc_index/ && ../Reindeer  --index -f "$n"_eqc_list.txt -k $k -o "$n"_eqc_index -t 20
