@@ -426,11 +426,11 @@ void kmer_Set_Light::write_buffer_color(vector<string>& buffers, zstr::ofstream*
 	unsigned char comp[nn];
 	unsigned char* in = (unsigned char*)&headerV[0];
 	unsigned compr_header_size = trlec(in, n, comp);
-	unsigned char *decoded;
-	decoded = new unsigned char [nn + 4096];
-	unsigned char *comp_written0;
-	comp_written0 = new unsigned char[compr_header_size];
-	unsigned sz = trled(comp_written0, compr_header_size, decoded, headerV.size());
+	//~ unsigned char *decoded;
+	//~ decoded = new unsigned char [nn + 4096];
+	//~ unsigned char *comp_written0;
+	//~ comp_written0 = new unsigned char[compr_header_size];
+	//~ unsigned sz = trled(comp_written0, compr_header_size, decoded, headerV.size());
 	tmp_buffer += ">";
 	tmp_buffer.append(reinterpret_cast<char*> (&minimi), sizeof(int32_t)); //minimizer 
 	tmp_buffer.append(reinterpret_cast<char*> (&compr_header_size), sizeof(unsigned)) ; //size of compressed rle colors
