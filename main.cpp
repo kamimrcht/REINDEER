@@ -37,6 +37,10 @@ using namespace chrono;
 
 
 string version("v1.0.2");
+// MPHF options
+uint m1(10);
+uint m3(5);
+
 
 char ch;
 string query,fof(""), color_dump_file("reindeer_matrix"), color_load_file(""), output_bcalm("bcalm_out"),output_union_bcalm("bcalm_union_out"),output("output_reindeer"), output_index("index_out");
@@ -68,7 +72,10 @@ void PrintHelp()
             "--log-count             :     Record the log of the counts, gives approximate counts that save space (to use only with --count).\n"
             "      * Output options\n"
             "-o <file>               :     Directory to write output files (default: output_reindeer)\n\n"
-
+            "      * Advanced parameters (we recommend not to change these values unless you are very aware of REINDEER's inner components)\n"
+            "--minimizer-size <integer>          :    MPHF option: minimizer size\n"
+            "--buckets <integer>          :    MPHF option: number of buckets (log)\n"
+            ""
             "                    QUERY\n\n"
 
             "      * Mandatory parameters\n"
@@ -101,6 +108,8 @@ void ProcessArgs(int argc, char** argv)
             {"disk-query", no_argument, nullptr, 'd'},
             {"quantization", no_argument, nullptr, 'u'},
             {"log-count", no_argument, nullptr, 'L'},
+            {"minimizer-size", required_argument , nullptr, 'm'},
+            {"buckets", required_argument , nullptr, 'n'},
             {nullptr, no_argument, nullptr, 0}
     };
 
@@ -130,6 +139,12 @@ void ProcessArgs(int argc, char** argv)
                 break;
             case 'q':
                 query=optarg;
+                break;
+            case 'm':
+                m1=stoi(optarg);
+                break;
+            case 'n':
+                m3=stoi(optarg);
                 break;
             case 'k':
                 k=stoi(optarg);
@@ -207,7 +222,7 @@ int main(int argc, char **argv)
         bcalm_cleanup();
         cout << "Indexing k-mers...\n\n" << endl;
         color_dump_file = output + "/" + color_dump_file;
-        reindeer_index(k, fof, color_dump_file, record_counts, output, cl, threads,  do_query_on_disk, quantize, do_log);
+        reindeer_index(k, fof, color_dump_file, record_counts, output, cl, threads,  do_query_on_disk, quantize, do_log, m1, m3);
         cout << "INDEX BUILDING = THE END" <<endl;
     } else {
         if (color_load_file.empty())
@@ -225,7 +240,7 @@ int main(int argc, char **argv)
             {   
                 cout << "[ERROR] Invalid query file" << endl;
                 return 0;
-			}
+            }
             reindeer_query(color_load_file, output_query,  threshold,   query, threads,  do_query_on_disk);
         }
     }
