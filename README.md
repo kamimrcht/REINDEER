@@ -198,9 +198,10 @@ in sequencing datasets](https://www.biorxiv.org/content/10.1101/2020.03.29.01415
 Citation:
 ```Bibtex
 @inproceedings{marchet2020reindeer,
-  title={REINDEER: efficient indexing of k-mer presence and abundance in sequencing datasets},
-  author={Marchet, Camille and Iqbal, Zamin and Gautheret, Daniel and Salson, Mika{\"e}l and Chikhi, Rayan},
-  booktitle={ISMB},
-  year={2020},
+  title ={{REINDEER}: efficient indexing of k-mer presence and abundance in sequencing datasets},
+ author={Marchet, Camille and Iqbal, Zamin and Gautheret, Daniel and Salson, Mika{\"e}l and Chikhi, Rayan},
+  booktitle =        {28th Intelligent Systems for Molecular Biology (ISMB 2020)},
+  year =         {2020},
+  doi =         {10.1101/2020.03.29.014159},
 }
 ```
