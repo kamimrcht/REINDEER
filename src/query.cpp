@@ -78,6 +78,8 @@ void get_colors_counts_query_eq_classes(vector<int64_t>& kmer_ids,   uint64_t co
 	int64_t lastId(-1);
 	vector<uint16_t> qcounts, lastV;
 	vector<uint8_t> qcolors;
+	vector<uint16_t> vec(color_number, 0);
+
 	for(uint64_t i(0);i<kmer_ids.size();++i)
 	{
 		if(kmer_ids[i]>=0)
@@ -118,7 +120,15 @@ void get_colors_counts_query_eq_classes(vector<int64_t>& kmer_ids,   uint64_t co
 				{
 					query_counts.push_back( qcounts );
 				}
+				else
+				{
+					query_counts.push_back(vec);
+				}
 			}
+		}
+		else 
+		{
+			query_counts.push_back(vec);
 		}
 	}
 	delete []color;
@@ -182,25 +192,26 @@ vector<uint> write_count_output(bool record_counts, vector<vector<uint16_t>>& qu
 	{
 		string out_str("");
 		vector<pair<pair<uint, uint>, string>> coords;
-		
+
 		for (uint c(0); c < query_counts.size(); ++c)
 		{
+			string val_str = to_string(query_counts[c][color]);
+				if (val_str == "0")
+					val_str = "*";
 			if (c == 0)
 			{
-				if (query_counts[c][color] == 0)
-				{
-					coords.push_back({{0,0},"*"});
-				}
-				else
-				{
-					coords.push_back({{0,0},to_string(query_counts[c][color])});
-				}
+				//~ if (query_counts[c][color] == 0 and c == 0)
+				//~ {
+					//~ coords.push_back({{0,0},"*"});
+				//~ }
+				//~ else
+				//~ {
+					coords.push_back({{0,0},val_str});
+				//~ }
 			}
 			else
 			{
-				string val_str = to_string(query_counts[c][color]);
-				if (val_str == "0")
-					val_str = "*";
+				
 				if (val_str == coords.back().second)
 				{
 					coords.back().first.second ++;
@@ -208,17 +219,17 @@ vector<uint> write_count_output(bool record_counts, vector<vector<uint16_t>>& qu
 				else
 				{
 					uint new_coord = coords.back().first.second + 1;
-					coords.push_back({{new_coord, new_coord +1},val_str});
+					coords.push_back({{new_coord, new_coord},val_str});
 				}
 			}
 			
 			nc = to_string(query_counts[c][color]);
 		}
-		if (coords.size() >0 )
-		{
-			coords.back().first.second = query_counts.size() + k_size - 1;
-			coords.back().first.second --;
-		}
+		//~ if (coords.size() >0 )
+		//~ {
+			//~ coords.back().first.second = query_counts.size() + k_size - 1;
+			//~ coords.back().first.second --;
+		//~ }
 		uint cov_positions(query_counts.size() + k_size - 1);
 		for (auto && coo : coords)
 		{
