@@ -17,7 +17,7 @@
       * [input paired-end reads (to bcalm)](#input-paired-end-reads-to-bcalm)
    * [Reproduce the manuscript's results](#reproduce-the-manuscripts-results)
    * [Citation](#citation)
-   * [Advanced FAQ](#advanced_FAQ)
+   * [Advanced FAQ](#advanced-faq)
 
 
 # Motivation
@@ -190,3 +190,6 @@ Citation:
 # Advanced FAQ
 
 ## Why can we observe different values for k-mers in a single query
+
+<img src="./Images/output_advanced.png" alt="drawing" width="500"/>
+
