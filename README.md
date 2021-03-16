@@ -11,15 +11,13 @@
    * [Index and query k-mers presence/absence only (not abundances)](#index-and-query-k-mers-presenceabsence-only-not-abundances)
    * [Output](#output)
       * [k-mer abundances](#k-mer-abundances)
-      * [k-mer presence/absence](#k-mer-presenceabsence)
    * [Beta options](#beta-options)
       * [query the index on the disk instead of loading the index in-ram](#query-the-index-on-the-disk-instead-of-loading-the-index-in-ram)
       * [log counts/quantized counts](#log-countsquantized-counts)
       * [input paired-end reads (to bcalm)](#input-paired-end-reads-to-bcalm)
    * [Reproduce the manuscript's results](#reproduce-the-manuscripts-results)
    * [Citation](#citation)
-
-
+   * [Advanced FAQ](#advanced_FAQ)
 
 
 # Motivation
@@ -131,34 +129,18 @@ In order to have k-mer presence/absence instead of abundance per indexed dataset
 
 By default, query outputs are written in `output_reindeer/query_results/`
 
+
+
 ## k-mer abundances
 
+Let's say that the query is 51 bases long and we look for 31-mers.
+There are 21 k-mers in the query, from k-mer 0 to k-mer 20.
 The output of REINDEER looks like:
 
-```    
->SRR10092187.6 HISEQ:815:HK2NNBCXY:1:1101:1224:2136 length=51 66 2:4 
-```
-
-Counts are reported in a particular format. In this example, `66` means that the queried k-mers correspond to a region which abundance is 66 in dataset 1. In the third column, we observe that two numbers were given, separated by a `:` It means that the sequence spans 2 unitigs in the graph of dataset 2, so REINDEER reported the counts in these 2 unitigs.
-
-## k-mer presence/absence
-
-When launched with `--nocount`, an example line from Reindeer's query is:
-
-```    
->SRR10092187.47 HISEQ:815:HK2NNBCXY:1:1101:1829:2108 length=51 dataset1:100% dataset3:71%
-```
-
-A query sequence appears in the output if more than `t`% k-mers were found an indexed dataset.
-Headers from the initial files are used to refer to query sequences (for instance `>SRR10092187.47 HISEQ:815:HK2NNBCXY:1:1101:1829:2108 length=51`).
-
-Then, the indexed datasets it appears in are written, separated by spaces. The numbers (i.e., `1` and `3` in `dataset1:100% dataset3:71%`) refer to the rank (starting at 1) of the datasets in the inital fof file.
-
-In this example, it means than `t`% k-mers from sequence `>SRR10092187.47 HISEQ:815:HK2NNBCXY:1:1101:1829:2108 length=51` were in the first and third sample written in the fof file.
-
-Finally, we can see that 100% of the k-mers from the queried sequence appear in dataset `1`, and only 71% appear in dataset `3`.
+<img src="./Images/reindeer_output.png" alt="drawing" width="400"/>
 
 
+Why can we observe different values for k-mers in a single query?  I answer this question in the [advanced FAQ](#advanced-faq).
 
 # Beta options
 
@@ -205,3 +187,6 @@ Citation:
   doi =         {10.1101/2020.03.29.014159},
 }
 ```
+# Advanced FAQ
+
+## Why can we observe different values for k-mers in a single query
