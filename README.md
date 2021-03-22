@@ -16,7 +16,7 @@
       * [log counts/quantized counts](#log-countsquantized-counts)
       * [input paired-end reads (to bcalm)](#input-paired-end-reads-to-bcalm)
    * [Reproduce the manuscript's results](#reproduce-the-manuscripts-results)
-   * [Citation](#citation)
+   * [Citation and resources](#citation-and-resources)
    * [Advanced FAQ](#advanced-faq)
 
 
@@ -172,12 +172,17 @@ Then query:
 We provide a page with scripts to reproduce the results we show in our manuscript, link [here](https://github.com/kamimrcht/REINDEER/tree/master/reproduce_manuscript_results).
 
 
-# Citation
+# Citation and resources
+
+REINDEER has been published in [Bioinformatics](https://academic.oup.com/bioinformatics/article/36/Supplement_1/i177/5870500?login=true). 
+It was presented during ISMB conference in 2020.
 
 Access to the preprint: [REINDEER: efficient indexing of k-mer presence and abundance
-in sequencing datasets](https://www.biorxiv.org/content/10.1101/2020.03.29.014159v1.full.pdf)
+in sequencing datasets](https://www.biorxiv.org/content/10.1101/2020.03.29.014159v1.full.pdf).
 
-Citation:
+Presentation recorded during [BiATA 2020](https://www.youtube.com/watch?v=CbTaM5zX09U).
+
+Citations:
 ```Bibtex
 @inproceedings{marchet2020reindeer,
   title ={{REINDEER}: efficient indexing of k-mer presence and abundance in sequencing datasets},
@@ -185,6 +190,16 @@ Citation:
   booktitle =        {28th Intelligent Systems for Molecular Biology (ISMB 2020)},
   year =         {2020},
   doi =         {10.1101/2020.03.29.014159},
+}
+@article{marchet2020reindeer,
+  title={REINDEER: efficient indexing of k-mer presence and abundance in sequencing datasets},
+  author={Marchet, Camille and Iqbal, Zamin and Gautheret, Daniel and Salson, Mika{\"e}l and Chikhi, Rayan},
+  journal={Bioinformatics},
+  volume={36},
+  number={Supplement\_1},
+  pages={i177--i185},
+  year={2020},
+  publisher={Oxford University Press}
 }
 ```
 # Advanced FAQ
