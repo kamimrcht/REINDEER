@@ -137,7 +137,7 @@ Let's say that the query is 51 bases long and we look for 31-mers.
 There are 21 k-mers in the query, from k-mer 0 to k-mer 20.
 The output of REINDEER looks like:
 
-<img src="./Images/reindeer_output.png" alt="drawing" width="700"/>
+<img src="./Images/reindeer_output.png" alt="drawing" width="850"/>
 
 
 Why can we observe different values for k-mers in a single query?  I answer this question in the [advanced FAQ](#advanced-faq).
