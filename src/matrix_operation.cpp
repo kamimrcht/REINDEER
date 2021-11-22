@@ -19,21 +19,20 @@ void dump_compressed_vector_buff(vector<uint16_t>& counts, int64_t monotig_id, s
 }
 
 // load rle encoded matrix from disk (keep compressed in ram)
-vector<unsigned char*> load_compressed_vectors(const string& input_file, vector<unsigned>&vector_sizes, uint64_t& color_number, uint64_t& monotig_number, long eq_class_nb)
+vector<unsigned char*> load_compressed_vectors(reindeer_index& index_values, vector<unsigned>&vector_sizes)
 {
-	//~ ifstream in_nb(input_file + "_monotig_nb");
-	auto in = new zstr::ifstream(input_file);
-	if(not exists_test(input_file))
+	auto in = new zstr::ifstream(index_values.color_load_file);
+	if(not exists_test(index_values.color_load_file))
 	{
 		cout<<"File problem"<<endl;
 		exit(0);
 	}
 	int64_t rank;
 	unsigned line_size;
-	in->read(reinterpret_cast<char *>(&color_number), sizeof(uint64_t));
+	in->read(reinterpret_cast<char *>(&index_values.nb_colors), sizeof(uint64_t));
 	vector<unsigned char*> out; //todo resize when loading eq class
 	uint t(0);
-	for (uint i(0); i < eq_class_nb; ++i) //lire le nb de classes d'eq
+	for (uint i(0); i < index_values.nb_eq_class; ++i) 
 	{
 		in->read(reinterpret_cast<char *>(&line_size), sizeof(unsigned));
 		in->read(reinterpret_cast<char *>(&rank), sizeof(int64_t));

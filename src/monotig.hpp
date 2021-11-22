@@ -53,7 +53,7 @@ bool similar_count(const vector<uint16_t>& V1,const vector<uint16_t>& V2);
 
 string compress_vector(const vector<uint16_t>& V);
 
-void construct_index_fof(const string& input_file, const string& tmp_dir, int colormode);
+void construct_index_fof(reindeer_index& index_values);
 
 
 vector<uint16_t> get_count_vector(const vector< pair<uint16_t,uint16_t> >&V,uint64_t number_color);

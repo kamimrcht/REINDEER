@@ -36,6 +36,7 @@
 #include "build_index.hpp"
 #include "utils.hpp"
 
+
 #ifndef REN
 #define REN
 
@@ -45,7 +46,7 @@ using namespace chrono;
 
 
 
-void reindeer_index(uint k, string& fof,  string& color_dump_file, bool record_counts,  string& output, string& color_load_file, uint threads,  bool do_query_on_disk, bool quantize, bool do_log, uint m1, uint m3);
-uint reindeer_query(string& output, string& output_query,   uint threshold,  string& query, uint threads, bool do_query_on_disk);
+void build_reindeer_index(reindeer_index& index_values);
+uint reindeer_query(reindeer_index& index_values, string& output_query,   uint threshold,  string& query);
 
 #endif

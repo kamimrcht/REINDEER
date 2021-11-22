@@ -31,6 +31,9 @@ vector<uint16_t> get_count_monotig(unsigned char* monotig_counts, unsigned vecto
 	unsigned char* decoded(decode_vector(monotig_counts, vector_size,color_number, record_counts));
 	vector<uint16_t> counts (count_string_to_count_vector(decoded, color_number*2));
 	delete [] decoded;
+	for (auto && c: counts)
+		cout << c << " ";
+	cout << endl;
 	return counts;
 }
 
@@ -79,7 +82,6 @@ void get_colors_counts_query_eq_classes(vector<int64_t>& kmer_ids,   uint64_t co
 	vector<uint16_t> qcounts, lastV;
 	vector<uint8_t> qcolors;
 	vector<uint16_t> vec(color_number, 0);
-
 	for(uint64_t i(0);i<kmer_ids.size();++i)
 	{
 		if(kmer_ids[i]>=0)

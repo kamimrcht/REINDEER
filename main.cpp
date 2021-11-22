@@ -40,6 +40,10 @@ string version("v1.0.2");
 // MPHF options
 uint m1(10);
 uint m3(5);
+uint m2(10);
+uint c(1);
+uint bit(0);
+uint ex(0);
 
 
 char ch;
@@ -85,7 +89,7 @@ void PrintHelp()
             "      * Optional parameters\n"
             "-P                      :     Threshold: at least P% of the positions in the query must be covered by k-mers present in a dataset for the dataset to be reported (default: " << threshold << "%)\n"
             "-o <file>               :     Directory to write output files (default: output_reindeer/)\n"
-            "--disk-query            :     On-disk query (default: in-memory). To be used for large indexes that won't fit in RAM, if the index was constructed with the same option.\n\n"
+            "--disk-query            :     On-disk query (boolean, default: in-memory query). To be used for large indexes that won't fit in RAM, if the index was constructed with the same option.\n\n"
 
 
             "                    General\n\n"
@@ -218,14 +222,13 @@ int main(int argc, char **argv)
             PrintHelp();
             return 0;
         }
-        string cl("");
         bcalm_cleanup();
         cout << "Indexing k-mers...\n\n" << endl;
-        color_dump_file = output + "/" + color_dump_file;
-        reindeer_index(k, fof, color_dump_file, record_counts, output, cl, threads,  do_query_on_disk, quantize, do_log, m1, m3);
+        reindeer_index index_val{10, 1, 0, 0, m1, m3, k, threads, record_counts, 1, do_query_on_disk, quantize, do_log, 0, 0, 0, "", output+ "/" +color_dump_file, fof, output, output+"/monotig_files", output+"/reindeer_index.gz"};
+        build_reindeer_index(index_val);
         cout << "INDEX BUILDING = THE END" <<endl;
     } else {
-        if (color_load_file.empty())
+        if (color_load_file.empty()) //todo changer le nom
         {
             cout << "Missing argument -l" << endl;
             PrintHelp();
@@ -241,7 +244,8 @@ int main(int argc, char **argv)
                 cout << "[ERROR] Invalid query file" << endl;
                 return 0;
             }
-            reindeer_query(color_load_file, output_query,  threshold,   query, threads,  do_query_on_disk);
+            reindeer_index index_val{10, 1, 0, 0, m1, m3, k, threads, record_counts, 1, do_query_on_disk, quantize, do_log, 0, 0,0,"", color_load_file+ "/" +color_dump_file, fof, color_load_file, color_load_file+"/monotig_files", color_load_file+"/reindeer_index.gz"};
+            reindeer_query(index_val, output_query,  threshold,   query);
         }
     }
     return 0;

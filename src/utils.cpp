@@ -603,7 +603,7 @@ uint64_t get_color_number(string& fof)
 
 
 
-void read_info(uint& k, uint64_t& nb_monotig, long& eq_class_nb, uint64_t& color_number, uint& record_option, string& rd_file)
+void read_info(reindeer_index& index_values, string& rd_file, uint& record_option)
 {
 	ifstream info_file(rd_file + "_info");
 	if (!info_file.is_open()) {
@@ -611,9 +611,18 @@ void read_info(uint& k, uint64_t& nb_monotig, long& eq_class_nb, uint64_t& color
 		exit(1);
 	}
 	//get nb of monotigs, nb of eq_classes, nb_of colors
-	info_file.read(reinterpret_cast<char *>(&nb_monotig), sizeof(uint64_t));
-	info_file.read(reinterpret_cast<char *>(&k), sizeof(uint));
+	info_file.read(reinterpret_cast<char *>(&index_values.nb_monotig), sizeof(uint64_t));
+	info_file.read(reinterpret_cast<char *>(&index_values.k), sizeof(uint));
 	info_file.read(reinterpret_cast<char *>(&record_option), sizeof(uint));
-	info_file.read(reinterpret_cast<char *>(&eq_class_nb), sizeof(long));
-	info_file.read(reinterpret_cast<char *>(&color_number), sizeof(uint64_t));
+	info_file.read(reinterpret_cast<char *>(&index_values.nb_eq_class), sizeof(long));
+	info_file.read(reinterpret_cast<char *>(&index_values.nb_colors), sizeof(uint64_t));
+	cout << index_values.nb_monotig << " " << index_values.k << " " <<  record_option << " " << index_values.nb_eq_class << " " << index_values.nb_colors << endl;
+	if (record_option == 1)
+	{
+		index_values.record_counts = true;
+	}
+	else
+	{
+		index_values.record_counts = false;
+	}
 }
