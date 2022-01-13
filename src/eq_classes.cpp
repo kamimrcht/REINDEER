@@ -92,9 +92,11 @@ void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_
 		vector<count_vector> count_vecs;
 		robin_hood::unordered_map<string, pair<count_vector, vector<uint64_t>>> bucket_class;
 		string compressed;
-		zstr::ifstream in(output + "/matrix_bucket_"+ to_string(i) + ".gz"); //TODO zstr??
-		if (not is_empty_zfile(in)){
-			in.peek();
+		//~ zstr::ifstream in(output + "/matrix_bucket_"+ to_string(i) + ".gz"); //TODO zstr??
+		ifstream in(output + "/matrix_bucket_"+ to_string(i) ); //TODO zstr??
+		//~ if (not is_empty_zfile(in)){
+		if (not is_empty_file(in)){
+			//~ in.peek();
 			while (not in.eof() and not in.fail())
 			{
 				//read file and store each vector in struct
@@ -124,7 +126,7 @@ void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_
 			mm.unlock();
 		} 
 			
-		//~ in.close();
+		in.close();
 	}
 	long nb_eq_class(prev_pos + 1);
 	cout << "Number of equivalence classes found: " << prev_pos + 1<< endl;

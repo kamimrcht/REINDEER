@@ -117,7 +117,8 @@ void dump_compressed_vector_bucket(int64_t monotig_id, vector<ofstream*>& bucket
 
 
 
-void read_matrix_compressed_line(zstr::ifstream& in, int64_t& rank, char* comp, unsigned& comp_size)
+//~ void read_matrix_compressed_line(zstr::ifstream& in, int64_t& rank, char* comp, unsigned& comp_size)
+void read_matrix_compressed_line(ifstream& in, int64_t& rank, char* comp, unsigned& comp_size)
 {
 	in.read(reinterpret_cast<char *>(&comp_size), sizeof(unsigned));
 	in.read((char*)(comp) , comp_size);
