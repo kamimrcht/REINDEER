@@ -64,7 +64,7 @@ Test can be run:
 
 ### Compilation tips
 
-If REINDEER gives a `Error: no such instruction` during compilation, try replacing `-march=native -mtune=native` by `-msse4` in the file `makefile`. If this did not work, pleaes file an issue.
+If REINDEER gives a `Error: no such instruction` during compilation, try replacing `-march=native -mtune=native` by `-msse4` in the file `makefile`. If this did not work, please file an issue.
 
 ## Quick start
 Have a look at the file of file format in `test/fof_unitigs.txt`.
@@ -76,7 +76,7 @@ and query:
 
 `./Reindeer --query -q test/query_test.fa -l quick_out -o quick_query`
 
-Results should be in `quick_query/query_results/out_query_Reindeer0.out`.
+Results should be in `test/quick_query/query_results/out_query_Reindeer0.out`.
 
 Help:
 
@@ -86,7 +86,7 @@ Help:
 
 ## Starting with read files (raw or gzipped fasta/fastq)
 
-Make sure you have installed Bcalm by doing `sh install`.
+Make sure you have installed Bcalm by doing `sh install.sh`.
 Let's assume you work with two files, `reads_1.fastq` and `reads_2.fastq`.
 The first thing needed to is to create a file of file (fof) that record the path to the reads.
 An example file can be found here: `test/fof.txt`
@@ -140,7 +140,7 @@ The output of REINDEER looks like:
 <img src="./Images/reindeer_output.png" alt="drawing" width="850"/>
 
 
-Why can we observe different values for k-mers in a single query?  I answer this question in the [advanced FAQ](#advanced-faq).
+Why can we observe different values for k-mers in a single query? I answer this question in the [advanced FAQ](#advanced-faq).
 
 # Beta options
 
@@ -165,7 +165,7 @@ Then query:
 ## input paired-end reads (to bcalm)
 
 
-`./Reindeer --index --paired-end --bcalm  -f fof.txt`
+`./Reindeer --index --paired-end --bcalm -f fof.txt`
 
 # Reproduce the manuscript's results
 
