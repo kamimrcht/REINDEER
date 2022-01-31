@@ -1,5 +1,6 @@
 
 #include "eq_classes.hpp"
+#include "reindeer.hpp"
 
 using namespace std;
 
@@ -11,7 +12,8 @@ void sort_vectors(vector<count_vector>& matrix_lines)
 
 
 // write final matrix of equivalence classes
-void get_eq_classes(string& output, robin_hood::unordered_map<string, pair<count_vector, vector<uint64_t>>>& bucket_class, uint64_t unitig_nb, uint64_t color_number, vector<long>& final_positions, long& prev_pos, zstr::ofstream* out)
+//~ void get_eq_classes(string& output, robin_hood::unordered_map<string, pair<count_vector, vector<uint64_t>>>& bucket_class, uint64_t unitig_nb, uint64_t color_number, vector<long>& final_positions, long& prev_pos, zstr::ofstream* out)
+void get_eq_classes(string& output, robin_hood::unordered_map<string, pair<count_vector, vector<uint64_t>>>& bucket_class, uint64_t unitig_nb, uint64_t color_number, vector<long>& final_positions, long& prev_pos, ofstream* out)
 {
 	string prev_comp("");
 	// for each representant, write the compressed size, index and compressed counts on disk
@@ -61,23 +63,28 @@ void get_eq_classes_disk_query(string& output, robin_hood::unordered_map<string,
 }
 
 //sort count vectors by file, write one occurence per count in a new matrix file
-void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_t nb_unitigs, bool do_query_on_disk, uint64_t nb_colors, ofstream* out_info)
+//~ void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_t nb_unitigs, bool do_query_on_disk, uint64_t nb_colors, ofstream* out_info)
+template <class T>
+void Reindeer_Index<T>::write_eq_class_matrix(vector<ofstream*>& all_files, ofstream* out_info)
 {
 	cout << "Sorting datasets to find equivalence classes..." << endl;
-	vector<long> final_positions(nb_unitigs);
-	zstr::ofstream * outz;
+	vector<long> final_positions(nb_monotig);
+	//~ zstr::ofstream * outz;
 	ofstream *out = nullptr;
-	if (do_query_on_disk)
-	{
-		out = new ofstream(output + "/reindeer_matrix_eqc");
+	//~ if (do_query_on_disk)
+	//~ {
+		//~ out = new ofstream(output + "/reindeer_matrix_eqc");
+			
+		out = new ofstream(matrix_eqc_file);
 		out->write(reinterpret_cast<char*>(&nb_colors),sizeof(uint64_t)); // number of colors
-	}
-	else
-	{
-		outz = new zstr::ofstream(output + "/reindeer_matrix_eqc.gz");
-		outz->write(reinterpret_cast<char*>(&nb_colors),sizeof(uint64_t)); // number of colors
+	//~ }
+	//~ else
+	//~ {
+		//~ outz = new zstr::ofstream(output + "/reindeer_matrix_eqc.gz");
+		//~ outz->write(reinterpret_cast<char*>(&nb_colors),sizeof(uint64_t)); // number of colors
 
-	}
+	//~ }
+
 	long prev_pos(-1);
 	uint i(0);
 	mutex mm; 
@@ -92,7 +99,8 @@ void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_
 		vector<count_vector> count_vecs;
 		robin_hood::unordered_map<string, pair<count_vector, vector<uint64_t>>> bucket_class;
 		string compressed;
-		zstr::ifstream in(output + "/matrix_bucket_"+ to_string(i) + ".gz"); //TODO zstr??
+		//~ zstr::ifstream in(output + "/matrix_bucket_"+ to_string(i) + ".gz"); //TODO zstr??
+		zstr::ifstream in(reindeer_index_files + "/matrix_bucket_"+ to_string(i) + ".gz"); //TODO zstr??
 		if (not is_empty_zfile(in)){
 			in.peek();
 			while (not in.eof() and not in.fail())
@@ -118,9 +126,15 @@ void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_
 			}
 			mm.lock();
 			if (do_query_on_disk)
-				get_eq_classes_disk_query(output, bucket_class,  nb_unitigs, nb_colors, final_positions, prev_pos, out);
+			{
+				//~ get_eq_classes_disk_query(output, bucket_class,  nb_unitigs, nb_colors, final_positions, prev_pos, out);
+				get_eq_classes_disk_query(reindeer_index_files, bucket_class,  nb_monotig, nb_colors, final_positions, prev_pos, out);
+			}
 			else
-				get_eq_classes(output, bucket_class,  nb_unitigs, nb_colors, final_positions, prev_pos, outz);
+			{
+				//~ get_eq_classes(output, bucket_class,  nb_unitigs, nb_colors, final_positions, prev_pos, outz);
+				get_eq_classes(reindeer_index_files, bucket_class,  nb_monotig, nb_colors, final_positions, prev_pos, out);
+			}
 			mm.unlock();
 		} 
 			
@@ -128,7 +142,8 @@ void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_
 	}
 	long nb_eq_class(prev_pos + 1);
 	cout << "Number of equivalence classes found: " << prev_pos + 1<< endl;
-	zstr::ofstream * out_position =  new zstr::ofstream(output + "/reindeer_matrix_eqc_position.gz");
+	//~ zstr::ofstream * out_position =  new zstr::ofstream(output + "/reindeer_matrix_eqc_position.gz");
+	zstr::ofstream * out_position =  new zstr::ofstream(matrix_eqc_position_file);
 	uint nb(0);
 	for (uint i(0); i < final_positions.size(); ++i)
 	{
@@ -139,10 +154,10 @@ void write_eq_class_matrix(string& output, vector<ofstream*>& all_files, uint64_
 	out_info->write(reinterpret_cast<char*>(&nb_eq_class), sizeof(long));
 	out_info->write(reinterpret_cast<char*>(&nb_colors), sizeof(uint64_t));
 	
-	if (do_query_on_disk)
+	//~ if (do_query_on_disk)
 		delete out;
-	else
-		delete outz;
+	//~ else
+		//~ delete outz;
 }
 
 
