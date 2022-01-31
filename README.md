@@ -56,6 +56,8 @@ Then:
 
 or
 
+`cd REINDEER`
+
 `make`
 
 Test can be run:
@@ -64,7 +66,7 @@ Test can be run:
 
 ### Compilation tips
 
-If REINDEER gives a `Error: no such instruction` during compilation, try replacing `-march=native -mtune=native` by `-msse4` in the file `makefile`. If this did not work, pleaes file an issue.
+If REINDEER gives a `Error: no such instruction` during compilation, try replacing `-march=native -mtune=native` by `-msse4` in the file `makefile`. If this did not work, please file an issue.
 
 ## Quick start
 Have a look at the file of file format in `test/fof_unitigs.txt`.
@@ -86,9 +88,9 @@ Help:
 
 ## Starting with read files (raw or gzipped fasta/fastq)
 
-Make sure you have installed Bcalm by doing `sh install`.
+Make sure you have installed Bcalm by doing `sh install.sh`.
 Let's assume you work with two files, `reads_1.fastq` and `reads_2.fastq`.
-The first thing needed to is to create a file of file (fof) that record the path to the reads.
+The first thing needed to is to create a file of file (fof) that records the path to the reads.
 An example file can be found here: `test/fof.txt`
 Then this file of file is provided for the index construction:
 
@@ -110,7 +112,7 @@ This allows to skip the first Bcalm step.
 
 # Query fasta files
 
-Simply provide the fasta query file (**single line**) to Reindeer using `-q`, along with the directory of index files that were generated during index construction (`output_reindeer` by default, can changed with `-o`), using `-l':
+Simply provide the fasta query file (**single line**) to Reindeer using `-q`, along with the directory of index files that were generated during index construction (`output_reindeer` by default, can changed with `-o`), using `-l`:
 
 `./Reindeer --query -q test/query_test.fa -l output_reindeer`
 
