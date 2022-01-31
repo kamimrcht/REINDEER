@@ -92,36 +92,29 @@ template <class T>
 Reindeer_Index<T>::Reindeer_Index(string& poutput,string& poutput_query, uint threshold,  string& query, uint pthreads,  bool pdo_query_on_disk)
 {
 	color_load_file = poutput;
+	reindeer_index_files = poutput;
 	output = poutput_query;
 	threads = pthreads;
 	do_query_on_disk = pdo_query_on_disk;
 	// QUERY //
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
 	//check if loading directory exists and all reindeer files are present
-	if (do_query_on_disk)
-	{
-		color_load_file = getRealPath("reindeer_matrix_eqc", poutput);
-		matrix_name = color_load_file;
-	}
-	else
-	{
-		color_load_file = getRealPath("reindeer_matrix_eqc", poutput);
-		//~ size_t wo_ext = color_load_file.find_last_of("."); 
-		//~ matrix_name = color_load_file.substr(0, wo_ext); 
-		matrix_name = color_load_file; 
-	}
+	color_load_file = getRealPath("reindeer_matrix_eqc", poutput);
+	matrix_name = color_load_file;
+	matrix_eqc_info_file = matrix_name + "_info";
+	matrix_eqc_position_file = matrix_name + "_position";
+	
 	read_info();
 	vector<unsigned char*> compr_monotig_color;
 	vector<unsigned> compr_monotig_color_sizes;
 	cout << "\n#Loading index..." << endl;
-    std::ofstream index_loading_semaphore(output + "/index_loading"); // begin semaphore
+    std::ofstream index_loading_semaphore(reindeer_index_files + "/index_loading"); // begin semaphore
 	//~ long eq_class_nb(0);
 	bool quantize = false, log = false;
-	print_Reindeer();
 	kmer_Set_Light* ksl = load_rle_index(compr_monotig_color, compr_monotig_color_sizes);
 	vector<long> position_in_file;
-	string position_file_name(matrix_name + "_position.gz");
-	get_position_vector_query_disk(position_in_file,  position_file_name,nb_monotig);
+	//~ string position_file_name(matrix_name + "_position");
+	get_position_vector_query_disk(position_in_file,  matrix_eqc_position_file,nb_monotig);
 	high_resolution_clock::time_point t12 = high_resolution_clock::now();
 	duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
 	cout<<"Index loading total: "<< time_span12.count() << " seconds."<<endl;
