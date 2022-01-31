@@ -43,7 +43,7 @@ uint m3(5);
 
 
 char ch;
-string query,fof(""), color_dump_file("reindeer_matrix"), color_load_file(""), output_bcalm("bcalm_out"),output_union_bcalm("bcalm_union_out"),output("output_reindeer"), output_index("index_out");
+string query,fof(""), color_load_file(""), output_bcalm("bcalm_out"),output_union_bcalm("bcalm_union_out"),output("");
 uint k(31), threads(1);
 bool record_counts(true), quantize(false), do_query_on_disk(false), bcalm(false), do_Index(false), do_Query(false), PE(false), do_log(false);
 uint threshold(40);
@@ -71,7 +71,7 @@ void PrintHelp()
             "--quantization          :     Quantize the abundances in bins (to use only with --count).\n"
             "--log-count             :     Record the log of the counts, gives approximate counts that save space (to use only with --count).\n"
             "      * Output options\n"
-            "-o <file>               :     Directory to write output files (default: output_reindeer)\n\n"
+            "-o <file>               :     Directory to write reindeer index files (default: reindeer_index_files)\n\n"
             "      * Advanced parameters (we recommend not to change these values unless you are very aware of REINDEER's inner components)\n"
             "--minimizer-size <integer>          :    MPHF option: minimizer size\n"
             "--buckets <integer>          :    MPHF option: number of buckets (log)\n"
@@ -80,11 +80,11 @@ void PrintHelp()
 
             "      * Mandatory parameters\n"
             "--query                 :     Query mode\n"
-            "-l                      :     Reindeer index directory (should be output_reindeer if you've not used -o during indexing)\n"
+            "-l                      :     Reindeer index directory (should be reindeer_index_files if you've not used -o during indexing)\n"
             "-q <FASTA>              :     FASTA query file with query sequences\n"
             "      * Optional parameters\n"
             "-P                      :     Threshold: at least P% of the positions in the query must be covered by k-mers present in a dataset for the dataset to be reported (default: " << threshold << "%)\n"
-            "-o <file>               :     Directory to write output files (default: output_reindeer/)\n"
+            "-o <file>               :     Directory to write query output files (default: output_reindeer_query/)\n"
             "--disk-query            :     On-disk query (default: in-memory). To be used for large indexes that won't fit in RAM, if the index was constructed with the same option.\n\n"
 
 
@@ -191,8 +191,9 @@ int main(int argc, char **argv)
     for(int i = 0; i < argc; ++i)
         cout << argv[i] << ' ';
     cout << endl << endl;
-    if (not dirExists(output)){
-        systRet=system(("mkdir " + output).c_str());
+    string reindeer_index_files(output);
+    if (not dirExists(reindeer_index_files)){
+        systRet=system(("mkdir " + reindeer_index_files).c_str());
     }
     if ( (do_Index and do_Query) or not(do_Index or do_Query) ){
         cout << "You must choose: either indexing (--index) or querying (--query)\n" << endl;
@@ -209,7 +210,7 @@ int main(int argc, char **argv)
         if (bcalm)
         {
             cout << "Computing De Bruijn graphs on each dataset using Bcalm2...\n\n" << endl;
-            fof = bcalm_launcher_single(fof,  k,  threads, output, output_bcalm, PE);
+            fof = bcalm_launcher_single(fof,  k,  threads, reindeer_index_files, output_bcalm, PE);
         }
         
         if ( fof.empty() or k == 0 )
@@ -218,11 +219,10 @@ int main(int argc, char **argv)
             PrintHelp();
             return 0;
         }
-        string cl("");
         bcalm_cleanup();
         cout << "Indexing k-mers...\n\n" << endl;
-        color_dump_file = output + "/" + color_dump_file;
-        reindeer_index(k, fof, color_dump_file, record_counts, output, cl, threads,  do_query_on_disk, quantize, do_log, m1, m3);
+        Reindeer_Index<uint16_t> reindeer_index(k, fof, record_counts, reindeer_index_files, threads,  do_query_on_disk, quantize, do_log, m1, m3);
+        //~ reindeer_index(k, fof, color_dump_file, record_counts, output, cl, threads,  do_query_on_disk, quantize, do_log, m1, m3);
         cout << "INDEX BUILDING = THE END" <<endl;
     } else {
         if (color_load_file.empty())
@@ -241,7 +241,23 @@ int main(int argc, char **argv)
                 cout << "[ERROR] Invalid query file" << endl;
                 return 0;
             }
-            reindeer_query(color_load_file, output_query,  threshold,   query, threads,  do_query_on_disk);
+            
+            
+            if (dirExists(color_load_file))
+			{
+				if ( not (exists_test(color_load_file + "/reindeer_matrix_eqc") and exists_test(color_load_file + "/reindeer_matrix_eqc_info") and exists_test(color_load_file + "/reindeer_index.gz") and exists_test(color_load_file + "/reindeer_matrix_eqc_position.gz")))
+				{
+					cerr << "[ERROR] REINDEER index files are missing. Stopped."<< endl; 
+					return 0;
+				}
+			} 
+			else 
+			{
+				cerr << "[ERROR] REINDEER index directory is missing (or path in -l is wrong). Stopped." << endl;
+				return 0;
+			}
+            //~ reindeer_query(color_load_file, output_query,  threshold,   query, threads,  do_query_on_disk);
+            Reindeer_Index<uint16_t> reindeer_index(color_load_file, output_query,  threshold,   query, threads,  do_query_on_disk);
         }
     }
     return 0;

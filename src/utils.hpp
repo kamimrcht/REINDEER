@@ -85,7 +85,6 @@ vector<uint8_t> RLE8C(const vector<uint8_t>&V);
 
 vector<uint8_t> RLE8D(const vector<uint8_t>&V);
 
-void read_info(uint& k, uint64_t& nb_monotig, long& eq_class_nb, uint64_t& color_number, uint& record_option, string& rd_file);
 
 void new_paired_end_file(string& input, string& input2, string& output_file, bool fastq);
 
