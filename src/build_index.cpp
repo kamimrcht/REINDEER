@@ -231,11 +231,11 @@ template <class T>
 kmer_Set_Light*  Reindeer_Index<T>::load_rle_index(vector<unsigned char*> &compr_monotig_color,  vector<unsigned>& compr_monotig_color_sizes)
 {
 	//~ print_Reindeer();
-	kmer_Set_Light* ksl= new kmer_Set_Light(output + "/reindeer_index.gz");
+	kmer_Set_Light* ksl= new kmer_Set_Light(reindeer_index_files + "/reindeer_index.gz");
 	do_coloring(ksl, compr_monotig_color, compr_monotig_color_sizes);
 	if (DELE_MONOTIG_FILE)
 	{
-		string cmd("rm -rf " + output +"/monotig_files"); 
+		string cmd("rm -rf " + reindeer_index_files +"/monotig_files"); 
 		int sysRet(system(cmd.c_str()));
 	}
 	return ksl;

@@ -245,7 +245,7 @@ int main(int argc, char **argv)
             
             if (dirExists(color_load_file))
 			{
-				if ( not (exists_test(color_load_file + "/reindeer_matrix_eqc") and exists_test(color_load_file + "/reindeer_matrix_eqc_info") and exists_test(color_load_file + "/reindeer_index.gz") and exists_test(color_load_file + "/reindeer_matrix_eqc_position.gz")))
+				if ( not (exists_test(color_load_file + "/reindeer_matrix_eqc") and exists_test(color_load_file + "/reindeer_matrix_eqc_info") and exists_test(color_load_file + "/reindeer_index.gz") and exists_test(color_load_file + "/reindeer_matrix_eqc_position")))
 				{
 					cerr << "[ERROR] REINDEER index files are missing. Stopped."<< endl; 
 					return 0;
