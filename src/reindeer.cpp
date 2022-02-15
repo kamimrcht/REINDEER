@@ -15,7 +15,7 @@ using namespace chrono;
 
 // constructor for index construction
 template <class T>
-Reindeer_Index<T>::Reindeer_Index(uint pk, string& pfof, bool precord_counts, string& preindeer_index_files, uint pthreads,  bool pdo_query_on_disk, bool pquantize, bool pdo_log, uint pm1, uint pm3)
+Reindeer_Index<T>::Reindeer_Index(uint pk, string& pfof, bool precord_counts, string& preindeer_index_files, uint pthreads,  bool pdo_query_on_disk, bool pquantize, bool pdo_log, uint pm1, uint pm3, bool dele_tmp)
 {
 	// MPHF options
 	m2 = 10;
@@ -48,6 +48,8 @@ Reindeer_Index<T>::Reindeer_Index(uint pk, string& pfof, bool precord_counts, st
 	matrix_eqc_info_file = reindeer_index_files + "/reindeer_matrix_eqc_info";
 	matrix_eqc_file = reindeer_index_files + "/reindeer_matrix_eqc";
 	matrix_eqc_position_file = reindeer_index_files + "/reindeer_matrix_eqc_position";
+	dele_monotig_file = dele_tmp;
+
 	
 	fof = pfof;
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
@@ -89,7 +91,7 @@ void Reindeer_Index<T>::read_info()
 
 // constructor for query
 template <class T>
-Reindeer_Index<T>::Reindeer_Index(string& poutput,string& poutput_query, uint threshold,  string& query, uint pthreads,  bool pdo_query_on_disk)
+Reindeer_Index<T>::Reindeer_Index(string& poutput,string& poutput_query, uint threshold,  string& query, uint pthreads,  bool pdo_query_on_disk, bool dele_tmp)
 {
 	color_load_file = poutput;
 	reindeer_index_files = poutput;
@@ -103,6 +105,8 @@ Reindeer_Index<T>::Reindeer_Index(string& poutput,string& poutput_query, uint th
 	matrix_name = color_load_file;
 	matrix_eqc_info_file = matrix_name + "_info";
 	matrix_eqc_position_file = matrix_name + "_position";
+	dele_monotig_file = dele_tmp;
+
 	
 	read_info();
 	vector<unsigned char*> compr_monotig_color;

@@ -79,6 +79,7 @@ public:
 	string matrix_eqc_info_file;
 	string matrix_eqc_file;
 	string matrix_eqc_position_file;
+	bool dele_monotig_file;
 
 	
 	string color_load_file;
@@ -88,8 +89,8 @@ public:
 	string matrix_name;
 	
 	//constructor
-	Reindeer_Index(uint pk, string& pfof, bool precord_counts, string& preindeer_index_files, uint pthreads,  bool pdo_query_on_disk, bool pquantize, bool pdo_log, uint pm1, uint pm3);
-	Reindeer_Index(string& output,string& output_query, uint threshold,  string& query, uint threads,  bool do_query_on_disk);
+	Reindeer_Index(uint pk, string& pfof, bool precord_counts, string& preindeer_index_files, uint pthreads,  bool pdo_query_on_disk, bool pquantize, bool pdo_log, uint pm1, uint pm3, bool dele_tmp);
+	Reindeer_Index(string& output,string& output_query, uint threshold,  string& query, uint threads,  bool do_query_on_disk, bool dele_tmp);
 	void print_Reindeer();
 
 

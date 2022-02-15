@@ -45,7 +45,7 @@ uint m3(5);
 char ch;
 string query,fof(""), color_load_file(""), output_bcalm("bcalm_out"),output_union_bcalm("bcalm_union_out"),output("");
 uint k(31), threads(1);
-bool record_counts(true), quantize(false), do_query_on_disk(false), bcalm(false), do_Index(false), do_Query(false), PE(false), do_log(false);
+bool record_counts(true), quantize(false), do_query_on_disk(false), bcalm(false), do_Index(false), do_Query(false), PE(false), do_log(false), keep_tmp(false);
 uint threshold(40);
 
 
@@ -75,6 +75,7 @@ void PrintHelp()
             "      * Advanced parameters (we recommend not to change these values unless you are very aware of REINDEER's inner components)\n"
             "--minimizer-size <integer>          :    MPHF option: minimizer size\n"
             "--buckets <integer>          :    MPHF option: number of buckets (log)\n"
+            "--keep-tmp                   :    keep tmp files\n"
             ""
             "                    QUERY\n\n"
 
@@ -97,7 +98,7 @@ void PrintHelp()
 void ProcessArgs(int argc, char** argv)
 {
     
-    const char* const short_opts = "k:P:t:f:l:g:q:o:w:";
+    const char* const short_opts = "pk:P:t:f:l:g:q:o:w:r";
     const option long_opts[] = {
             {"index", no_argument, nullptr, 'i'},
             {"help", no_argument, nullptr, 'h'},
@@ -110,6 +111,7 @@ void ProcessArgs(int argc, char** argv)
             {"log-count", no_argument, nullptr, 'L'},
             {"minimizer-size", required_argument , nullptr, 'm'},
             {"buckets", required_argument , nullptr, 'n'},
+            {"keep-tmp", no_argument , nullptr, 'r'},
             {nullptr, no_argument, nullptr, 0}
     };
 
@@ -160,6 +162,9 @@ void ProcessArgs(int argc, char** argv)
                 break;
             case 'P':
                 threshold=stoi(optarg);
+                break;
+            case 'r':
+                keep_tmp=true;
                 break;
             case 'l':
                 color_load_file=optarg;
@@ -221,7 +226,7 @@ int main(int argc, char **argv)
         }
         bcalm_cleanup();
         cout << "Indexing k-mers...\n\n" << endl;
-        Reindeer_Index<uint16_t> reindeer_index(k, fof, record_counts, reindeer_index_files, threads,  do_query_on_disk, quantize, do_log, m1, m3);
+        Reindeer_Index<uint16_t> reindeer_index(k, fof, record_counts, reindeer_index_files, threads,  do_query_on_disk, quantize, do_log, m1, m3, !(keep_tmp));
         //~ reindeer_index(k, fof, color_dump_file, record_counts, output, cl, threads,  do_query_on_disk, quantize, do_log, m1, m3);
         cout << "INDEX BUILDING = THE END" <<endl;
     } else {
@@ -232,7 +237,7 @@ int main(int argc, char **argv)
             return 0;
         } else {
             cout << "Querying..." << endl;
-            string output_query(output + "/query_results");
+            string output_query(color_load_file + "/query_results");
             if (not dirExists(output_query)){
                 systRet=system(("mkdir " + output_query).c_str());
             }
@@ -257,7 +262,7 @@ int main(int argc, char **argv)
 				return 0;
 			}
             //~ reindeer_query(color_load_file, output_query,  threshold,   query, threads,  do_query_on_disk);
-            Reindeer_Index<uint16_t> reindeer_index(color_load_file, output_query,  threshold,   query, threads,  do_query_on_disk);
+            Reindeer_Index<uint16_t> reindeer_index(color_load_file, output_query,  threshold,   query, threads,  do_query_on_disk , !(keep_tmp));
         }
     }
     return 0;
