@@ -5,7 +5,7 @@
 using namespace chrono;
 using namespace std;
 
-bool DELE_MONOTIG_FILE(true);
+//~ bool DELE_MONOTIG_FILE(true);
 
 // read colors from bcalm headers
 vector<uint8_t>  get_colors_monotigs(string& line)
@@ -131,7 +131,7 @@ void Reindeer_Index<T>::write_matrix_in_bucket_files(kmer_Set_Light* ksl, vector
 				}
 				monotigs_file.peek();
 			}
-			if (DELE_MONOTIG_FILE)
+			if (dele_monotig_file)
 				remove(fname.c_str()); 
 		}
 	}
@@ -233,7 +233,7 @@ kmer_Set_Light*  Reindeer_Index<T>::load_rle_index(vector<unsigned char*> &compr
 	//~ print_Reindeer();
 	kmer_Set_Light* ksl= new kmer_Set_Light(reindeer_index_files + "/reindeer_index.gz");
 	do_coloring(ksl, compr_monotig_color, compr_monotig_color_sizes);
-	if (DELE_MONOTIG_FILE)
+	if (dele_monotig_file)
 	{
 		string cmd("rm -rf " + reindeer_index_files +"/monotig_files"); 
 		int sysRet(system(cmd.c_str()));
@@ -273,7 +273,7 @@ void Reindeer_Index<T>::build_index(kmer_Set_Light* ksl)
 	else 
 	{
 		cerr << "[Warning] monotig files (monotig_files) were found in output dir, I will use them and I won't delete them" << endl;
-		DELE_MONOTIG_FILE = false;
+		//~ DELE_MONOTIG_FILE = false;
 		//~ if (not exists_test(output +"/reindeer_index.gz"))
 		if (not exists_test(index_file))
 		{
@@ -313,7 +313,7 @@ void Reindeer_Index<T>::build_index(kmer_Set_Light* ksl)
 	high_resolution_clock::time_point t4 = high_resolution_clock::now();
 	duration<double> time_span34 = duration_cast<duration<double>>(t4 - t3);
 	cout<<"Matrix done: "<< time_span34.count() << " seconds."<<endl;
-	if (DELE_MONOTIG_FILE)
+	if (dele_monotig_file)
 	{
 		//~ string cmd("rm -r " + output +"/monotig_files"); 
 		string cmd("rm -r " + monotig_files); 
