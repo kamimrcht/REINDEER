@@ -33,7 +33,7 @@ uint m3(5);
 char ch;
 string query, fof(""), color_load_file(""), output_bcalm("bcalm_out"), output_union_bcalm("bcalm_union_out"), output("");
 uint k(31), threads(1);
-bool record_counts(true), quantize(false), do_query_on_disk(false), bcalm(false), do_Index(false), do_Query(false), PE(false), do_log(false), keep_tmp(false);
+bool record_counts(true), quantize(false), do_query_on_disk(true), bcalm(false), do_Index(false), do_Query(false), PE(false), do_log(false), keep_tmp(false);
 uint threshold(40);
 
 void PrintHelp()
@@ -53,7 +53,7 @@ void PrintHelp()
                                                           "--nocount               :     Only compute presence/absence, not abundance\n"
                                                           "--bcalm                 :     Launch bcalm on each single read dataset\n"
                                                           "--paired-end            :     Index using paired-end files (provide pairs of files one after another in the fof). Works only with --bcalm.\n"
-                                                          "--disk-query            :     Index for on-disk query (default: in-memory). To be used for large indexes that won't fit in RAM.\n"
+                                                          "--mem-query            :     Index for in-memory query (default: on-disk). To be used for very large query batches if the index fits in RAM.\n"
                                                           "--quantization          :     Quantize the abundances in bins (to use only with --count).\n"
                                                           "--log-count             :     Record the log of the counts, gives approximate counts that save space (to use only with --count).\n"
                                                           "      * Output options\n"
@@ -160,7 +160,7 @@ void ProcessArgs(int argc, char** argv)
             bcalm = true;
             break;
         case 'd':
-            do_query_on_disk = true;
+            do_query_on_disk = false;
             break;
         case 'h': // -h or --help
         case '?': // Unrecognized option
@@ -242,7 +242,7 @@ int main(int argc, char** argv)
                 return 0;
             }
             //~ reindeer_query(color_load_file, output_query,  threshold,   query, threads,  do_query_on_disk);
-            Reindeer_Index<uint16_t> reindeer_index(color_load_file, output_query, threshold, query, threads, do_query_on_disk, !(keep_tmp));
+            Reindeer_Index<uint16_t> reindeer_index(color_load_file, output_query, threshold, query, threads, !(keep_tmp));
         }
     }
     return 0;

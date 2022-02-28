@@ -129,13 +129,16 @@ void Reindeer_Index<T>::write_eq_class_matrix(vector<ofstream*>& all_files, ofst
     long nb_eq_class(prev_pos + 1);
     cout << "Number of equivalence classes found: " << prev_pos + 1 << endl;
     //~ zstr::ofstream * out_position =  new zstr::ofstream(output + "/reindeer_matrix_eqc_position.gz");
-    zstr::ofstream* out_position = new zstr::ofstream(matrix_eqc_position_file);
+    //~ zstr::ofstream* out_position = new zstr::ofstream(matrix_eqc_position_file);
+    ofstream out_position(matrix_eqc_position_file);
     uint nb(0);
     for (uint i(0); i < final_positions.size(); ++i) {
-        out_position->write(reinterpret_cast<char*>(&final_positions[i]), sizeof(long));
+        //~ out_position->write(reinterpret_cast<char*>(&final_positions[i]), sizeof(long));
+        out_position.write(reinterpret_cast<char*>(&final_positions[i]), sizeof(long));
         ++nb;
     }
-    delete out_position;
+    //~ delete out_position;
+    out_position.close();
     out_info->write(reinterpret_cast<char*>(&nb_eq_class), sizeof(long));
     out_info->write(reinterpret_cast<char*>(&nb_colors), sizeof(uint64_t));
 

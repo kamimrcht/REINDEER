@@ -75,6 +75,7 @@ void Reindeer_Index<T>::read_info()
     info_file.read(reinterpret_cast<char*>(&record_option), sizeof(uint));
     info_file.read(reinterpret_cast<char*>(&nb_eq_class), sizeof(long));
     info_file.read(reinterpret_cast<char*>(&nb_colors), sizeof(uint64_t));
+    info_file.read(reinterpret_cast<char*>(&do_query_on_disk), sizeof(bool));
     if (record_option == 1) {
         record_counts = true;
     }
@@ -82,13 +83,12 @@ void Reindeer_Index<T>::read_info()
 
 // constructor for query
 template <class T>
-Reindeer_Index<T>::Reindeer_Index(string& poutput, string& poutput_query, uint threshold, string& query, uint pthreads, bool pdo_query_on_disk, bool dele_tmp)
+Reindeer_Index<T>::Reindeer_Index(string& poutput, string& poutput_query, uint threshold, string& query, uint pthreads, bool dele_tmp)
 {
     color_load_file = poutput;
     reindeer_index_files = poutput;
     output = poutput_query;
     threads = pthreads;
-    do_query_on_disk = pdo_query_on_disk;
     // QUERY //
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
     //check if loading directory exists and all reindeer files are present
