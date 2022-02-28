@@ -50,11 +50,8 @@ void get_header_monotig_file(zstr::ifstream& in, string& header)
     trash = new unsigned char[5];
     in.read((char*)trash, 5); // ">" and minimizer
     delete[] trash;
-    //~ cout << "position in file: " << in.tellg() << endl;
-    //~ cout << "header capacity: " << header.capacity() << " header size before: " << header.size() << endl;
     in.read(reinterpret_cast<char*>(&compressed_header_size), sizeof(unsigned)); // size of colors/counts with rle
     header.append(reinterpret_cast<char*>(&compressed_header_size), sizeof(unsigned));
-    //~ cout << "header capacity: " << header.capacity() << " header size before: " << header.size() << endl;
     if (header.capacity() < sizeof(unsigned) + compressed_header_size)
         header.reserve(header.size() + sizeof(unsigned) + compressed_header_size + 1024); //todo ok ?
     header.resize(sizeof(unsigned) + compressed_header_size);
@@ -158,6 +155,7 @@ void Reindeer_Index<T>::write_matrix_in_bucket_files(kmer_Set_Light* ksl, vector
         remove(&name[0]);
         delete all_files[i];
     }
+    out_info.write(reinterpret_cast<char*>(&do_query_on_disk), sizeof(bool));
     out_info.close();
 }
 
@@ -273,7 +271,6 @@ void Reindeer_Index<T>::build_index(kmer_Set_Light* ksl)
     duration<double> time_span34 = duration_cast<duration<double>>(t4 - t3);
     cout << "Matrix done: " << time_span34.count() << " seconds." << endl;
     if (dele_monotig_file) {
-        //~ string cmd("rm -r " + output +"/monotig_files");
         string cmd("rm -r " + monotig_files);
         int sysRet(system(cmd.c_str()));
     }

@@ -79,7 +79,7 @@ public:
 
     //constructor
     Reindeer_Index(uint pk, string& pfof, bool precord_counts, string& preindeer_index_files, uint pthreads, bool pdo_query_on_disk, bool pquantize, bool pdo_log, uint pm1, uint pm3, bool dele_tmp);
-    Reindeer_Index(string& output, string& output_query, uint threshold, string& query, uint threads, bool do_query_on_disk, bool dele_tmp);
+    Reindeer_Index(string& output, string& output_query, uint threshold, string& query, uint threads, bool dele_tmp);
     void print_Reindeer();
 
     void build_index(kmer_Set_Light* ksl);
