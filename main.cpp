@@ -1,5 +1,6 @@
 #include "src/launch_bcalm.hpp"
 #include "src/reindeer.hpp"
+#include "src/utils.hpp"
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -31,7 +32,7 @@ uint m1(10);
 uint m3(5);
 
 char ch;
-string query, fof(""), color_load_file(""), output_bcalm("bcalm_out"), output_union_bcalm("bcalm_union_out"), output("");
+string query, fof(""), color_load_file(""), output_bcalm("bcalm_out"), output_union_bcalm("bcalm_union_out"), output("reindeer_index_files");
 uint k(31), threads(1);
 bool record_counts(true), quantize(false), do_query_on_disk(true), bcalm(false), do_Index(false), do_Query(false), PE(false), do_log(false), keep_tmp(false);
 uint threshold(40);
@@ -171,9 +172,12 @@ void ProcessArgs(int argc, char** argv)
     }
 }
 
+
 int main(int argc, char** argv)
 {
+	
     int systRet;
+    string rno(get_run_tag());
     ProcessArgs(argc, argv);
     cout << "############# REINDEER version " << version << " #############" << endl
          << "Command line was: ";
@@ -181,10 +185,7 @@ int main(int argc, char** argv)
         cout << argv[i] << ' ';
     cout << endl
          << endl;
-    string reindeer_index_files(output);
-    if (not dirExists(reindeer_index_files)) {
-        systRet = system(("mkdir " + reindeer_index_files).c_str());
-    }
+    
     if ((do_Index and do_Query) or not(do_Index or do_Query)) {
         cout << "You must choose: either indexing (--index) or querying (--query)\n"
              << endl;
@@ -199,6 +200,14 @@ int main(int argc, char** argv)
             PrintHelp();
             return 0;
         }
+        string reindeer_index_files;
+        if (output == "reindeer_index_files")
+			reindeer_index_files = output + "_" + rno;
+		else
+			reindeer_index_files = output;
+		if (not dirExists(reindeer_index_files)) {
+          systRet = system(("mkdir " + reindeer_index_files ).c_str());
+		}
         if (bcalm) {
             cout << "Computing De Bruijn graphs on each dataset using Bcalm2...\n\n"
                  << endl;
@@ -215,7 +224,8 @@ int main(int argc, char** argv)
              << endl;
         Reindeer_Index<uint16_t> reindeer_index(k, fof, record_counts, reindeer_index_files, threads, do_query_on_disk, quantize, do_log, m1, m3, !(keep_tmp));
         //~ reindeer_index(k, fof, color_dump_file, record_counts, output, cl, threads,  do_query_on_disk, quantize, do_log, m1, m3);
-        cout << "INDEX BUILDING = THE END" << endl;
+        cout << "Reindeer index files written in " << reindeer_index_files << endl;
+        cout << "INDEX BUILDING = THE END." << endl;
     } else {
         if (color_load_file.empty()) {
             cout << "Missing argument -l" << endl;
@@ -241,7 +251,6 @@ int main(int argc, char** argv)
                 cerr << "[ERROR] REINDEER index directory is missing (or path in -l is wrong). Stopped." << endl;
                 return 0;
             }
-            //~ reindeer_query(color_load_file, output_query,  threshold,   query, threads,  do_query_on_disk);
             Reindeer_Index<uint16_t> reindeer_index(color_load_file, output_query, threshold, query, threads, !(keep_tmp));
         }
     }

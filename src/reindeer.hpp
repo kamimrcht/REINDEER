@@ -60,6 +60,9 @@ public:
     uint64_t nb_colors; // number of samples
     uint64_t nb_monotig;
     long nb_eq_class;
+    
+    vector<unsigned char*> compressed_monotig_color;
+    vector<unsigned> compressed_monotig_color_sizes;
 
     //files
     string reindeer_index_files;
@@ -84,29 +87,13 @@ public:
 
     void build_index(kmer_Set_Light* ksl);
     void read_info();
-    void do_coloring(kmer_Set_Light* ksl, vector<unsigned char*>& compr_monotig_color, vector<unsigned>& compr_monotig_color_size);
-    kmer_Set_Light* load_rle_index(vector<unsigned char*>& compr_monotig_color, vector<unsigned>& compr_monotig_color_sizes);
-    void write_matrix_in_bucket_files(kmer_Set_Light* ksl, vector<unsigned char*>& compressed_colors, vector<unsigned>& compressed_colors_size);
+    void do_coloring(kmer_Set_Light* ksl);
+    kmer_Set_Light* load_rle_index();
+    void write_matrix_in_bucket_files(kmer_Set_Light* ksl);
     void write_eq_class_matrix(vector<ofstream*>& all_files, ofstream* out_info);
 
-    //~ Reindeer_Index()
-    //~ {
-    //~ high_resolution_clock::time_point t1 = high_resolution_clock::now();
-    //~ kmer_Set_Light ksl(k,m1,m2,m3,threads,bit);
-    //~ int systemRet;
-    //~ // BUILD THE INDEX
-    //~ nb_colors = get_color_number(fof);
-    //~ build_index(k, m1, m2, m3, bit, color_load_file, color_dump_file, fof, record_counts, &ksl, threads,  output, do_query_on_disk, quantize, do_log, nb_colors);
-    //~ high_resolution_clock::time_point t12 = high_resolution_clock::now();
-    //~ duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
-    //~ cout<<"Index building and Coloration done total: "<< time_span12.count() << " seconds."<<endl;
-    //~ uint64_t mem(getMemorySelfMaxUsed());
-    //~ cout<<"Max Memory used: "<< mem  << endl;
-    //~ }
 };
 
-//~ void reindeer_index(uint k, string& fof,  string& color_dump_file, bool record_counts,  string& output, string& color_load_file, uint threads,  bool do_query_on_disk, bool quantize, bool do_log, uint m1, uint m3);
-uint reindeer_query(string& output, string& output_query, uint threshold, string& query, uint threads, bool do_query_on_disk);
 template class Reindeer_Index<uint8_t>;
 template class Reindeer_Index<uint16_t>;
 #endif

@@ -3,6 +3,7 @@
 #include "../blight/zstr.hpp"
 #include <algorithm>
 #include <chrono>
+#include <iomanip>
 #include <cmath>
 #include <ctime>
 #include <ctype.h>
@@ -32,6 +33,8 @@
 #define UTILS
 
 using namespace std;
+
+string get_run_tag();
 
 uint64_t getMemorySelfUsed();
 uint64_t getMemorySelfMaxUsed();

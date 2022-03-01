@@ -99,13 +99,11 @@ Reindeer_Index<T>::Reindeer_Index(string& poutput, string& poutput_query, uint t
     dele_monotig_file = dele_tmp;
 
     read_info();
-    vector<unsigned char*> compr_monotig_color;
-    vector<unsigned> compr_monotig_color_sizes;
     cout << "\n#Loading index..." << endl;
     std::ofstream index_loading_semaphore(reindeer_index_files + "/index_loading"); // begin semaphore
     //~ long eq_class_nb(0);
     bool quantize = false, log = false;
-    kmer_Set_Light* ksl = load_rle_index(compr_monotig_color, compr_monotig_color_sizes);
+    kmer_Set_Light* ksl = load_rle_index();
     vector<long> position_in_file;
     //~ string position_file_name(matrix_name + "_position");
     get_position_vector_query_disk(position_in_file, matrix_eqc_position_file, nb_monotig);
@@ -115,7 +113,7 @@ Reindeer_Index<T>::Reindeer_Index(string& poutput, string& poutput_query, uint t
     std::remove(string(output + "/index_loading").c_str()); // end semaphore
     cout << "\n#Computing query..." << endl;
     high_resolution_clock::time_point tnew = high_resolution_clock::now();
-    perform_query(*ksl, nb_colors, k, record_counts, threshold, query, output, threads, compr_monotig_color, compr_monotig_color_sizes, do_query_on_disk, matrix_name, nb_eq_class, nb_monotig, position_in_file);
+    perform_query(*ksl, nb_colors, k, record_counts, threshold, query, output, threads, compressed_monotig_color, compressed_monotig_color_sizes, do_query_on_disk, matrix_name, nb_eq_class, nb_monotig, position_in_file);
     high_resolution_clock::time_point tnew2 = high_resolution_clock::now();
     duration<double> time_spannew2 = duration_cast<duration<double>>(tnew2 - tnew);
     cout << "Querying sequences took " << time_spannew2.count() << " seconds in total." << endl;
