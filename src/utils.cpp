@@ -19,8 +19,7 @@ string get_run_tag()
     oss << std::put_time(&tm, "%d-%m-%Y %H-%M-%S");
     string timestr = oss.str();
     vector<string> splitdate(split_utils(timestr, ' '));
-    cout << rno + timestr <<endl;
-    return rno + splitdate[0];
+    return splitdate[0] + "_" + rno ;
 }
 
 void get_all_blout(string& path, vector<string>& files)
@@ -350,35 +349,7 @@ void parse_bgreat_output(string& input, vector<vector<uint64_t>>& unitigs_to_nod
     }
 }
 
-//~ uint16_t revhash ( uint32_t x ) {
-//~ x = ( ( x >> 16 ) ^ x ) * 0x2c1b3c6d;
-//~ x = ( ( x >> 16 ) ^ x ) * 0x297a2d39;
-//~ x = ( ( x >> 16 ) ^ x ) * 0x64ea2d65;
-//~ x = ( ( x >> 16 ) ^ x );
-//~ return x;
-//~ }
 
-//~ vector<uint16_t> RLE16C(const vector<uint16_t>&V){
-//~ vector<uint16_t> res;
-//~ if(V.empty()){return res;}
-//~ uint16_t pred(V[0]);
-//~ uint64_t count(1);
-//~ for(uint64_t i(1);i<V.size();++i){
-//~ if(V[i]==pred){
-//~ count++;
-//~ }else{
-//~ res.push_back(pred);
-//~ res.push_back(count);
-//~ count=1;
-//~ pred=V[i];
-//~ }
-//~ }
-//~ res.push_back(pred);
-//~ res.push_back(count);
-//~ return res;
-//~ }
-
-//~ vector<uint8_t> RLE16C(const vector<uint16_t>&V){
 vector<unsigned char> RLE16C(const vector<uint16_t>& V)
 {
     vector<unsigned char> res;
@@ -423,9 +394,6 @@ vector<uint16_t> RLE16D(const vector<uint8_t>& V)
     for (uint64_t i(0); i < V.size(); i += 3) {
         res.resize(V[i + 2], V[i] * 256 + V[i + 1]);
     }
-    //~ for (auto && k : res)
-    //~ cout << k <<  " ";
-    //~ cout << endl;
     return res;
 }
 

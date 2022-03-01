@@ -3,7 +3,6 @@
 #include "../blight/strict_fstream.hpp"
 #include "../blight/zstr.hpp"
 #include "build_index.hpp"
-#include "query.hpp"
 #include "utils.hpp"
 #include <algorithm>
 #include <chrono>
@@ -91,6 +90,11 @@ public:
     kmer_Set_Light* load_rle_index();
     void write_matrix_in_bucket_files(kmer_Set_Light* ksl);
     void write_eq_class_matrix(vector<ofstream*>& all_files, ofstream* out_info);
+    
+    //query
+    void perform_query(kmer_Set_Light& ksl,  uint threshold, string& query, vector<long>& position_in_file);
+    void get_position_vector_query_disk(vector<long>& position_in_file);
+
 
 };
 

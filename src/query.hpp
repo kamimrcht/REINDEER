@@ -31,6 +31,7 @@
 #include "../trle/trle.h"
 #include "../blight/blight.h"
 #include "utils.hpp"
+#include "reindeer.hpp"
 
 
 #ifndef QQ
@@ -51,8 +52,6 @@ vector<uint16_t> get_count_monotig(unsigned char* monotig_counts, unsigned vecto
 
 
 
-void get_position_vector_query_disk(vector<long>& position_in_file, string& position_file_name, uint64_t nb_monotig);
-//~ void get_matrix_line_query_disk(int64_t rank, unsigned char* color, unsigned& line_size, long position_in_matrix, ifstream& in );
 long get_matrix_line_query_disk(int64_t rank, unsigned char* color, unsigned& line_size, vector<long>& position_in_file, ifstream& in );
 
 
@@ -78,6 +77,5 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t& color_n
 void query_by_file(uint& counter, string& entry, kmer_Set_Light& ksl, uint64_t& color_number,   uint k, bool record_counts,  uint threshold,  string& output, uint nb_threads,  vector<unsigned char*>& compr_monotig_color, vector<unsigned >& compr_monotig_color_size, bool do_query_on_disk, string& rd_file, long eq_class_nb, uint64_t	 nb_monotig, 	vector<long>& position_in_file);
 
 
-void perform_query(kmer_Set_Light& ksl, uint64_t& color_number,  uint k, bool record_counts, uint threshold,  string& query, string& output, uint nb_threads, vector<unsigned char*>& compr_monotig_color,  vector<unsigned>& compr_monotig_color_size, bool do_query_on_disk, string& rd_file, long eq_class_nb, uint64_t nb_monotig, 	vector<long>& position_in_file);
 
 #endif
