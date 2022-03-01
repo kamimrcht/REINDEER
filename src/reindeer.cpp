@@ -3,12 +3,6 @@
 using namespace std;
 using namespace chrono;
 
-// MPHF options
-
-//~ uint m2(10);
-//~ uint c(1);
-//~ uint bit(0);
-//~ uint ex(0);
 
 // constructor for index construction
 template <class T>
@@ -105,15 +99,14 @@ Reindeer_Index<T>::Reindeer_Index(string& poutput, string& poutput_query, uint t
     bool quantize = false, log = false;
     kmer_Set_Light* ksl = load_rle_index();
     vector<long> position_in_file;
-    //~ string position_file_name(matrix_name + "_position");
-    get_position_vector_query_disk(position_in_file, matrix_eqc_position_file, nb_monotig);
+    get_position_vector_query_disk(position_in_file);
     high_resolution_clock::time_point t12 = high_resolution_clock::now();
     duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
     cout << "Index loading total: " << time_span12.count() << " seconds." << endl;
     std::remove(string(output + "/index_loading").c_str()); // end semaphore
     cout << "\n#Computing query..." << endl;
     high_resolution_clock::time_point tnew = high_resolution_clock::now();
-    perform_query(*ksl, nb_colors, k, record_counts, threshold, query, output, threads, compressed_monotig_color, compressed_monotig_color_sizes, do_query_on_disk, matrix_name, nb_eq_class, nb_monotig, position_in_file);
+    perform_query(*ksl, threshold, query, position_in_file);
     high_resolution_clock::time_point tnew2 = high_resolution_clock::now();
     duration<double> time_spannew2 = duration_cast<duration<double>>(tnew2 - tnew);
     cout << "Querying sequences took " << time_spannew2.count() << " seconds in total." << endl;

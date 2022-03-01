@@ -26,19 +26,17 @@ vector<uint16_t> get_count_monotig(unsigned char* monotig_counts, unsigned vecto
     return counts;
 }
 
-void get_position_vector_query_disk(vector<long>& position_in_file, string& position_file_name, uint64_t nb_monotig)
+template <class T>
+void Reindeer_Index<T>::get_position_vector_query_disk(vector<long>& position_in_file)
 {
-    //~ zstr::ifstream* in = new zstr::ifstream(position_file_name); //positions file
-    ifstream in(position_file_name); //positions file
+    ifstream in(matrix_eqc_position_file); //positions file
     long position;
     uint nb(0);
     while (nb < nb_monotig) {
-        //~ in->read(reinterpret_cast<char*>(&position), sizeof(long));
         in.read(reinterpret_cast<char*>(&position), sizeof(long));
         position_in_file.push_back(position);
         ++nb;
     }
-    //~ delete in;
     in.close();
 }
 
@@ -66,7 +64,6 @@ void get_colors_counts_query_eq_classes(vector<int64_t>& kmer_ids, uint64_t colo
     unsigned char* color;
     color = new unsigned char[2 * color_number + 1204];
     unsigned size;
-    //uint count(0);
     int64_t lastId(-1);
     vector<uint16_t> qcounts, lastV;
     vector<uint8_t> qcolors;
@@ -161,14 +158,7 @@ vector<uint> write_count_output(bool record_counts, vector<vector<uint16_t>>& qu
             if (val_str == "0")
                 val_str = "*";
             if (c == 0) {
-                //~ if (query_counts[c][color] == 0 and c == 0)
-                //~ {
-                //~ coords.push_back({{0,0},"*"});
-                //~ }
-                //~ else
-                //~ {
                 coords.push_back({ { 0, 0 }, val_str });
-                //~ }
             } else {
 
                 if (val_str == coords.back().second) {
@@ -178,14 +168,8 @@ vector<uint> write_count_output(bool record_counts, vector<vector<uint16_t>>& qu
                     coords.push_back({ { new_coord, new_coord }, val_str });
                 }
             }
-
             nc = to_string(query_counts[c][color]);
         }
-        //~ if (coords.size() >0 )
-        //~ {
-        //~ coords.back().first.second = query_counts.size() + k_size - 1;
-        //~ coords.back().first.second --;
-        //~ }
         uint cov_positions(query_counts.size() + k_size - 1);
         for (auto&& coo : coords) {
             out_str += to_string(coo.first.first) + "-" + to_string(coo.first.second) + ":" + coo.second + ",";
@@ -200,7 +184,6 @@ vector<uint> write_count_output(bool record_counts, vector<vector<uint16_t>>& qu
             cov_positions = 0; // otherwise it is set to k-1 which means nothing
         }
         color_counts.push_back(out_str);
-        //~ cout << cov_positions * 100/ (query_counts.size() + k_size - 1)<< endl;
         covered_positions.push_back(cov_positions * 100 / (query_counts.size() + k_size - 1));
     }
     return covered_positions;
@@ -305,14 +288,15 @@ void query_by_file(uint& counter, string& entry, kmer_Set_Light& ksl, uint64_t& 
     counter++;
 }
 
-void perform_query(kmer_Set_Light& ksl, uint64_t& color_number, uint k, bool record_counts, uint threshold, string& query, string& output, uint nb_threads, vector<unsigned char*>& compr_monotig_color, vector<unsigned>& compr_monotig_color_size, bool do_query_on_disk, string& rd_file, long eq_class_nb, uint64_t nb_monotig, vector<long>& position_in_file)
+template <class T>
+void Reindeer_Index<T>::perform_query(kmer_Set_Light& ksl,  uint threshold, string& query, vector<long>& position_in_file)
 {
     uint counter(0), patience(0);
     string entry;
     if (not query.empty()) {
         if (exists_test(query)) {
             high_resolution_clock::time_point t121 = high_resolution_clock::now();
-            query_by_file(counter, query, ksl, color_number, k, record_counts, threshold, output, nb_threads, compr_monotig_color, compr_monotig_color_size, do_query_on_disk, rd_file, eq_class_nb, nb_monotig, position_in_file);
+            query_by_file(counter, query, ksl, nb_colors, k, record_counts, threshold, output, threads, compressed_monotig_color, compressed_monotig_color_sizes, do_query_on_disk, matrix_name, nb_eq_class, nb_monotig, position_in_file);
             high_resolution_clock::time_point t13 = high_resolution_clock::now();
             duration<double> time_span13 = duration_cast<duration<double>>(t13 - t121);
             cout << "Query done: " << time_span13.count() << " seconds." << endl;
@@ -350,7 +334,7 @@ void perform_query(kmer_Set_Light& ksl, uint64_t& color_number, uint k, bool rec
                     }
                     cout << "Queried file: " << entry << " option -P: " << thresh << endl;
                     high_resolution_clock::time_point t121 = high_resolution_clock::now();
-                    query_by_file(counter, entry, ksl, color_number, k, record_counts, thresh, output, nb_threads, compr_monotig_color, compr_monotig_color_size, do_query_on_disk, rd_file, eq_class_nb, nb_monotig, position_in_file);
+                    query_by_file(counter, entry, ksl, nb_colors, k, record_counts, thresh, output, threads, compressed_monotig_color, compressed_monotig_color_sizes, do_query_on_disk, matrix_name, nb_eq_class, nb_monotig, position_in_file);
                     memset(str, 0, 255);
                     high_resolution_clock::time_point t13 = high_resolution_clock::now();
                     duration<double> time_span13 = duration_cast<duration<double>>(t13 - t121);
