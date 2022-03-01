@@ -119,7 +119,6 @@ void throw_empty_issue()
     cerr << "[Warning] Query file contains empty lines. Please amend it before querying REINDEER" << endl;
 }
 
-
 vector<string> getLineFasta_buffer2(ifstream* in, uint stop, uint k)
 {
     vector<string> lines;
@@ -153,6 +152,7 @@ vector<string> getLineFasta_buffer2(ifstream* in, uint stop, uint k)
         {
             while (c != '>' and c != EOF) {
                 getline(*in, line); // get sequence
+                transform(line.begin(), line.end(), line.begin(), ::toupper);
                 if (line.empty()) {
                     throw_empty_issue();
                     break;
@@ -516,7 +516,6 @@ string getRealPath(string file, string& dir)
     return rp + "/" + file;
 }
 
-
 // count the number of datasets in the fof
 // store their names for the query output
 uint64_t get_color_number(string& fof, string& output)
@@ -541,11 +540,11 @@ uint64_t get_color_number(string& fof, string& output)
 
 void init_outputfile(string& toW, string& fof)
 {
-	string line;
-	ifstream fof_file(fof);
-	while (not fof_file.eof()) {
-		getline(fof_file, line);
-		break;
-	}
-	toW += "query " + line;
+    string line;
+    ifstream fof_file(fof);
+    while (not fof_file.eof()) {
+        getline(fof_file, line);
+        break;
+    }
+    toW += "query " + line;
 }
