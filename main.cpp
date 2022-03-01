@@ -172,10 +172,9 @@ void ProcessArgs(int argc, char** argv)
     }
 }
 
-
 int main(int argc, char** argv)
 {
-	
+
     int systRet;
     string rno(get_run_tag());
     ProcessArgs(argc, argv);
@@ -185,7 +184,7 @@ int main(int argc, char** argv)
         cout << argv[i] << ' ';
     cout << endl
          << endl;
-    
+
     if ((do_Index and do_Query) or not(do_Index or do_Query)) {
         cout << "You must choose: either indexing (--index) or querying (--query)\n"
              << endl;
@@ -202,12 +201,12 @@ int main(int argc, char** argv)
         }
         string reindeer_index_files;
         if (output == "reindeer_index_files")
-			reindeer_index_files = output + "_" + rno;
-		else
-			reindeer_index_files = output;
-		if (not dirExists(reindeer_index_files)) {
-          systRet = system(("mkdir " + reindeer_index_files ).c_str());
-		}
+            reindeer_index_files = output + "_" + rno;
+        else
+            reindeer_index_files = output;
+        if (not dirExists(reindeer_index_files)) {
+            systRet = system(("mkdir " + reindeer_index_files).c_str());
+        }
         if (bcalm) {
             cout << "Computing De Bruijn graphs on each dataset using Bcalm2...\n\n"
                  << endl;

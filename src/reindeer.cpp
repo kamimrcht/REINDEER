@@ -3,7 +3,6 @@
 using namespace std;
 using namespace chrono;
 
-
 // constructor for index construction
 template <class T>
 Reindeer_Index<T>::Reindeer_Index(uint pk, string& pfof, bool precord_counts, string& preindeer_index_files, uint pthreads, bool pdo_query_on_disk, bool pquantize, bool pdo_log, uint pm1, uint pm3, bool dele_tmp)
