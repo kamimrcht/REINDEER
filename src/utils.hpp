@@ -85,7 +85,7 @@ uint64_t harmonic_mean(vector<uint64_t>& counts);
 
 string getRealPath(string file, string& dir);
 
-uint64_t get_color_number(string& fof);
+uint64_t get_color_number(string& fof, string& output);
 
 void get_all_blout(string& path, vector<string>& files);
 
@@ -96,5 +96,6 @@ vector<uint16_t> count_string_to_count_vector(unsigned char* count_char_monotig,
 
 // convert char [] counts/colors to uint
 vector<uint8_t> count_string_to_count_vector8(unsigned char* count_char_monotig, unsigned size);
+void init_outputfile(string& toW, string& fof);
 
 #endif
