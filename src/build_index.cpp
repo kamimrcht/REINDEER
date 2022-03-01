@@ -5,7 +5,6 @@
 using namespace chrono;
 using namespace std;
 
-//~ bool DELE_MONOTIG_FILE(true);
 
 // read colors from bcalm headers
 vector<uint8_t> get_colors_monotigs(string& line)
@@ -61,12 +60,11 @@ void get_header_monotig_file(zstr::ifstream& in, string& header)
 
 // dispatch count vectors in files. Similar counts go in similar files
 template <class T>
-void Reindeer_Index<T>::write_matrix_in_bucket_files(kmer_Set_Light* ksl, vector<unsigned char*>& compressed_colors, vector<unsigned>& compressed_colors_size)
+void Reindeer_Index<T>::write_matrix_in_bucket_files(kmer_Set_Light* ksl)
 {
     //create bucket files for partitionning the compressed counts -> finding eq classes
     vector<ofstream*> all_files;
     for (uint i(0); i < 1000; ++i) {
-        //~ ofstream* out = new ofstream(output + "/matrix_bucket_"+ to_string(i) + ".gz");
         ofstream* out = new ofstream(reindeer_index_files + "/matrix_bucket_" + to_string(i) + ".gz");
         all_files.push_back(out);
     }
@@ -75,8 +73,6 @@ void Reindeer_Index<T>::write_matrix_in_bucket_files(kmer_Set_Light* ksl, vector
     vector<string> monotig_files_names;
     string monotig_folder(monotig_files + "/");
     get_all_blout(monotig_folder, monotig_files_names); //todo .lz4
-    //~ uint64_t nb_monotigs(0);
-    //~ ofstream out_info(output  + "/reindeer_matrix_eqc_info");
     ofstream out_info(matrix_eqc_info_file);
     mutex mm;
     uint nb_treated_monotigs(0);
@@ -87,7 +83,6 @@ void Reindeer_Index<T>::write_matrix_in_bucket_files(kmer_Set_Light* ksl, vector
         string fname;
         fname = monotig_files_names[i];
         if (fname != "." and fname != "..") {
-            //~ fname = output + "/monotig_files/" + fname;
             fname = monotig_files + "/" + fname;
             zstr::ifstream monotigs_file(fname);
             if (not exists_test(fname)) {
@@ -99,7 +94,6 @@ void Reindeer_Index<T>::write_matrix_in_bucket_files(kmer_Set_Light* ksl, vector
             vector<uint8_t> colors;
             string header(5, ' '), monotig, buffer;
             header.reserve(4096);
-            //~ unsigned char *in = nullptr;
             // record count vector for each monotig at index given by the mphf
             monotigs_file.peek();
             while (not monotigs_file.eof()) {
@@ -150,7 +144,6 @@ void Reindeer_Index<T>::write_matrix_in_bucket_files(kmer_Set_Light* ksl, vector
     write_eq_class_matrix(all_files, &out_info);
     // remove bucket files
     for (uint i(0); i < all_files.size(); ++i) {
-        //~ string name(output + "/matrix_bucket_"+ to_string(i) + ".gz");
         string name(reindeer_index_files + "/matrix_bucket_" + to_string(i) + ".gz");
         remove(&name[0]);
         delete all_files[i];
@@ -161,8 +154,7 @@ void Reindeer_Index<T>::write_matrix_in_bucket_files(kmer_Set_Light* ksl, vector
 
 // color using monotig file: either build and dump the color matrix during the index construction, or load it during the query
 template <class T>
-void Reindeer_Index<T>::do_coloring(kmer_Set_Light* ksl, vector<unsigned char*>& compr_monotig_color, vector<unsigned>& compr_monotig_color_size)
-//~ void do_coloring(string& color_load_file, string& color_dump_file, string& fof, kmer_Set_Light* ksl, bool record_counts, uint k, uint nb_threads,  string& output, vector<unsigned char*>& compr_monotig_color,vector<unsigned>& compr_monotig_color_size, bool do_query_on_disk,  long& nb_eq_class, uint64_t& nb_colors, bool quantize, bool log)
+void Reindeer_Index<T>::do_coloring(kmer_Set_Light* ksl)
 {
     vector<string> file_names;
     if (not color_load_file.empty()) //query
@@ -170,7 +162,7 @@ void Reindeer_Index<T>::do_coloring(kmer_Set_Light* ksl, vector<unsigned char*>&
         if (not do_query_on_disk) {
             uint64_t color_number;
             uint64_t monotig_number;
-            compr_monotig_color = load_compressed_vectors(color_load_file, compr_monotig_color_size, color_number, monotig_number, nb_eq_class);
+            compressed_monotig_color = load_compressed_vectors(color_load_file, compressed_monotig_color_sizes, color_number, monotig_number, nb_eq_class);
         }
     } else //indexing
     {
@@ -191,17 +183,16 @@ void Reindeer_Index<T>::do_coloring(kmer_Set_Light* ksl, vector<unsigned char*>&
             cerr << "[ERROR] File of file problem" << endl;
         }
 
-        write_matrix_in_bucket_files(ksl, compr_monotig_color, compr_monotig_color_size);
+        write_matrix_in_bucket_files(ksl);
     }
 }
 
 // load dumped index(+colors)
 template <class T>
-kmer_Set_Light* Reindeer_Index<T>::load_rle_index(vector<unsigned char*>& compr_monotig_color, vector<unsigned>& compr_monotig_color_sizes)
+kmer_Set_Light* Reindeer_Index<T>::load_rle_index()
 {
-    //~ print_Reindeer();
     kmer_Set_Light* ksl = new kmer_Set_Light(reindeer_index_files + "/reindeer_index.gz");
-    do_coloring(ksl, compr_monotig_color, compr_monotig_color_sizes);
+    do_coloring(ksl);
     if (dele_monotig_file) {
         string cmd("rm -rf " + reindeer_index_files + "/monotig_files");
         int sysRet(system(cmd.c_str()));
@@ -212,11 +203,9 @@ kmer_Set_Light* Reindeer_Index<T>::load_rle_index(vector<unsigned char*>& compr_
 // build index from new file
 template <class T>
 void Reindeer_Index<T>::build_index(kmer_Set_Light* ksl)
-//~ void Reindeer_Index<T>::build_index(uint k, uint m1,uint m2,uint m3, uint bit, string& color_load_file, string& color_dump_file, string& fof, bool record_counts,  kmer_Set_Light* ksl, uint nb_threads,  string& output, bool do_query_on_disk, bool quantize, bool do_log, uint64_t nb_colors)
 {
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
     bool dont_dump(false);
-    //~ string in_name(reindeer_index_files +"/monotig_files");
     int color_mode;
     if (record_counts)
         if (quantize)
@@ -227,7 +216,6 @@ void Reindeer_Index<T>::build_index(kmer_Set_Light* ksl)
             color_mode = 1;
     else
         color_mode = 0;
-    //~ if (not dirExists(in_name))
     if (not dirExists(monotig_files)) {
         cout << "#Monotigs and index constuction..." << endl;
         // apply monotig merge (-> MMM) with rule regarding colors or counts
@@ -235,11 +223,8 @@ void Reindeer_Index<T>::build_index(kmer_Set_Light* ksl)
         ksl->construct_index_fof(fof, reindeer_index_files, color_mode);
     } else {
         cerr << "[Warning] monotig files (monotig_files) were found in output dir, I will use them and I won't delete them" << endl;
-        //~ DELE_MONOTIG_FILE = false;
-        //~ if (not exists_test(output +"/reindeer_index.gz"))
         if (not exists_test(index_file)) {
             // color 0, count 1, quantize 2, log 3
-            //~ string m_folder(output +"/monotig_files/");
             string m_folder(monotig_files + "/");
             string fof_blout(do_fof(m_folder, reindeer_index_files));
             ksl->construct_index_fof(fof_blout, reindeer_index_files, color_mode); //todo + .lz4
@@ -248,17 +233,12 @@ void Reindeer_Index<T>::build_index(kmer_Set_Light* ksl)
         } else {
             dont_dump = true;
             cerr << "[Warning] index file (reindeer_index.gz) was found in output dir, I will use it and I won't delete it" << endl;
-            //~ ksl = new kmer_Set_Light(output + "/reindeer_index.gz");
             ksl = new kmer_Set_Light(index_file);
         }
     }
-    vector<unsigned char*> compr_monotig_color;
-    vector<unsigned> compr_monotig_color_size;
-    //~ long nb_eq_class(0);
 
     if (!dont_dump) {
         cout << "#Dumping index..." << endl;
-        //~ ksl->dump_disk(output + "/reindeer_index.gz");
         ksl->dump_disk(index_file);
         high_resolution_clock::time_point t2 = high_resolution_clock::now();
         duration<double> time_span12 = duration_cast<duration<double>>(t2 - t1);
@@ -266,7 +246,7 @@ void Reindeer_Index<T>::build_index(kmer_Set_Light* ksl)
     }
     cout << "#Building colors and equivalence classes matrix to be written on disk..." << endl;
     high_resolution_clock::time_point t3 = high_resolution_clock::now();
-    do_coloring(ksl, compr_monotig_color, compr_monotig_color_size);
+    do_coloring(ksl);
     high_resolution_clock::time_point t4 = high_resolution_clock::now();
     duration<double> time_span34 = duration_cast<duration<double>>(t4 - t3);
     cout << "Matrix done: " << time_span34.count() << " seconds." << endl;

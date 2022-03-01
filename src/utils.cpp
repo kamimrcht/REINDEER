@@ -2,6 +2,27 @@
 
 using namespace std;
 
+
+
+
+
+string get_run_tag()
+{
+	srand(time(NULL));
+	int run_no(rand()%10000);
+	stringstream ss_rno;
+	ss_rno << run_no;
+	string rno = ss_rno.str();
+	auto t = std::time(nullptr);
+    auto tm = *std::localtime(&t);
+    std::ostringstream oss;
+    oss << std::put_time(&tm, "%d-%m-%Y %H-%M-%S");
+    string timestr = oss.str();
+    vector<string> splitdate(split_utils(timestr, ' '));
+    cout << rno + timestr <<endl;
+    return rno + splitdate[0];
+}
+
 void get_all_blout(string& path, vector<string>& files)
 {
     DIR* dirp = opendir(path.c_str());
