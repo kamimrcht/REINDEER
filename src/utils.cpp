@@ -119,8 +119,6 @@ void throw_empty_issue()
     cerr << "[Warning] Query file contains empty lines. Please amend it before querying REINDEER" << endl;
 }
 
-//~ void getLineFasta(ifstream* in, string& fasta, string& header) {
-//~ void getLineFasta_buffer(ifstream* in, string& fasta, string& header, uint buffer) {
 string getLineFasta_buffer(ifstream* in)
 {
     string line, result;
@@ -151,29 +149,29 @@ vector<string> getLineFasta_buffer2(ifstream* in, uint stop, uint k)
     c = static_cast<char>(in->peek());
     while (not(i >= stop or in->eof())) {
         ++i;
-        if (c == '>') // header
+        if (c == '>') // this line is a header
         {
-            if (not result.empty()) {
+            if (not result.empty()) { // check the line before (sequence)
                 if (result.size() >= k) {
-                    lines.push_back(result);
+                    lines.push_back(result); // push the sequence
                 } else {
                     lines.pop_back(); //remove last header corresponding to too small sequence
                     throw_size_issue();
                 }
                 result = "";
             }
-            getline(*in, line);
+            getline(*in, line); // read the header
             if (line.empty()) {
                 throw_empty_issue();
                 break;
             };
             c = static_cast<char>(in->peek());
-            lines.push_back(line);
+            lines.push_back(split_utils(line, ' ')[0]); // header pushed back until first space (fasta identifier)
             error = false;
-        } else // sequence
+        } else // this line is a sequence
         {
             while (c != '>' and c != EOF) {
-                getline(*in, line);
+                getline(*in, line); // get sequence
                 if (line.empty()) {
                     throw_empty_issue();
                     break;
@@ -190,7 +188,7 @@ vector<string> getLineFasta_buffer2(ifstream* in, uint stop, uint k)
                         break;
                     } else {
                         if (lines.back()[0] == '>' and (not error))
-                            result += line;
+                            result += line; // add multifasta sequence
                     }
                 }
 
@@ -198,6 +196,7 @@ vector<string> getLineFasta_buffer2(ifstream* in, uint stop, uint k)
             }
         }
     }
+    // last entry (sequence)
     if (not lines.empty()) {
         if (lines.back()[0] == '>') {
             if (not result.empty()) {
