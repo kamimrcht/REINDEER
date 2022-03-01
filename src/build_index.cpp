@@ -5,7 +5,6 @@
 using namespace chrono;
 using namespace std;
 
-
 // read colors from bcalm headers
 vector<uint8_t> get_colors_monotigs(string& line)
 {

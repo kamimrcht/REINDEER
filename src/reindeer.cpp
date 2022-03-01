@@ -93,7 +93,6 @@ Reindeer_Index<T>::Reindeer_Index(string& poutput, string& poutput_query, uint t
     dele_monotig_file = dele_tmp;
     fof_file = reindeer_index_files + "/fof";
 
-
     read_info();
     cout << "\n#Loading index..." << endl;
     std::ofstream index_loading_semaphore(reindeer_index_files + "/index_loading"); // begin semaphore
