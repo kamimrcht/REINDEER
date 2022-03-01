@@ -59,7 +59,7 @@ public:
     uint64_t nb_colors; // number of samples
     uint64_t nb_monotig;
     long nb_eq_class;
-    
+
     vector<unsigned char*> compressed_monotig_color;
     vector<unsigned> compressed_monotig_color_sizes;
 
@@ -90,12 +90,10 @@ public:
     kmer_Set_Light* load_rle_index();
     void write_matrix_in_bucket_files(kmer_Set_Light* ksl);
     void write_eq_class_matrix(vector<ofstream*>& all_files, ofstream* out_info);
-    
+
     //query
-    void perform_query(kmer_Set_Light& ksl,  uint threshold, string& query, vector<long>& position_in_file);
+    void perform_query(kmer_Set_Light& ksl, uint threshold, string& query, vector<long>& position_in_file);
     void get_position_vector_query_disk(vector<long>& position_in_file);
-
-
 };
 
 template class Reindeer_Index<uint8_t>;

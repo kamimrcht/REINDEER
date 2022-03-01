@@ -289,7 +289,7 @@ void query_by_file(uint& counter, string& entry, kmer_Set_Light& ksl, uint64_t& 
 }
 
 template <class T>
-void Reindeer_Index<T>::perform_query(kmer_Set_Light& ksl,  uint threshold, string& query, vector<long>& position_in_file)
+void Reindeer_Index<T>::perform_query(kmer_Set_Light& ksl, uint threshold, string& query, vector<long>& position_in_file)
 {
     uint counter(0), patience(0);
     string entry;

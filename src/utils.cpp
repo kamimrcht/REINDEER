@@ -2,24 +2,20 @@
 
 using namespace std;
 
-
-
-
-
 string get_run_tag()
 {
-	srand(time(NULL));
-	int run_no(rand()%10000);
-	stringstream ss_rno;
-	ss_rno << run_no;
-	string rno = ss_rno.str();
-	auto t = std::time(nullptr);
+    srand(time(NULL));
+    int run_no(rand() % 10000);
+    stringstream ss_rno;
+    ss_rno << run_no;
+    string rno = ss_rno.str();
+    auto t = std::time(nullptr);
     auto tm = *std::localtime(&t);
     std::ostringstream oss;
     oss << std::put_time(&tm, "%d-%m-%Y %H-%M-%S");
     string timestr = oss.str();
     vector<string> splitdate(split_utils(timestr, ' '));
-    return splitdate[0] + "_" + rno ;
+    return splitdate[0] + "_" + rno;
 }
 
 void get_all_blout(string& path, vector<string>& files)
@@ -348,7 +344,6 @@ void parse_bgreat_output(string& input, vector<vector<uint64_t>>& unitigs_to_nod
         readID++;
     }
 }
-
 
 vector<unsigned char> RLE16C(const vector<uint16_t>& V)
 {
