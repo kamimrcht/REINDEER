@@ -112,7 +112,7 @@ This allows to skip the first Bcalm step.
 
 # Query fasta files
 
-Simply provide the fasta query file (**single line**) to Reindeer using `-q`, along with the directory of index files that were generated during index construction (`output_reindeer` by default, can changed with `-o`), using `-l`:
+Simply provide the fasta query file (**single line**) to Reindeer using `-q`, along with the directory of index files that were generated during index construction (`output_reindeer` by default, can be changed with `-o`), using `-l`:
 
 `./Reindeer --query -q test/query_test.fa -l output_reindeer`
 
@@ -129,7 +129,7 @@ In order to have k-mer presence/absence instead of abundance per indexed dataset
 
 # Output
 
-By default, query outputs are written in `output_reindeer/query_results/`
+By default, query outputs are written in `output_reindeer/query_results/`.
 
 
 
