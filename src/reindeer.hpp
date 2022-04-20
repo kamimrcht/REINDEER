@@ -1,7 +1,7 @@
 
 #include "../blight/blight.h"
-#include "../blight/strict_fstream.hpp"
-#include "../blight/zstr.hpp"
+#include "../blight/include/strict_fstream.hpp"
+#include "../blight/include/zstr.hpp"
 #include "build_index.hpp"
 #include "utils.hpp"
 #include <algorithm>

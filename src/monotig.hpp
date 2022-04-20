@@ -1,9 +1,9 @@
-#include "../blight/bbhash.h"
+#include "../blight/include/bbhash.h"
 #include "../blight/blight.h"
-#include "../blight/common.h"
-#include "../blight/robin_hood.h"
+#include "../blight/include/common.h"
+#include "../blight/include/robin_hood.h"
 #include "../blight/utils.h"
-#include "../blight/zstr.hpp"
+#include "../blight/include/zstr.hpp"
 #include "../trle/trle.h"
 #include "utils.hpp"
 #include <algorithm>

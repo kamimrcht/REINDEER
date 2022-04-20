@@ -1,6 +1,6 @@
 
 
-#include "../blight/robin_hood.h"
+#include "../blight/include/robin_hood.h"
 #include "../blight/utils.h"
 #include "../trle/trle.h"
 #include "matrix_operation.hpp"

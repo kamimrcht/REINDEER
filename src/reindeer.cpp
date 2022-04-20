@@ -42,7 +42,7 @@ Reindeer_Index<T>::Reindeer_Index(uint pk, string& pfof, bool precord_counts, st
     fof = pfof;
     fof_file = reindeer_index_files + "/fof";
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
-    kmer_Set_Light ksl(k, m1, m2, m3, threads, bit);
+    kmer_Set_Light ksl(k, m1, m3, threads, bit);
     int systemRet;
     // BUILD THE INDEX
     nb_colors = get_color_number(fof, fof_file);

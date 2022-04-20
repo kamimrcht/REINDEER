@@ -1,6 +1,6 @@
 
 
-#include "../blight/zstr.hpp"
+#include "../blight/include/zstr.hpp"
 #include <algorithm>
 #include <chrono>
 #include <cmath>
