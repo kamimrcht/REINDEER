@@ -32,6 +32,7 @@ using namespace chrono;
 
 
 
+static ofstream monotigs_file("monotigs.out");
 
 uint16_t abundance_at (uint8_t index);
 
