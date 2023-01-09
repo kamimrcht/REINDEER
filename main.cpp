@@ -45,7 +45,7 @@ uint m3(5);
 char ch;
 string query,fof(""), color_dump_file("reindeer_matrix"), color_load_file(""), output_bcalm("bcalm_out"),output_union_bcalm("bcalm_union_out"),output("output_reindeer"), output_index("index_out");
 uint k(31), threads(1);
-bool record_counts(true), quantize(false), do_query_on_disk(false), bcalm(false), do_Index(false), do_Query(false), PE(false), do_log(false);
+bool record_counts(true), quantize(false), do_query_on_disk(false), bcalm(false), do_Index(false), do_Query(false), PE(false), do_log(false), output_monotigs(false);
 uint threshold(40);
 
 
@@ -75,6 +75,7 @@ void PrintHelp()
             "      * Advanced parameters (we recommend not to change these values unless you are very aware of REINDEER's inner components)\n"
             "--minimizer-size <integer>          :    MPHF option: minimizer size\n"
             "--buckets <integer>          :    MPHF option: number of buckets (log)\n"
+            "--monotigs              :    Save the monotigs into monotigs.tsv inside of the output directory\n"
             ""
             "                    QUERY\n\n"
 
@@ -110,6 +111,7 @@ void ProcessArgs(int argc, char** argv)
             {"log-count", no_argument, nullptr, 'L'},
             {"minimizer-size", required_argument , nullptr, 'm'},
             {"buckets", required_argument , nullptr, 'n'},
+            {"monotigs", no_argument, nullptr, 'M'},
             {nullptr, no_argument, nullptr, 0}
     };
 
@@ -127,6 +129,9 @@ void ProcessArgs(int argc, char** argv)
                 break;
             case 'f':
                 fof=optarg;
+                break;
+            case 'M':
+                output_monotigs = true;
                 break;
             case 'Q':
                 do_Query=true;
@@ -222,7 +227,7 @@ int main(int argc, char **argv)
         bcalm_cleanup();
         cout << "Indexing k-mers...\n\n" << endl;
         color_dump_file = output + "/" + color_dump_file;
-        reindeer_index(k, fof, color_dump_file, record_counts, output, cl, threads,  do_query_on_disk, quantize, do_log, m1, m3);
+        reindeer_index(k, fof, color_dump_file, record_counts, output, output_monotigs, cl, threads,  do_query_on_disk, quantize, do_log, m1, m3);
         cout << "INDEX BUILDING = THE END" <<endl;
     } else {
         if (color_load_file.empty())

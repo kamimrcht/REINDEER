@@ -8,6 +8,12 @@ using namespace chrono;
 
 
 
+void set_monotigs_output(string & filename) {
+	monotigs_registry = ofstream(filename);
+}
+
+
+
 uint64_t MAX_ABUNDANCE_DISCRETE;
 vector<uint8_t> abundance_discretization;
 
@@ -395,10 +401,12 @@ kmer kmer_Set_Light::select_good_successor(const  robin_hood::unordered_node_map
 
 void kmer_Set_Light::write_buffer_count(vector<string>& buffers, zstr::ofstream* out, vector<uint16_t>& headerV, string& seq2dump, int32_t minimi)
 {
-	monotigs_file << seq2dump << '\t';
-	for (uint16_t count : headerV)
-		monotigs_file << '\t' << (uint64_t)count;
-	monotigs_file << endl;
+	if (monotigs_registry) {
+		monotigs_registry << seq2dump << '\t';
+		for (uint16_t count : headerV)
+			monotigs_registry << '\t' << (uint64_t)count;
+		monotigs_registry << endl;
+	}
 
 	string tmp_buffer("");
 	uint n = headerV.size()*2;
