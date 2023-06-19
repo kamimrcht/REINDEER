@@ -79,15 +79,15 @@ void PrintHelp()
 
                          "                    General\n\n"
                          "-t <integer>            :     Number of threads (default 1)\n"
-                         "--help                  :     Show help\n"
-                         "--version               :     Show version\n";
+                         "--help | -h             :     Show help\n"
+                         "--version | -V          :     Show version\n";
     exit(1);
 }
 
 void ProcessArgs(int argc, char** argv)
 {
 
-    const char* const short_opts = "pk:P:t:f:l:g:q:o:w:r";
+    const char* const short_opts = "pk:P:t:f:l:g:q:o:w:rVh";
     const option long_opts[] = {
         { "index", no_argument, nullptr, 'i' },
         { "help", no_argument, nullptr, 'h' },
@@ -101,7 +101,7 @@ void ProcessArgs(int argc, char** argv)
         { "minimizer-size", required_argument, nullptr, 'm' },
         { "buckets", required_argument, nullptr, 'n' },
         { "keep-tmp", no_argument, nullptr, 'r' },
-        {"version", no_argument, nullptr, 'V' },
+        { "version", no_argument, nullptr, 'V' },
         { nullptr, no_argument, nullptr, 0 }
     };
 
