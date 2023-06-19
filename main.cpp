@@ -1,6 +1,7 @@
 #include "src/launch_bcalm.hpp"
 #include "src/reindeer.hpp"
 #include "src/utils.hpp"
+#include "version.h" // manage version from git
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -27,7 +28,6 @@
 using namespace std;
 using namespace chrono;
 
-string version("v1.0.2");
 // MPHF options
 uint m1(10);
 uint m3(5);
@@ -40,7 +40,7 @@ uint threshold(40);
 
 void PrintHelp()
 {
-    cout << "******************* REINDEER " << version << "**********************************\n"
+    cout << "******************* REINDEER " << VERSION << "**********************************\n"
                                                           "******************* REad Index for abuNDancE quERy ******************\n\n"
 
                                                           "                    INDEX BUILDING\n\n"
@@ -79,7 +79,8 @@ void PrintHelp()
 
                          "                    General\n\n"
                          "-t <integer>            :     Number of threads (default 1)\n"
-                         "--help                  :     Show help\n";
+                         "--help                  :     Show help\n"
+                         "--version               :     Show version\n";
     exit(1);
 }
 
@@ -100,6 +101,7 @@ void ProcessArgs(int argc, char** argv)
         { "minimizer-size", required_argument, nullptr, 'm' },
         { "buckets", required_argument, nullptr, 'n' },
         { "keep-tmp", no_argument, nullptr, 'r' },
+        {"version", no_argument, nullptr, 'V' },
         { nullptr, no_argument, nullptr, 0 }
     };
 
@@ -164,6 +166,10 @@ void ProcessArgs(int argc, char** argv)
         case 'd':
             do_query_on_disk = false;
             break;
+        case 'V':
+            cout << VERSION << endl;
+            exit(0);
+            break;
         case 'h': // -h or --help
         case '?': // Unrecognized option
         default:
@@ -175,11 +181,10 @@ void ProcessArgs(int argc, char** argv)
 
 int main(int argc, char** argv)
 {
-
     int systRet;
     string rno(get_run_tag());
     ProcessArgs(argc, argv);
-    cout << "############# REINDEER version " << version << " #############" << endl
+    cout << "############# REINDEER version " << VERSION << " #############" << endl
          << "Command line was: ";
     for (int i = 0; i < argc; ++i)
         cout << argv[i] << ' ';

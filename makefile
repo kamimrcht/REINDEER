@@ -22,6 +22,7 @@ INC=blight/blight.h blight/bbhash.h blight/common.h src/utils.hpp src/reindeer.h
 EXEC=Reindeer
 LZ4H=blight/lz4/lz4frame.o blight/lz4/lz4.o blight/lz4/xxhash.o blight/lz4/lz4hc.o
 
+VERSION := $(shell git describe --tags --always)
 
 all: $(EXEC)
 
@@ -29,6 +30,7 @@ Reindeer: main.o blight.o utils_b.o trlec.o trled.o monotig.o utils.o reindeer.o
 	$(CXX) -o $@ $^ $(CFLAGS)
 
 main.o: main.cpp $(INC)
+	echo "#define VERSION \"$(VERSION)\"" > version.h
 	$(CXX) -o $@ -c $< $(CFLAGS)
 
 monotig.o: src/monotig.cpp $(INC)
