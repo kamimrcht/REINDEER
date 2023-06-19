@@ -187,18 +187,18 @@ int main(int argc, char** argv)
          << endl;
 
     if ((do_Index and do_Query) or not(do_Index or do_Query)) {
-        cout << "You must choose: either indexing (--index) or querying (--query)\n"
+        cout << strerror(E2BIG) << " | " << "You must choose: either indexing (--index) or querying (--query)\n"
              << endl;
         PrintHelp();
-        return 0;
+        return E2BIG;
     }
     if (do_Index) //indexing only
     {
         if (fof.size() == 0) {
-            cout << "Please specify input datasets to index using using -f.\n"
+            cout << strerror(EINVAL) << " | " << "Please specify input datasets to index using using -f.\n"
                  << endl;
             PrintHelp();
-            return 0;
+            return EINVAL;
         }
         string reindeer_index_files;
         if (output == "reindeer_index_files")
@@ -219,9 +219,9 @@ int main(int argc, char** argv)
         }
 
         if (fof.empty() or k == 0) {
-            cout << "Missing argument " << endl;
+            cout << strerror(EINVAL) << " | " << "Missing argument " << endl;
             PrintHelp();
-            return 0;
+            return EINVAL;
         }
         bcalm_cleanup();
         cout << "Indexing k-mers...\n\n"
@@ -232,9 +232,9 @@ int main(int argc, char** argv)
         cout << "INDEX BUILDING = THE END." << endl;
     } else {
         if (color_load_file.empty()) {
-            cout << "Missing argument -l" << endl;
+            cout << strerror(EINVAL) << " | " << "Missing argument -l" << endl;
             PrintHelp();
-            return 0;
+            return EINVAL;
         } else {
             cout << "Querying..." << endl;
             string output_query(output + "/query_results");
@@ -246,18 +246,18 @@ int main(int argc, char** argv)
                 }
             }
             if (not(query.empty() or exists_test(query))) {
-                cout << "[ERROR] Invalid query file" << endl;
-                return 0;
+                cout << "[ERROR] " << strerror(EINVAL) << " | " << "Invalid query file" << endl;
+                return EINVAL;
             }
 
             if (dirExists(color_load_file)) {
                 if (not(exists_test(color_load_file + "/reindeer_matrix_eqc") and exists_test(color_load_file + "/reindeer_matrix_eqc_info") and exists_test(color_load_file + "/reindeer_index.gz") and exists_test(color_load_file + "/reindeer_matrix_eqc_position"))) {
-                    cerr << "[ERROR] REINDEER index files are missing. Stopped." << endl;
-                    return 0;
+                    cerr << "[ERROR] " << strerror(ENOENT) << " | " << "REINDEER index files are missing. Stopped." << endl;
+                    return ENOENT;
                 }
             } else {
-                cerr << "[ERROR] REINDEER index directory is missing (or path in -l is wrong). Stopped." << endl;
-                return 0;
+                cerr << "[ERROR] " << strerror(ENOENT) << " | " << "REINDEER index directory is missing (or path in -l is wrong). Stopped." << endl;
+                return ENOENT;
             }
             Reindeer_Index<uint16_t> reindeer_index(color_load_file, output_query, threshold, query, threads, !(keep_tmp));
         }
