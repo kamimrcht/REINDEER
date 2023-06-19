@@ -22,6 +22,7 @@
 #include <unistd.h>
 #include <unordered_map>
 #include <vector>
+#include <filesystem>
 
 using namespace std;
 using namespace chrono;
@@ -204,8 +205,12 @@ int main(int argc, char** argv)
             reindeer_index_files = output + "_" + rno;
         else
             reindeer_index_files = output;
-        if (not dirExists(reindeer_index_files)) {
-            systRet = system(("mkdir " + reindeer_index_files).c_str());
+        if (!filesystem::exists(reindeer_index_files)){
+            try {
+                filesystem::create_directories(reindeer_index_files);
+            } catch (const exception& e) {
+                return EINVAL;
+            }
         }
         if (bcalm) {
             cout << "Computing De Bruijn graphs on each dataset using Bcalm2...\n\n"
@@ -232,9 +237,13 @@ int main(int argc, char** argv)
             return 0;
         } else {
             cout << "Querying..." << endl;
-            string output_query(color_load_file + "/query_results");
-            if (not dirExists(output_query)) {
-                systRet = system(("mkdir " + output_query).c_str());
+            string output_query(output + "/query_results");
+            if (!filesystem::exists(output_query)){
+                try {
+                    filesystem::create_directories(output_query);
+                } catch (const exception& e) {
+                    return EINVAL;
+                }
             }
             if (not(query.empty() or exists_test(query))) {
                 cout << "[ERROR] Invalid query file" << endl;

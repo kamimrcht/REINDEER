@@ -17,8 +17,8 @@ ifeq ($(DEBUG_SYMS), 1)
 	CFLAGS+=-g
 endif
 CFLAGS2+= -w -Wall -std=gnu99 -DUSE_THREADS  -fstrict-aliasing -Iext $(DEFS)
-CFLAGS+=-std=c++11 -pipe -lz -fopenmp -Iblight/lz4 ${WARNS}
-INC=blight/blight.h blight/bbhash.h blight/common.h src/utils.hpp src/reindeer.hpp src/launch_bcalm.hpp trle/trle.h trle/trle_.h trle/conf.h src/eq_classes.hpp src/query.hpp src/build_index.hpp blight/utils.h src/eq_classes.hpp blight/zstr.hpp blight/common.h blight/robin_hood.h src/monotig.hpp src/matrix_operation.hpp blight/lz4/lz4_stream.h 
+CFLAGS+=-std=c++17 -pipe -lz -fopenmp -Iblight/lz4 ${WARNS}
+INC=blight/blight.h blight/bbhash.h blight/common.h src/utils.hpp src/reindeer.hpp src/launch_bcalm.hpp trle/trle.h trle/trle_.h trle/conf.h src/eq_classes.hpp src/query.hpp src/build_index.hpp blight/utils.h src/eq_classes.hpp blight/zstr.hpp blight/common.h blight/robin_hood.h src/monotig.hpp src/matrix_operation.hpp blight/lz4/lz4_stream.h
 EXEC=Reindeer
 LZ4H=blight/lz4/lz4frame.o blight/lz4/lz4.o blight/lz4/xxhash.o blight/lz4/lz4hc.o
 
