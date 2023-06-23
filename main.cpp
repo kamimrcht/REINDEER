@@ -35,7 +35,7 @@ uint m3(5);
 char ch;
 string query, fof(""), color_load_file(""), output_bcalm("bcalm_out"), output_union_bcalm("bcalm_union_out"), output("reindeer_index_files");
 uint k(31), threads(1);
-bool record_counts(true), quantize(false), do_query_on_disk(true), bcalm(false), do_Index(false), do_Query(false), PE(false), do_log(false), keep_tmp(false);
+bool average(false), record_counts(true), quantize(false), do_query_on_disk(true), bcalm(false), do_Index(false), do_Query(false), PE(false), do_log(false), keep_tmp(false);
 uint threshold(40);
 
 void PrintHelp()
@@ -76,6 +76,7 @@ void PrintHelp()
          << threshold << "%)\n"
                          "-o <file>               :     Directory to write query output files (default: output_reindeer_query/)\n"
                          "--disk-query            :     On-disk query (default: in-memory). To be used for large indexes that won't fit in RAM, if the index was constructed with the same option.\n\n"
+                         "--average | -a          :     Average counts (default : false)\n"
 
                          "                    General\n\n"
                          "-t <integer>            :     Number of threads (default 1)\n"
@@ -87,7 +88,7 @@ void PrintHelp()
 void ProcessArgs(int argc, char** argv)
 {
 
-    const char* const short_opts = "pk:P:t:f:l:g:q:o:w:rVh";
+    const char* const short_opts = "pk:P:t:f:l:g:q:o:w:rVha";
     const option long_opts[] = {
         { "index", no_argument, nullptr, 'i' },
         { "help", no_argument, nullptr, 'h' },
@@ -102,6 +103,7 @@ void ProcessArgs(int argc, char** argv)
         { "buckets", required_argument, nullptr, 'n' },
         { "keep-tmp", no_argument, nullptr, 'r' },
         { "version", no_argument, nullptr, 'V' },
+        { "average", no_argument, nullptr, 'a' },
         { nullptr, no_argument, nullptr, 0 }
     };
 
@@ -169,6 +171,9 @@ void ProcessArgs(int argc, char** argv)
         case 'V':
             cout << VERSION << endl;
             exit(0);
+            break;
+        case 'a':
+            average = true;
             break;
         case 'h': // -h or --help
         case '?': // Unrecognized option
@@ -264,7 +269,7 @@ int main(int argc, char** argv)
                 cerr << "[ERROR] " << strerror(ENOENT) << " | " << "REINDEER index directory is missing (or path in -l is wrong). Stopped." << endl;
                 return ENOENT;
             }
-            Reindeer_Index<uint16_t> reindeer_index(color_load_file, output_query, threshold, query, threads, !(keep_tmp));
+            Reindeer_Index<uint16_t> reindeer_index(color_load_file, output_query, threshold, query, threads, !(keep_tmp), average);
         }
     }
     return 0;

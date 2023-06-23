@@ -77,12 +77,13 @@ void Reindeer_Index<T>::read_info()
 
 // constructor for query
 template <class T>
-Reindeer_Index<T>::Reindeer_Index(string& poutput, string& poutput_query, uint threshold, string& query, uint pthreads, bool dele_tmp)
+Reindeer_Index<T>::Reindeer_Index(string& poutput, string& poutput_query, uint threshold, string& query, uint pthreads, bool dele_tmp, bool paverage)
 {
     color_load_file = poutput;
     reindeer_index_files = poutput;
     output = poutput_query;
     threads = pthreads;
+    average = paverage;
     // QUERY //
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
     //check if loading directory exists and all reindeer files are present
@@ -107,7 +108,7 @@ Reindeer_Index<T>::Reindeer_Index(string& poutput, string& poutput_query, uint t
     std::remove(string(output + "/index_loading").c_str()); // end semaphore
     cout << "\n#Computing query..." << endl;
     high_resolution_clock::time_point tnew = high_resolution_clock::now();
-    perform_query(*ksl, threshold, query, position_in_file);
+    perform_query(*ksl, threshold, query, position_in_file, average);
     high_resolution_clock::time_point tnew2 = high_resolution_clock::now();
     duration<double> time_spannew2 = duration_cast<duration<double>>(tnew2 - tnew);
     cout << "Querying sequences took " << time_spannew2.count() << " seconds in total." << endl;
@@ -132,6 +133,7 @@ void Reindeer_Index<T>::print_Reindeer()
     cout << "do_query_on_disk " << do_query_on_disk << endl;
     cout << "quantize " << quantize << endl; // record quantization
     cout << "do_log " << do_log << endl; // record log
+    cout << average << endl; // average counts
 
     // color variables
     cout << "nb_colors " << nb_colors << endl; // number of samples
