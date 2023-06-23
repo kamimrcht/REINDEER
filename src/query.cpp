@@ -186,20 +186,10 @@ vector<uint> write_count_output(bool average, bool record_counts, vector<vector<
             }
         }
         if (average) {
-            if (total_for_average > 0) {
-                out_uint = out_uint/total_for_average;
-                out_str = to_string(out_uint);
-            }/* else {
-                out_str = "*";
-                cov_positions = 0;
-            }*/
+            out_uint = out_uint/total_for_average;
+            out_str = to_string(out_uint);
         } else {
-            if (!out_str.empty()) {
-                out_str.pop_back(); //remove last comma
-            }/*else {
-                out_str = "*";
-                cov_positions = 0; // otherwise it is set to k-1 which means nothing
-            }*/
+            out_str.pop_back(); //remove last comma
         }
         color_counts.push_back(out_str);
         covered_positions.push_back(cov_positions * 100 / (query_counts.size() + k_size - 1));

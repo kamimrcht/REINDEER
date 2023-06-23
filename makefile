@@ -38,7 +38,7 @@ monotig.o: src/monotig.cpp $(INC)
 
 blight.o: blight/blight.cpp $(INC)
 	$(CXX) -o $@ -c $< $(CFLAGS)
-	
+
 utils_b.o: blight/utils.cpp $(INC)
 	$(CXX) -o $@ -c $< $(CFLAGS)
 
@@ -56,26 +56,26 @@ blight/lz4/lz4.o: blight/lz4/lz4.c $(INC)
 
 blight/lz4/lz4hc.o: blight/lz4/lz4hc.c $(INC)
 	$(CC) -o $@ -c $< $(CFLAGS2)
-	
+
 blight/lz4/xxhash.o: blight/lz4/xxhash.c $(INC)
-	$(CC) -o $@ -c $< $(CFLAGS2) 
+	$(CC) -o $@ -c $< $(CFLAGS2)
 
 
 utils.o: src/utils.cpp  $(INC)
 	$(CC) -o $@ -c $< $(CFLAGS)
-	
+
 reindeer.o: src/reindeer.cpp  $(INC)
 	$(CC) -o $@ -c $< $(CFLAGS)
-	
+
 query.o: src/query.cpp  $(INC)
 	$(CC) -o $@ -c $< $(CFLAGS)
-	
+
 eq_classes.o: src/eq_classes.cpp $(INC)
 	$(CC) -o $@ -c $< $(CFLAGS)
-	
+
 build_index.o: src/build_index.cpp $(INC)
 	$(CC) -o $@ -c $< $(CFLAGS)
-	
+
 launch_bcalm.o: src/launch_bcalm.cpp $(INC)
 	$(CC) -o $@ -c $< $(CFLAGS)
 
