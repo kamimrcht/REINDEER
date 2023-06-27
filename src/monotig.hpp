@@ -31,7 +31,9 @@ using namespace std;
 using namespace chrono;
 
 
+static ofstream monotigs_registry;
 
+void set_monotigs_output(string & filename);
 
 uint16_t abundance_at (uint8_t index);
 

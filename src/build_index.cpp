@@ -1,5 +1,6 @@
 
 #include "build_index.hpp"
+#include "monotig.hpp"
 
 using namespace chrono;
 using namespace std;
@@ -234,8 +235,13 @@ kmer_Set_Light* load_rle_index(uint k, string& color_load_file, string& color_du
 
 
 // build index from new file
-void build_index(uint k, uint m1,uint m2,uint m3, uint bit, string& color_load_file, string& color_dump_file, string& fof, bool record_counts,  kmer_Set_Light* ksl, uint nb_threads,  string& output, bool do_query_on_disk, bool quantize, bool do_log, uint64_t nb_colors)
+void build_index(uint k, uint m1,uint m2,uint m3, uint bit, string& color_load_file, string& color_dump_file, string& fof, bool record_counts,  kmer_Set_Light* ksl, uint nb_threads,  string& output, bool output_monotigs, bool do_query_on_disk, bool quantize, bool do_log, uint64_t nb_colors)
 {
+	if (output_monotigs) {
+		string monotigs_file(output + "/monotigs.tsv");
+		set_monotigs_output(monotigs_file);
+	}
+
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
 	bool dont_dump(false);
 	string in_name(output +"/monotig_files");

@@ -12,14 +12,14 @@ uint c(1);
 uint bit(0);
 uint ex(0);
 
-void reindeer_index(uint k, string& fof,  string& color_dump_file, bool record_counts, string& output, string& color_load_file, uint threads,  bool do_query_on_disk, bool quantize, bool do_log, uint m1, uint m3)
+void reindeer_index(uint k, string& fof,  string& color_dump_file, bool record_counts, string& output, bool output_monotigs, string& color_load_file, uint threads,  bool do_query_on_disk, bool quantize, bool do_log, uint m1, uint m3)
 {
 	high_resolution_clock::time_point t1 = high_resolution_clock::now();
 	kmer_Set_Light ksl(k,m1,m2,m3,threads,bit);
 	int systemRet;
 	// BUILD THE INDEX
 	uint64_t nb_colors(get_color_number(fof));
-	build_index(k, m1, m2, m3, bit, color_load_file, color_dump_file, fof, record_counts, &ksl, threads,  output, do_query_on_disk, quantize, do_log, nb_colors);
+	build_index(k, m1, m2, m3, bit, color_load_file, color_dump_file, fof, record_counts, &ksl, threads,  output, output_monotigs, do_query_on_disk, quantize, do_log, nb_colors);
 	high_resolution_clock::time_point t12 = high_resolution_clock::now();
 	duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
 	cout<<"Index building and Coloration done total: "<< time_span12.count() << " seconds."<<endl;
