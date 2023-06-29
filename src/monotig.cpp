@@ -141,7 +141,7 @@ uint64_t max_size_superbucket(0);
 uint64_t min_size_superbucket(10000000000);
 
 // builds blight index from fof
-void kmer_Set_Light::construct_index_fof(const string& input_file, const string& tmp_dir, int colormode)
+void kmer_Set_Light::construct_index_fof(const string& input_file, vector<uint64_t>& kmers_by_file, const string& tmp_dir, int colormode)
 {
     omp_set_nested(2);
     if (not tmp_dir.empty()) {
@@ -175,7 +175,7 @@ void kmer_Set_Light::construct_index_fof(const string& input_file, const string&
     }
     // files for the _blout that contain monotigs
     vector<ofstream*> out_blout;
-    create_super_buckets_list(fnames);
+    create_super_buckets_list(fnames, kmers_by_file);
     reset();
 
     high_resolution_clock::time_point t2 = high_resolution_clock::now();
@@ -482,8 +482,10 @@ uint16_t kmer_Set_Light::parseCoverage(const string& str)
 }
 
 // hashes the kmers from all the input files in super bucket files
-void kmer_Set_Light::create_super_buckets_list(const vector<string>& input_files)
+void kmer_Set_Light::create_super_buckets_list(const vector<string>& input_files, vector<uint64_t>& kmers_by_file)
 {
+    kmers_by_file.resize(input_files.size());
+    fill(kmers_by_file.begin(), kmers_by_file.end(), 0);
     struct rlimit rl;
     getrlimit(RLIMIT_NOFILE, &rl);
     rl.rlim_cur = number_superbuckets.value() + 10 + coreNumber;
@@ -519,12 +521,14 @@ void kmer_Set_Light::create_super_buckets_list(const vector<string>& input_files
             vector<string> buffer(number_superbuckets.value());
             minimizer_type old_minimizer, minimizer;
             while (not inUnitigsread->eof()) {
+                uint64_t occurrence_kmer = 0;
                 ref = useless = "";
                 getline(*inUnitigsread, useless);
                 getline(*inUnitigsread, ref);
                 if (ref.size() < k) {
                     ref = "";
                 } else {
+                    occurrence_kmer = ref.size() - k + 1;
 #pragma omp atomic
                     read_kmer += ref.size() - k + 1;
                 }
@@ -593,8 +597,11 @@ void kmer_Set_Light::create_super_buckets_list(const vector<string>& input_files
                             omp_unset_lock(&(lock[((old_minimizer)) / bucket_per_superBuckets.value()]));
                             buffer[old_minimizer / bucket_per_superBuckets.value()].clear();
                         }
+                        // count total occurence of this monotig
+                        occurrence_kmer *= cov;
                     }
                 }
+                kmers_by_file[i_file] += occurrence_kmer;
             }
             for (uint64_t i(0); i < number_superbuckets.value(); ++i) {
                 if (not buffer[i].empty()) {

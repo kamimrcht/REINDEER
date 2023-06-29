@@ -50,7 +50,7 @@ public:
     bool record_counts; // if true, record counts else presence/absence //todo replace by color mode
     uint color_mode;
     bool do_query_on_disk; // if true the full index is dumped on the disk, else it is rebuilt and in ram
-    bool average; // if true, average the counts, else put them side to side
+    string output_format; // output format of values (none/average/normalized/sum)
 
     // other counts modes
     bool quantize; // record quantization
@@ -83,18 +83,18 @@ public:
 
     //constructor
     Reindeer_Index(uint pk, string& pfof, bool precord_counts, string& preindeer_index_files, uint pthreads, bool pdo_query_on_disk, bool pquantize, bool pdo_log, uint pm1, uint pm3, bool dele_tmp);
-    Reindeer_Index(string& output, string& output_query, uint threshold, string& query, uint threads, bool dele_tmp, bool average);
+    Reindeer_Index(string& output, string& output_query, uint threshold, string& query, uint threads, bool dele_tmp, string& output_format);
     void print_Reindeer();
 
     void build_index(kmer_Set_Light* ksl);
-    void read_info();
-    void do_coloring(kmer_Set_Light* ksl);
+    void read_info(vector<uint64_t>& kmers_by_file);
+    void do_coloring(kmer_Set_Light* ksl, vector<uint64_t>& kmers_by_file);
     kmer_Set_Light* load_rle_index();
-    void write_matrix_in_bucket_files(kmer_Set_Light* ksl);
+    void write_matrix_in_bucket_files(kmer_Set_Light* ksl, vector<uint64_t>& kmers_by_file);
     void write_eq_class_matrix(vector<ofstream*>& all_files, ofstream* out_info);
 
     //query
-    void perform_query(kmer_Set_Light& ksl, uint threshold, string& query, vector<long>& position_in_file, bool average);
+    void perform_query(kmer_Set_Light& ksl, uint threshold, string& query, vector<long>& position_in_file, string& output_format, vector<uint64_t>& kmers_by_file);
     void get_position_vector_query_disk(vector<long>& position_in_file);
 };
 

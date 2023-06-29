@@ -59,7 +59,7 @@ void get_header_monotig_file(zstr::ifstream& in, string& header)
 
 // dispatch count vectors in files. Similar counts go in similar files
 template <class T>
-void Reindeer_Index<T>::write_matrix_in_bucket_files(kmer_Set_Light* ksl)
+void Reindeer_Index<T>::write_matrix_in_bucket_files(kmer_Set_Light* ksl, vector<uint64_t>& kmers_by_file)
 {
     //create bucket files for partitionning the compressed counts -> finding eq classes
     vector<ofstream*> all_files;
@@ -148,12 +148,15 @@ void Reindeer_Index<T>::write_matrix_in_bucket_files(kmer_Set_Light* ksl)
         delete all_files[i];
     }
     out_info.write(reinterpret_cast<char*>(&do_query_on_disk), sizeof(bool));
+    for (auto& tk : kmers_by_file) {
+        out_info.write(reinterpret_cast<char*>(&tk), sizeof(uint64_t));
+    }
     out_info.close();
 }
 
 // color using monotig file: either build and dump the color matrix during the index construction, or load it during the query
 template <class T>
-void Reindeer_Index<T>::do_coloring(kmer_Set_Light* ksl)
+void Reindeer_Index<T>::do_coloring(kmer_Set_Light* ksl, vector<uint64_t>& kmers_by_file)
 {
     vector<string> file_names;
     if (not color_load_file.empty()) //query
@@ -182,7 +185,7 @@ void Reindeer_Index<T>::do_coloring(kmer_Set_Light* ksl)
             cerr << "[ERROR] File of file problem" << endl;
         }
 
-        write_matrix_in_bucket_files(ksl);
+        write_matrix_in_bucket_files(ksl, kmers_by_file);
     }
 }
 
@@ -190,8 +193,9 @@ void Reindeer_Index<T>::do_coloring(kmer_Set_Light* ksl)
 template <class T>
 kmer_Set_Light* Reindeer_Index<T>::load_rle_index()
 {
+    vector<uint64_t> kmers_by_file {0};
     kmer_Set_Light* ksl = new kmer_Set_Light(reindeer_index_files + "/reindeer_index.gz");
-    do_coloring(ksl);
+    do_coloring(ksl, kmers_by_file);
     if (dele_monotig_file) {
         string cmd("rm -rf " + reindeer_index_files + "/monotig_files");
         int sysRet(system(cmd.c_str()));
@@ -203,6 +207,7 @@ kmer_Set_Light* Reindeer_Index<T>::load_rle_index()
 template <class T>
 void Reindeer_Index<T>::build_index(kmer_Set_Light* ksl)
 {
+    vector<uint64_t> kmers_by_file; // total of kmers for each file
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
     bool dont_dump(false);
     int color_mode;
@@ -219,14 +224,14 @@ void Reindeer_Index<T>::build_index(kmer_Set_Light* ksl)
         cout << "#Monotigs and index constuction..." << endl;
         // apply monotig merge (-> MMM) with rule regarding colors or counts
         // color 0, count 1, quantize 2, log 3
-        ksl->construct_index_fof(fof, reindeer_index_files, color_mode);
+        ksl->construct_index_fof(fof, kmers_by_file, reindeer_index_files, color_mode);
     } else {
         cerr << "[Warning] monotig files (monotig_files) were found in output dir, I will use them and I won't delete them" << endl;
         if (not exists_test(index_file)) {
             // color 0, count 1, quantize 2, log 3
             string m_folder(monotig_files + "/");
             string fof_blout(do_fof(m_folder, reindeer_index_files));
-            ksl->construct_index_fof(fof_blout, reindeer_index_files, color_mode); //todo + .lz4
+            ksl->construct_index_fof(fof_blout, kmers_by_file, reindeer_index_files, color_mode); //todo + .lz4
             //todo could be optimized: blight needs to update some initialized variables and could take these directly as input super kmers
             remove((reindeer_index_files + "/fof_blout").c_str());
         } else {
@@ -245,7 +250,7 @@ void Reindeer_Index<T>::build_index(kmer_Set_Light* ksl)
     }
     cout << "#Building colors and equivalence classes matrix to be written on disk..." << endl;
     high_resolution_clock::time_point t3 = high_resolution_clock::now();
-    do_coloring(ksl);
+    do_coloring(ksl, kmers_by_file);
     high_resolution_clock::time_point t4 = high_resolution_clock::now();
     duration<double> time_span34 = duration_cast<duration<double>>(t4 - t3);
     cout << "Matrix done: " << time_span34.count() << " seconds." << endl;
