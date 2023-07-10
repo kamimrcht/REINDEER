@@ -80,8 +80,8 @@ void PrintHelp()
 
                          "                    General\n\n"
                          "-t <integer>            :     Number of threads (default 1)\n"
-                         "--help | -h             :     Show help\n"
-                         "--version | -V          :     Show version\n";
+                         "--help, -h             :     Show help\n"
+                         "--version, -V          :     Show version\n";
     exit(1);
 }
 

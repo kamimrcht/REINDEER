@@ -58,7 +58,7 @@ public:
 
     // color variables
     uint64_t nb_colors; // number of samples
-    uint64_t nb_monotig;
+    uint64_t nb_monotig {0};
     long nb_eq_class;
 
     vector<unsigned char*> compressed_monotig_color;

@@ -219,9 +219,7 @@ vector<uint> write_count_output(bool record_counts, vector<vector<uint16_t>>& qu
 void write_results_above_threshold(string& toWrite, vector<vector<uint16_t>>& query_counts, uint64_t color_number , vector<string>& toW, vector<string>& color_counts,  string& header, bool record_counts, uint threshold, string& line, uint k, vector<uint>& covered_positions)
 {
     vector<double_t> percent(color_number, 0);
-
-    toWrite += header.substr(0, 50);
-
+    toWrite += header.substr(0,50) ;
     for (uint cp(0); cp < covered_positions.size(); ++cp) {
         if (covered_positions[cp] >= threshold) {
             if (record_counts) {
