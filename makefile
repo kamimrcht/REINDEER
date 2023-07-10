@@ -82,6 +82,19 @@ launch_bcalm.o: src/launch_bcalm.cpp $(INC)
 matrix_operation.o: src/matrix_operation.cpp $(INC)
 	$(CC) -o $@ -c $< $(CFLAGS)
 
+
+update_info: update_reindeer_info.o
+	$(CXX) -o $@ $^ $(CFLAGS)
+
+update_reindeer_info.o: script/update_reindeer_info.cpp
+	$(CXX) -o $@ -c $< $(CFLAGS)
+
+update_clean:
+	rm -rf update_reindeer_info.o update_info
+
+update_rebuild: update_clean update_info
+
+
 clean:
 	rm -rf trlec.o trled.o utils.o main.o blight.o utils_b.o reindeer.o query.o build_index.o eq_classes.o launch_bcalm.o monotig.o matrix_operation.o
 	rm -rf $(EXEC)
