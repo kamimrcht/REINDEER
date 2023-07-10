@@ -548,3 +548,24 @@ void init_outputfile(string& toW, string& fof)
     }
     toW += "query " + line;
 }
+
+string parse_filename(const string& filename) {
+    string clean_filename = "";
+    auto last_slash_pos = filename.find_last_of('/');
+    if (last_slash_pos != string::npos) {
+        auto first_period_pos = filename.find_first_of('.', last_slash_pos);
+        if (first_period_pos != string::npos) {
+            clean_filename = filename.substr(last_slash_pos + 1, first_period_pos - last_slash_pos - 1);
+        } else {
+            clean_filename = filename;
+        }
+    } else {
+        auto first_period_pos = filename.find_first_of('.');
+        if (first_period_pos != string::npos) {
+            clean_filename = filename.substr(0, first_period_pos);
+        } else {
+            clean_filename = filename;
+        }
+    }
+    return clean_filename;
+}

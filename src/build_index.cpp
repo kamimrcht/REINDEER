@@ -124,8 +124,8 @@ void Reindeer_Index<T>::write_matrix_in_bucket_files(kmer_Set_Light* ksl, vector
         all_files[i]->flush();
         all_files[i]->close();
     }
-    out_info.write(reinterpret_cast<char*>(&nb_monotig), sizeof(uint64_t));
-    out_info.write(reinterpret_cast<char*>(&k), sizeof(uint)); // in info: 1/nb monotigs, 2/k 3/record option 4/nb eq classes, 5/nb colors
+    out_info << "nb_monotig:" << to_string(nb_monotig) << endl;
+    out_info << "k:" << to_string(k) << endl; // in info: 1/nb monotigs, 2/k 3/record option 4/nb eq classes, 5/nb colors
     uint val(1);
     if (!record_counts) {
         val = 0;
@@ -138,7 +138,7 @@ void Reindeer_Index<T>::write_matrix_in_bucket_files(kmer_Set_Light* ksl, vector
             val = 1;
         }
     }
-    out_info.write(reinterpret_cast<char*>(&val), sizeof(uint));
+    out_info << "record_option:" << to_string(val) << endl;
     // compute final equivalence class and write them
     write_eq_class_matrix(all_files, &out_info);
     // remove bucket files
@@ -147,9 +147,9 @@ void Reindeer_Index<T>::write_matrix_in_bucket_files(kmer_Set_Light* ksl, vector
         remove(&name[0]);
         delete all_files[i];
     }
-    out_info.write(reinterpret_cast<char*>(&do_query_on_disk), sizeof(bool));
+    out_info << "do_query_on_disk:" << to_string(do_query_on_disk) << endl;
     for (auto& tk : kmers_by_file) {
-        out_info.write(reinterpret_cast<char*>(&tk), sizeof(uint64_t));
+        out_info << tk.first << ":" << to_string(tk.second) << endl;
     }
     out_info.close();
 }

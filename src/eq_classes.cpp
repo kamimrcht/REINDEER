@@ -139,8 +139,8 @@ void Reindeer_Index<T>::write_eq_class_matrix(vector<ofstream*>& all_files, ofst
     }
     //~ delete out_position;
     out_position.close();
-    out_info->write(reinterpret_cast<char*>(&nb_eq_class), sizeof(long));
-    out_info->write(reinterpret_cast<char*>(&nb_colors), sizeof(uint64_t));
+    *out_info << "nb_eq_class:" << to_string(nb_eq_class) << endl;
+    *out_info << "nb_colors:" << to_string(nb_colors) << endl;
 
     //~ if (do_query_on_disk)
     delete out;

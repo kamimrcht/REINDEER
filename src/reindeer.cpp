@@ -57,7 +57,6 @@ Reindeer_Index<T>::Reindeer_Index(uint pk, string& pfof, bool precord_counts, st
 template <class T>
 void Reindeer_Index<T>::read_info(vector<pair<string,uint64_t>>& kmers_by_file)
 {
-    uint64_t temp;
     ifstream info_file(matrix_name + "_info"); //todo change
     if (!info_file.is_open()) {
         cout << "Can't open an index file" << endl;
@@ -65,17 +64,39 @@ void Reindeer_Index<T>::read_info(vector<pair<string,uint64_t>>& kmers_by_file)
     }
     uint record_option;
     //get nb of monotigs, nb of eq_classes, nb_of colors
-    info_file.read(reinterpret_cast<char*>(&nb_monotig), sizeof(uint64_t));
-    info_file.read(reinterpret_cast<char*>(&k), sizeof(uint));
-    info_file.read(reinterpret_cast<char*>(&record_option), sizeof(uint));
-    info_file.read(reinterpret_cast<char*>(&nb_eq_class), sizeof(long));
-    info_file.read(reinterpret_cast<char*>(&nb_colors), sizeof(uint64_t));
-    info_file.read(reinterpret_cast<char*>(&do_query_on_disk), sizeof(bool));
-    for (int i = 0; i < nb_colors; i++) {
-        info_file.read(reinterpret_cast<char*>(&temp), sizeof(uint64_t));
-        kmers_by_file.push_back(temp);
-        //cout << temp << endl;
+
+    string line;
+    getline(info_file, line);
+    size_t colon_pos = line.find(':');
+    nb_monotig = stoull(line.substr(colon_pos + 1));
+
+    getline(info_file, line);
+    colon_pos = line.find(':');
+    k = stoul(line.substr(colon_pos + 1));
+
+    getline(info_file, line);
+    colon_pos = line.find(':');
+    record_option = stoul(line.substr(colon_pos + 1));
+
+    getline(info_file, line);
+    colon_pos = line.find(':');
+    nb_eq_class = stol(line.substr(colon_pos + 1));
+
+    getline(info_file, line);
+    colon_pos = line.find(':');
+    nb_colors = stoull(line.substr(colon_pos + 1));
+
+    getline(info_file, line);
+    colon_pos = line.find(':');
+    string do_query_on_disk_string = line.substr(colon_pos + 1);
+    do_query_on_disk = (do_query_on_disk_string != "0");
+
+    for (int i = 0; i < nb_colors; i++){
+        getline(info_file, line);
+        colon_pos = line.find(":");
+        kmers_by_file.push_back(make_pair(line.substr(0, colon_pos),stoull(line.substr(colon_pos + 1))));
     }
+
     if (record_option == 1) {
         record_counts = true;
     }

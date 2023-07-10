@@ -98,4 +98,6 @@ vector<uint16_t> count_string_to_count_vector(unsigned char* count_char_monotig,
 vector<uint8_t> count_string_to_count_vector8(unsigned char* count_char_monotig, unsigned size);
 void init_outputfile(string& toW, string& fof);
 
+string parse_filename(const string& filename);
+
 #endif
