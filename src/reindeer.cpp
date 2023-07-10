@@ -55,7 +55,7 @@ Reindeer_Index<T>::Reindeer_Index(uint pk, string& pfof, bool precord_counts, st
 }
 
 template <class T>
-void Reindeer_Index<T>::read_info(vector<uint64_t>& kmers_by_file)
+void Reindeer_Index<T>::read_info(vector<pair<string,uint64_t>>& kmers_by_file)
 {
     uint64_t temp;
     ifstream info_file(matrix_name + "_info"); //todo change
@@ -85,7 +85,7 @@ void Reindeer_Index<T>::read_info(vector<uint64_t>& kmers_by_file)
 template <class T>
 Reindeer_Index<T>::Reindeer_Index(string& poutput, string& poutput_query, uint threshold, string& query, uint pthreads, bool dele_tmp, string& poutput_format)
 {
-    vector<uint64_t> kmers_by_file;
+    vector<pair<string,uint64_t>> kmers_by_file;
     color_load_file = poutput;
     reindeer_index_files = poutput;
     output = poutput_query;

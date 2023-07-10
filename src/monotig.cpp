@@ -141,7 +141,7 @@ uint64_t max_size_superbucket(0);
 uint64_t min_size_superbucket(10000000000);
 
 // builds blight index from fof
-void kmer_Set_Light::construct_index_fof(const string& input_file, vector<uint64_t>& kmers_by_file, const string& tmp_dir, int colormode)
+void kmer_Set_Light::construct_index_fof(const string& input_file, vector<pair<string,uint64_t>>& kmers_by_file, const string& tmp_dir, int colormode)
 {
     omp_set_nested(2);
     if (not tmp_dir.empty()) {
@@ -482,10 +482,10 @@ uint16_t kmer_Set_Light::parseCoverage(const string& str)
 }
 
 // hashes the kmers from all the input files in super bucket files
-void kmer_Set_Light::create_super_buckets_list(const vector<string>& input_files, vector<uint64_t>& kmers_by_file)
+void kmer_Set_Light::create_super_buckets_list(const vector<string>& input_files, vector<pair<string,uint64_t>>& kmers_by_file)
 {
     kmers_by_file.resize(input_files.size());
-    fill(kmers_by_file.begin(), kmers_by_file.end(), 0);
+    fill(kmers_by_file.begin(), kmers_by_file.end(), make_pair("",0));
     struct rlimit rl;
     getrlimit(RLIMIT_NOFILE, &rl);
     rl.rlim_cur = number_superbuckets.value() + 10 + coreNumber;
@@ -601,7 +601,9 @@ void kmer_Set_Light::create_super_buckets_list(const vector<string>& input_files
                         occurrence_kmer *= cov;
                     }
                 }
-                kmers_by_file[i_file] += occurrence_kmer;
+                kmers_by_file[i_file].first = parse_filename(input_files[i_file]);
+                kmers_by_file[i_file].second += occurrence_kmer;
+                //cout << "occurrence_kmer : " << occurrence_kmer << endl;
             }
             for (uint64_t i(0); i < number_superbuckets.value(); ++i) {
                 if (not buffer[i].empty()) {

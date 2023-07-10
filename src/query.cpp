@@ -131,7 +131,7 @@ void get_colors_counts(vector<int64_t>& kmer_ids, bool record_counts, uint64_t c
 }
 
 // compute a string that sums up the count(s) for each dataset
-vector<uint> write_count_output(bool record_counts, vector<vector<uint16_t>>& query_counts, uint64_t color_number, vector<string>& toW, vector<string>& color_counts, uint k_size, string& output_format, vector<uint64_t>& kmers_by_file)
+vector<uint> write_count_output(bool record_counts, vector<vector<uint16_t>>& query_counts, uint64_t color_number, vector<string>& toW, vector<string>& color_counts, uint k_size, string& output_format, vector<pair<string,uint64_t>>& kmers_by_file)
 {
     bool average = false, sum = false, normalize = false;
     if (output_format != "raw") {
@@ -198,7 +198,7 @@ vector<uint> write_count_output(bool record_counts, vector<vector<uint16_t>>& qu
         }
         if (sum) { // out_number is already equal to the sum at this point, testing if we need the average or the normalized values or just the sum
             if (normalize) {
-                out_number = ceil(((out_number/total_for_average)/kmers_by_file[color])*1000000000);
+                out_number = ceil(((out_number/total_for_average)/kmers_by_file[color].second)*1000000000);
                 out_str = to_string((uint32_t)out_number);
             } else if (average) {
                 out_number = out_number/total_for_average;
@@ -236,7 +236,7 @@ void write_results_above_threshold(string& toWrite, vector<vector<uint16_t>>& qu
     toWrite += "\n";
 }
 
-void write_output(vector<int64_t>& kmers_colors, string& toWrite, bool record_counts, vector<vector<uint32_t>>& query_unitigID, vector<vector<uint32_t>>& query_unitigID_tmp, uint64_t& color_number, string& header, string& line, uint k, uint threshold, vector<vector<uint16_t>>& query_counts, vector<vector<uint8_t>>& query_colors, string& output_format, vector<uint64_t>& kmers_by_file)
+void write_output(vector<int64_t>& kmers_colors, string& toWrite, bool record_counts, vector<vector<uint32_t>>& query_unitigID, vector<vector<uint32_t>>& query_unitigID_tmp, uint64_t& color_number, string& header, string& line, uint k, uint threshold, vector<vector<uint16_t>>& query_counts, vector<vector<uint8_t>>& query_colors, string& output_format, vector<pair<string,uint64_t>>& kmers_by_file)
 {
     vector<string> color_counts;
     vector<string> toW(color_number, "");
@@ -244,7 +244,7 @@ void write_output(vector<int64_t>& kmers_colors, string& toWrite, bool record_co
     write_results_above_threshold(toWrite, query_counts, color_number, toW, color_counts, header, record_counts, threshold, line, k, covered_positions);
 }
 
-void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t& color_number, uint k, bool record_counts, uint threshold, vector<vector<uint32_t>>& query_unitigID, uint nb_threads, vector<unsigned char*>& compr_monotig_color, vector<unsigned>& compr_monotig_color_size, bool do_query_on_disk, string& rd_file, long eq_class_nb, uint64_t nb_monotig, vector<long>& position_in_file, string& fof, string& output_format, vector<uint64_t>& kmers_by_file)
+void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t& color_number, uint k, bool record_counts, uint threshold, vector<vector<uint32_t>>& query_unitigID, uint nb_threads, vector<unsigned char*>& compr_monotig_color, vector<unsigned>& compr_monotig_color_size, bool do_query_on_disk, string& rd_file, long eq_class_nb, uint64_t nb_monotig, vector<long>& position_in_file, string& fof, string& output_format, vector<pair<string,uint64_t>>& kmers_by_file)
 {
 
     ifstream query_file(input);
@@ -309,7 +309,7 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t& color_n
     out.close();
 }
 
-void query_by_file(uint& counter, string& entry, kmer_Set_Light& ksl, uint64_t& color_number, uint k, bool record_counts, uint threshold, string& output, uint nb_threads, vector<unsigned char*>& compr_monotig_color, vector<unsigned>& compr_monotig_color_size, bool do_query_on_disk, string& rd_file, long eq_class_nb, uint64_t nb_monotig, vector<long>& position_in_file, string& fof, string& output_format, vector<uint64_t>& kmers_by_file)
+void query_by_file(uint& counter, string& entry, kmer_Set_Light& ksl, uint64_t& color_number, uint k, bool record_counts, uint threshold, string& output, uint nb_threads, vector<unsigned char*>& compr_monotig_color, vector<unsigned>& compr_monotig_color_size, bool do_query_on_disk, string& rd_file, long eq_class_nb, uint64_t nb_monotig, vector<long>& position_in_file, string& fof, string& output_format, vector<pair<string,uint64_t>>& kmers_by_file)
 {
     string outName(output + "/out_query_Reindeer_P" + to_string(threshold) + "_" + get_file_name(entry).substr(0, 50) + "_" + to_string(counter) + ".out");
     cout << "Result will be written in " << outName << endl;
@@ -319,7 +319,7 @@ void query_by_file(uint& counter, string& entry, kmer_Set_Light& ksl, uint64_t& 
 }
 
 template <class T>
-void Reindeer_Index<T>::perform_query(kmer_Set_Light& ksl, uint threshold, string& query, vector<long>& position_in_file, string& output_format, vector<uint64_t>& kmers_by_file)
+void Reindeer_Index<T>::perform_query(kmer_Set_Light& ksl, uint threshold, string& query, vector<long>& position_in_file, string& output_format, vector<pair<string,uint64_t>>& kmers_by_file)
 {
     uint counter(0), patience(0);
     string entry;

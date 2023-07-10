@@ -44,7 +44,7 @@ bool similar_count(const vector<uint16_t>& V1, const vector<uint16_t>& V2);
 
 string compress_vector(const vector<uint16_t>& V);
 
-void construct_index_fof(const string& input_file, vector<uint64_t>& kmers_by_file, const string& tmp_dir, int colormode);
+void construct_index_fof(const string& input_file, vector<pair<string,uint64_t>>& kmers_by_file, const string& tmp_dir, int colormode);
 
 vector<uint16_t> get_count_vector(const vector<pair<uint16_t, uint16_t>>& V, uint64_t number_color);
 vector<uint8_t> get_color_vector(const vector<pair<uint16_t, uint16_t>>& V, uint64_t number_color);
@@ -59,6 +59,6 @@ void get_monocolor_minitigs_mem(vector<robin_hood::unordered_node_map<kmer, kmer
 
 uint16_t parseCoverage(const string& str);
 
-void create_super_buckets_list(const vector<string>& input_files, vector<uint64_t>& kmers_by_file);
+void create_super_buckets_list(const vector<string>& input_files, vector<pair<string,uint64_t>>& kmers_by_file);
 
 #endif

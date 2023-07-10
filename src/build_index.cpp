@@ -59,7 +59,7 @@ void get_header_monotig_file(zstr::ifstream& in, string& header)
 
 // dispatch count vectors in files. Similar counts go in similar files
 template <class T>
-void Reindeer_Index<T>::write_matrix_in_bucket_files(kmer_Set_Light* ksl, vector<uint64_t>& kmers_by_file)
+void Reindeer_Index<T>::write_matrix_in_bucket_files(kmer_Set_Light* ksl, vector<pair<string,uint64_t>>& kmers_by_file)
 {
     //create bucket files for partitionning the compressed counts -> finding eq classes
     vector<ofstream*> all_files;
@@ -156,7 +156,7 @@ void Reindeer_Index<T>::write_matrix_in_bucket_files(kmer_Set_Light* ksl, vector
 
 // color using monotig file: either build and dump the color matrix during the index construction, or load it during the query
 template <class T>
-void Reindeer_Index<T>::do_coloring(kmer_Set_Light* ksl, vector<uint64_t>& kmers_by_file)
+void Reindeer_Index<T>::do_coloring(kmer_Set_Light* ksl, vector<pair<string,uint64_t>>& kmers_by_file)
 {
     vector<string> file_names;
     if (not color_load_file.empty()) //query
@@ -193,7 +193,7 @@ void Reindeer_Index<T>::do_coloring(kmer_Set_Light* ksl, vector<uint64_t>& kmers
 template <class T>
 kmer_Set_Light* Reindeer_Index<T>::load_rle_index()
 {
-    vector<uint64_t> kmers_by_file {0};
+    vector<pair<string,uint64_t>> kmers_by_file {0};
     kmer_Set_Light* ksl = new kmer_Set_Light(reindeer_index_files + "/reindeer_index.gz");
     do_coloring(ksl, kmers_by_file);
     if (dele_monotig_file) {
@@ -207,7 +207,7 @@ kmer_Set_Light* Reindeer_Index<T>::load_rle_index()
 template <class T>
 void Reindeer_Index<T>::build_index(kmer_Set_Light* ksl)
 {
-    vector<uint64_t> kmers_by_file; // total of kmers for each file
+    vector<pair<string,uint64_t>> kmers_by_file; // total of kmers for each file
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
     bool dont_dump(false);
     int color_mode;

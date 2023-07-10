@@ -87,14 +87,14 @@ public:
     void print_Reindeer();
 
     void build_index(kmer_Set_Light* ksl);
-    void read_info(vector<uint64_t>& kmers_by_file);
-    void do_coloring(kmer_Set_Light* ksl, vector<uint64_t>& kmers_by_file);
+    void read_info(vector<pair<string,uint64_t>>& kmers_by_file);
+    void do_coloring(kmer_Set_Light* ksl, vector<pair<string,uint64_t>>& kmers_by_file);
     kmer_Set_Light* load_rle_index();
-    void write_matrix_in_bucket_files(kmer_Set_Light* ksl, vector<uint64_t>& kmers_by_file);
+    void write_matrix_in_bucket_files(kmer_Set_Light* ksl, vector<pair<string,uint64_t>>& kmers_by_file);
     void write_eq_class_matrix(vector<ofstream*>& all_files, ofstream* out_info);
 
     //query
-    void perform_query(kmer_Set_Light& ksl, uint threshold, string& query, vector<long>& position_in_file, string& output_format, vector<uint64_t>& kmers_by_file);
+    void perform_query(kmer_Set_Light& ksl, uint threshold, string& query, vector<long>& position_in_file, string& output_format, vector<pair<string,uint64_t>>& kmers_by_file);
     void get_position_vector_query_disk(vector<long>& position_in_file);
 };
 
