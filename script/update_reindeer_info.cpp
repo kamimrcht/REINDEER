@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <cstring>
+#include <system_error>
 
 using namespace std;
 namespace fs = filesystem;
@@ -28,15 +29,19 @@ void help() {
     cout << endl;
     cout <<
     "* Mandatory parameters *\n"
-    "-f, --fof <file>                   :       fof (File of files)\n"
-    "-i, --info <directory or file>     :       Either the directory where the index is stored or the reindeer_maxtrix_eqc_info file\n\n"
-    "* General options *\n"
-    "-h, --help                         :       Print help (what you are seeing)\n"
+    "-f, --fof <file>                   :       fof (File of files), file containing paths to files used to construct index\n"
+    "-i, --info <directory or file>     :       Either the directory where the index is stored or the reindeer_maxtrix_eqc_info file\n"
+    "\n"
+    "* Optional parameters *\n"
+    "--text                             :       If the info file is already a text file and you want to update it again\n"
+    "\n"
+    "* General parameters *\n"
+    "-h, --help                         :       Print help (what you are currently seeing)\n"
     << endl;
     exit(0);
 }
 
-vector<pair<string,string>> process_args(int argc, char** argv) {
+vector<pair<string,string>> process_args(int argc, char** argv, bool& is_text) {
 
     vector<pair<string,string>> paths;
 
@@ -45,6 +50,7 @@ vector<pair<string,string>> process_args(int argc, char** argv) {
         { "fof", required_argument, nullptr, 'f' },
         { "info", required_argument, nullptr, 'i' },
         { "help", no_argument, nullptr, 'h' },
+        { "text", no_argument, nullptr, 't' },
         { nullptr, no_argument, nullptr, 0 }
     };
 
@@ -60,6 +66,9 @@ vector<pair<string,string>> process_args(int argc, char** argv) {
             break;
         case 'i':
             paths.push_back(make_pair("path_info",optarg));
+            break;
+        case 't':
+            is_text = true;
             break;
         case 'h':
         case '?': // Unrecognized option
@@ -87,7 +96,22 @@ uint16_t parseCoverage(const string& str) {
 	return (uint16_t)stof(str.substr(pos + 5, i));
 }
 
-string parse_filename(string& filename) {
+bool is_binary(const string& filename) {
+    ifstream file(filename, ios::binary);
+    bool isBinary = false;
+    char ch;
+    while (file.get(ch)) {
+        if (static_cast<unsigned char>(ch) > 127) {
+        // If any byte value is greater than 127, it is likely binary data
+            isBinary = true;
+            break;
+        }
+    }
+    file.close();
+    return isBinary;
+}
+
+string parse_filename(const string& filename) {
     string clean_filename = "";
     auto last_slash_pos = filename.find_last_of('/');
     if (last_slash_pos != string::npos) {
@@ -108,24 +132,96 @@ string parse_filename(string& filename) {
     return clean_filename;
 }
 
-Info read_binary(string& in_file) {
+Info read_binary(const string& in_file) {
     // ------ reading binary info file ------ //
-    Info data_read_binary;
+    if (!is_binary(in_file)) {
+        cerr << "[ERROR] " << strerror(EINVAL) << " : Input info file is not binary, try --text if you still want to update it or see help (-h, --help)" << endl;
+        exit(EINVAL);
+    }
+    Info data_read_bin;
     ifstream info_file_bin(in_file,ios::binary);
     info_file_bin.seekg(info_file_bin.beg);
-    info_file_bin.read(reinterpret_cast<char*>(&data_read_binary.nb_monotig), sizeof(uint64_t));
-    info_file_bin.read(reinterpret_cast<char*>(&data_read_binary.k), sizeof(uint));
-    info_file_bin.read(reinterpret_cast<char*>(&data_read_binary.record_option), sizeof(uint));
-    info_file_bin.read(reinterpret_cast<char*>(&data_read_binary.nb_eq_class), sizeof(long));
-    info_file_bin.read(reinterpret_cast<char*>(&data_read_binary.nb_colors), sizeof(uint64_t));
-    info_file_bin.read(reinterpret_cast<char*>(&data_read_binary.do_query_on_disk), sizeof(bool));
+    info_file_bin.read(reinterpret_cast<char*>(&data_read_bin.nb_monotig), sizeof(uint64_t));
+    info_file_bin.read(reinterpret_cast<char*>(&data_read_bin.k), sizeof(uint));
+    info_file_bin.read(reinterpret_cast<char*>(&data_read_bin.record_option), sizeof(uint));
+    info_file_bin.read(reinterpret_cast<char*>(&data_read_bin.nb_eq_class), sizeof(long));
+    info_file_bin.read(reinterpret_cast<char*>(&data_read_bin.nb_colors), sizeof(uint64_t));
+    info_file_bin.read(reinterpret_cast<char*>(&data_read_bin.do_query_on_disk), sizeof(bool));
     info_file_bin.close();
-    return data_read_binary;
+    cout << "Binary file read ✓" << endl;
+    return data_read_bin;
 }
 
-vector<pair<string,uint64_t>> calc_kbf(string& fof) {
-    // ------ calculating kmers_by_file ------ //
+Info read_text(const string& in_file){
+    if (is_binary(in_file+"_txt")) {
+        cerr << "[ERROR] " << strerror(EINVAL) << " : Input info file is binary, try without --text if you want to update it or see help (-h, --help)" << endl;
+        exit(EINVAL);
+    }
+    Info data_read_txt;
+    ifstream info_file_txt(in_file+"_txt");
 
+    string line;
+    getline(info_file_txt, line);
+    size_t colon_pos = line.find(':');
+    if (line.substr(0,colon_pos) != "nb_monotig") {
+        cerr << "[ERROR]" << strerror(EINTR) << " | Update stopped : Missing variable 'nb_monotig', try with original binary info file" << endl;
+        exit(EINTR);
+    } else {
+        data_read_txt.nb_monotig = stoull(line.substr(colon_pos + 1));
+    }
+
+    getline(info_file_txt, line);
+    colon_pos = line.find(':');
+    if (line.substr(0,colon_pos) != "k") {
+        cerr << "[ERROR]" << strerror(EINTR) << " | Update stopped : Missing variable 'k', try with original binary info file" << endl;
+        exit(EINTR);
+    } else {
+        data_read_txt.k = stoul(line.substr(colon_pos + 1));
+    }
+
+    getline(info_file_txt, line);
+    colon_pos = line.find(':');
+    if (line.substr(0,colon_pos) != "record_option") {
+        cerr << "[ERROR]" << strerror(EINTR) << " | Update stopped : Missing variable 'record_option', try with original binary info file" << endl;
+        exit(EINTR);
+    } else {
+        data_read_txt.record_option = stoul(line.substr(colon_pos + 1));
+    }
+
+    getline(info_file_txt, line);
+    colon_pos = line.find(':');
+    if (line.substr(0,colon_pos) != "nb_eq_class") {
+        cerr << "[ERROR]" << strerror(EINTR) << " | Update stopped : Missing variable 'nb_eq_class', try with original binary info file" << endl;
+        exit(EINTR);
+    } else {
+        data_read_txt.nb_eq_class = stol(line.substr(colon_pos + 1));
+    }
+
+    getline(info_file_txt, line);
+    colon_pos = line.find(':');
+    if (line.substr(0,colon_pos) != "nb_colors") {
+        cerr << "[ERROR]" << strerror(EINTR) << " | Update stopped : Missing variable 'nb_colors', try with original binary info file" << endl;
+        exit(EINTR);
+    } else {
+        data_read_txt.nb_colors = stoull(line.substr(colon_pos + 1));
+    }
+
+    getline(info_file_txt, line);
+    colon_pos = line.find(':');
+    if (line.substr(0,colon_pos) != "do_query_on_disk") {
+        cerr << "[ERROR]" << strerror(EINTR) << " | Update stopped : Missing variable 'do_query_on_disk', try with original binary info file" << endl;
+        exit(EINTR);
+    } else {
+        string do_query_on_disk_string = line.substr(colon_pos + 1);
+        data_read_txt.do_query_on_disk = (do_query_on_disk_string != "0");
+    }
+    cout << "Text file read ✓" << endl;
+    return data_read_txt;
+}
+
+vector<pair<string,uint64_t>> calc_kbf(const string& fof) {
+    // ------ calculating kmers_by_file ------ //
+    cout << "Calculating kmers by file..." << endl;
     ifstream ifof(fof);
     vector<string> input_files;
     while (!ifof.eof()) {
@@ -157,10 +253,11 @@ vector<pair<string,uint64_t>> calc_kbf(string& fof) {
         delete reading;
     }
     ifof.close();
+    cout << "Done ✓" << endl;
     return kbf;
 }
 
-void write_info_txt(string& in_file, Info& data) {
+void write_info_txt(const string& in_file, Info& data) {
     string extension = "_txt";
     ofstream info_file_txt(in_file+extension);
     info_file_txt << "nb_monotig:" << to_string(data.nb_monotig) << endl;
@@ -172,23 +269,27 @@ void write_info_txt(string& in_file, Info& data) {
     for (auto& v : data.kbf) {
         info_file_txt << v.first << ":" << to_string(v.second) << endl;
     }
+    cout << "Results written in ";
     info_file_txt.close();
 }
 
+/*
 void clear(string& in_file) {
     string extension = "_txt";
     fs::path path1 = in_file;
     fs::remove(in_file);
     fs::rename(in_file+extension,path1);
 }
+*/
 
 int main (int argc, char* argv[]) {
-    if (argc == 1) {
+    if (argc == 1 || argc == 3 || argc == 4) {
         cout << strerror(EINVAL) << " : Missing argument(s) | Try -h or --help" << endl;
         exit(EINVAL);
     }
-    vector<pair<string,string>> paths = process_args(argc, argv);
-    string fof = "", in_file = "";
+    bool is_text = false;
+    vector<pair<string,string>> paths = process_args(argc, argv, is_text);
+    string fof = "", in_file = "", info_path = "";
     for (auto& p : paths) {
         if (p.first == "fof") {
             fof = p.second;
@@ -197,17 +298,22 @@ int main (int argc, char* argv[]) {
             if (last_underscore_pos != string::npos) {
                 if (p.second.substr(last_underscore_pos + 1) == "info") {
                     in_file = p.second;
-                } else {
-                    in_file = p.second+"/reindeer_matrix_eqc_info";
                 }
             } else {
                 in_file = p.second+"/reindeer_matrix_eqc_info";
             }
+            info_path = p.second.substr(0,p.second.find_last_of("/")+1);
         }
     }
-    Info data_read_binary = read_binary(in_file);
-    data_read_binary.kbf = calc_kbf(fof); 
-    write_info_txt(in_file, data_read_binary);
-    clear(in_file);
+    Info data_read;
+    if (!is_text) {
+        data_read = read_binary(in_file);
+    } else {
+        data_read = read_text(in_file);
+    }
+    data_read.kbf = calc_kbf(fof);
+    write_info_txt(in_file, data_read);
+    cout << info_path << "reindeer_matrix_eqc_info_txt" << endl;
+    //clear(in_file);
     return 0;
 }
