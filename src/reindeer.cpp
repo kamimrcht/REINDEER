@@ -5,7 +5,7 @@ using namespace chrono;
 
 // constructor for index construction
 template <class T>
-Reindeer_Index<T>::Reindeer_Index(uint pk, string& pfof, bool precord_counts, string& preindeer_index_files, uint pthreads, bool pdo_query_on_disk, bool pquantize, bool pdo_log, uint pm1, uint pm3, bool dele_tmp)
+Reindeer_Index<T>::Reindeer_Index(uint pk, string& pfof, bool precord_counts, string& preindeer_index_files, uint pthreads, bool pdo_query_on_disk, bool pquantize, bool pdo_log, uint pm1, uint pm3, bool dele_tmp, bool poutput_monotigs)
 {
     // MPHF options
     m2 = 10;
@@ -21,6 +21,7 @@ Reindeer_Index<T>::Reindeer_Index(uint pk, string& pfof, bool precord_counts, st
     threads = pthreads; // number of threads
     record_counts = precord_counts; // if true, record counts else presence/absence //todo replace by color mode
     do_query_on_disk = pdo_query_on_disk; // if true the full index is dumped on the disk, else it is rebuilt and in ram
+    output_monotigs = poutput_monotigs;
 
     // other counts modes
     quantize = pquantize; // record quantization

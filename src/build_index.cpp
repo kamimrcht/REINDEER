@@ -1,4 +1,4 @@
-
+#include "monotig.hpp"
 #include "build_index.hpp"
 #include "reindeer.hpp"
 
@@ -208,6 +208,10 @@ template <class T>
 void Reindeer_Index<T>::build_index(kmer_Set_Light* ksl)
 {
     vector<pair<string,uint64_t>> kmers_by_file; // total of kmers for each file
+    if (output_monotigs) {
+        string monotigs_file(reindeer_index_files + "/monotigs.tsv");
+        set_monotigs_output(monotigs_file);
+	}
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
     bool dont_dump(false);
     int color_mode;

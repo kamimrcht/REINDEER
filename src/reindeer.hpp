@@ -51,6 +51,7 @@ public:
     uint color_mode;
     bool do_query_on_disk; // if true the full index is dumped on the disk, else it is rebuilt and in ram
     string output_format; // output format of values (none/average/normalized/sum)
+    bool output_monotigs;
 
     // other counts modes
     bool quantize; // record quantization
@@ -82,7 +83,7 @@ public:
     string matrix_name;
 
     //constructor
-    Reindeer_Index(uint pk, string& pfof, bool precord_counts, string& preindeer_index_files, uint pthreads, bool pdo_query_on_disk, bool pquantize, bool pdo_log, uint pm1, uint pm3, bool dele_tmp);
+    Reindeer_Index(uint pk, string& pfof, bool precord_counts, string& preindeer_index_files, uint pthreads, bool pdo_query_on_disk, bool pquantize, bool pdo_log, uint pm1, uint pm3, bool dele_tmp, bool poutput_monotigs);
     Reindeer_Index(string& output, string& output_query, uint threshold, string& query, uint threads, bool dele_tmp, string& output_format);
     void print_Reindeer();
 

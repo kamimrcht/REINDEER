@@ -35,7 +35,7 @@ uint m3(5);
 char ch;
 string query, fof(""), color_load_file(""), output_bcalm("bcalm_out"), output_union_bcalm("bcalm_union_out"), output("reindeer_index_files"), output_format("raw");
 uint k(31), threads(1);
-bool record_counts(true), quantize(false), do_query_on_disk(true), bcalm(false), do_Index(false), do_Query(false), PE(false), do_log(false), keep_tmp(false);
+bool record_counts(true), quantize(false), do_query_on_disk(true), bcalm(false), do_Index(false), do_Query(false), PE(false), do_log(false), keep_tmp(false), output_monotigs(false);
 uint threshold(40);
 
 void PrintHelp()
@@ -64,7 +64,7 @@ void PrintHelp()
                                                           "--minimizer-size <integer>          :    MPHF option: minimizer size\n"
                                                           "--buckets <integer>          :    MPHF option: number of buckets (log)\n"
                                                           "--keep-tmp                   :    keep tmp files\n"
-                                                          ""
+                                                          "--monotigs                   :    Save the monotigs into monotigs.tsv inside of the output directory\n"
                                                           "                    QUERY\n\n"
 
                                                           "      * Mandatory parameters\n"
@@ -104,6 +104,7 @@ void ProcessArgs(int argc, char** argv)
         { "keep-tmp", no_argument, nullptr, 'r' },
         { "version", no_argument, nullptr, 'V' },
         { "format", required_argument, nullptr, 'F' },
+        { "monotigs", no_argument, nullptr, 'M' },
         { nullptr, no_argument, nullptr, 0 }
     };
 
@@ -183,6 +184,9 @@ void ProcessArgs(int argc, char** argv)
                 output_format = optarg;
             }
             break;
+        case 'M':
+            output_monotigs = true;
+            break;
         case 'h': // -h or --help
         case '?': // Unrecognized option
         default:
@@ -244,7 +248,7 @@ int main(int argc, char** argv)
         bcalm_cleanup();
         cout << "Indexing k-mers...\n\n"
              << endl;
-        Reindeer_Index<uint16_t> reindeer_index(k, fof, record_counts, reindeer_index_files, threads, do_query_on_disk, quantize, do_log, m1, m3, !(keep_tmp));
+        Reindeer_Index<uint16_t> reindeer_index(k, fof, record_counts, reindeer_index_files, threads, do_query_on_disk, quantize, do_log, m1, m3, !(keep_tmp), output_monotigs);
         //~ reindeer_index(k, fof, color_dump_file, record_counts, output, cl, threads,  do_query_on_disk, quantize, do_log, m1, m3);
         cout << "Reindeer index files written in " << reindeer_index_files << endl;
         cout << "INDEX BUILDING = THE END." << endl;
