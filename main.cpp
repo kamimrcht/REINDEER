@@ -281,7 +281,9 @@ int main(int argc, char** argv)
                 cerr << "[ERROR] " << strerror(ENOENT) << " | " << "REINDEER index directory is missing (or path in -l is wrong). Stopped." << endl;
                 return ENOENT;
             }
-            Reindeer_Index<uint16_t> reindeer_index(color_load_file, output_query, threshold, query, threads, !(keep_tmp), output_format);
+            Reindeer_Index<uint16_t> reindeer_index(color_load_file, output, threshold, query, threads, !(keep_tmp), output_format);
+            reindeer_index.load_index();
+            reindeer_index.querying();
         }
     }
     return 0;

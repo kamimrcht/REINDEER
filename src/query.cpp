@@ -27,8 +27,9 @@ vector<uint16_t> get_count_monotig(unsigned char* monotig_counts, unsigned vecto
 }
 
 template <class T>
-void Reindeer_Index<T>::get_position_vector_query_disk(vector<long>& position_in_file)
+vector<long> Reindeer_Index<T>::get_position_vector_query_disk()
 {
+    vector<long> position_in_file;
     ifstream in(matrix_eqc_position_file); //positions file
     long position;
     uint nb(0);
@@ -38,6 +39,7 @@ void Reindeer_Index<T>::get_position_vector_query_disk(vector<long>& position_in
         ++nb;
     }
     in.close();
+    return position_in_file;
 }
 
 long get_matrix_line_query_disk(int64_t rank, unsigned char* color, unsigned& line_size, vector<long>& position_in_file, ifstream& in)

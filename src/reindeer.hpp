@@ -53,6 +53,13 @@ public:
     string output_format; // output format of values (none/average/normalized/sum)
     bool output_monotigs;
 
+    //variables
+    vector<pair<string,uint64_t>> kmers_by_file;
+    string query;
+    uint threshold;
+    vector<long> position_in_file;
+    kmer_Set_Light* ksl;
+
     // other counts modes
     bool quantize; // record quantization
     bool do_log; // record log
@@ -85,10 +92,13 @@ public:
     //constructor
     Reindeer_Index(uint pk, string& pfof, bool precord_counts, string& preindeer_index_files, uint pthreads, bool pdo_query_on_disk, bool pquantize, bool pdo_log, uint pm1, uint pm3, bool dele_tmp, bool poutput_monotigs);
     Reindeer_Index(string& output, string& output_query, uint threshold, string& query, uint threads, bool dele_tmp, string& output_format);
+    // methods
     void print_Reindeer();
+    void load_index();
+    void querying();
 
     void build_index(kmer_Set_Light* ksl);
-    void read_info(vector<pair<string,uint64_t>>& kmers_by_file);
+    void read_info();
     void do_coloring(kmer_Set_Light* ksl, vector<pair<string,uint64_t>>& kmers_by_file);
     kmer_Set_Light* load_rle_index();
     void write_matrix_in_bucket_files(kmer_Set_Light* ksl, vector<pair<string,uint64_t>>& kmers_by_file);
@@ -96,7 +106,7 @@ public:
 
     //query
     void perform_query(kmer_Set_Light& ksl, uint threshold, string& query, vector<long>& position_in_file, string& output_format, vector<pair<string,uint64_t>>& kmers_by_file);
-    void get_position_vector_query_disk(vector<long>& position_in_file);
+    vector<long> get_position_vector_query_disk();
 };
 
 template class Reindeer_Index<uint8_t>;
