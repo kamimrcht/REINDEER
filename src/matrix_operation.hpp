@@ -21,7 +21,6 @@ void dump_compressed_vector_bucket_disk_query(vector<uint16_t>& counts, int64_t 
 void dump_compressed_vector_bucket(int64_t monotig_id, vector<ofstream*>& bucket_files, string& header );
 
 
-//~ void read_matrix_compressed_line(zstr::ifstream& in, int64_t& rank, char* comp, unsigned& comp_size);
-void read_matrix_compressed_line(ifstream& in, int64_t& rank, char* comp, unsigned& comp_size);
+void read_matrix_compressed_line(zstr::ifstream& in, int64_t& rank, char* comp, unsigned& comp_size);
 
 #endif

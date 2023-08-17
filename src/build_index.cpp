@@ -73,8 +73,7 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 	vector<ofstream*> all_files;
 	for (uint i(0); i <1000; ++i)
 	{
-		//~ ofstream* out = new ofstream(output + "/matrix_bucket_"+ to_string(i) + ".gz"); 
-		ofstream* out = new ofstream(output + "/matrix_bucket_"+ to_string(i) ); 
+		ofstream* out = new ofstream(output + "/matrix_bucket_"+ to_string(i) + ".gz"); 
 		all_files.push_back(out); 
 	}
 	string output_file_name;
@@ -163,8 +162,7 @@ void write_matrix_in_bucket_files(string& color_load_file, string& color_dump_fi
 	// remove bucket files
 	for (uint i(0); i < all_files.size(); ++i)
 	{
-		//~ string name(output + "/matrix_bucket_"+ to_string(i) + ".gz");
-		string name(output + "/matrix_bucket_"+ to_string(i));
+		string name(output + "/matrix_bucket_"+ to_string(i) + ".gz");
 		remove(&name[0]); 
 		delete all_files[i];
 	}
