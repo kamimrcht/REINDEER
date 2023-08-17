@@ -83,6 +83,18 @@ matrix_operation.o: src/matrix_operation.cpp $(INC)
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 
+socket: socket.o blight.o utils_b.o trlec.o trled.o monotig.o utils.o reindeer.o query.o build_index.o eq_classes.o launch_bcalm.o matrix_operation.o $(LZ4H)
+	$(CXX) -o $@ $^ $(CFLAGS)
+
+socket.o: src/socket.cpp
+	$(CXX) -o $@ -c $< $(CFLAGS)
+
+socket_clean:
+	rm -rf *.o socket
+
+socket_rebuild: socket_clean socket
+
+
 update_info: update_reindeer_info.o
 	$(CXX) -o $@ $^ $(CFLAGS)
 
