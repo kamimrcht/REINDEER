@@ -30,9 +30,10 @@ TESTDIR:=out_test_tmp
 QUERY:=query_test
 
 all: test_build test_query_def test_query_format
-	@rm -fr $(TESTDIR);
+	@if [ ! -f $(TESTDIR)/error_query ]; then rm -fr $(TESTDIR); fi
 
 test_build:
+	@rm -rf $(TESTDIR) # remove it if previous run was in error
 	@mkdir -p $(TESTDIR);
 	@echo "$(YELLFG)Building REINDEER index $(NoColor)....................................................."
 	../Reindeer --index -f fof_unitigs.txt -o $(TESTDIR) > $(TESTDIR)/log 2>&1;
@@ -44,7 +45,7 @@ test_query_def:
 	../Reindeer --query -l $(TESTDIR) -q $(QUERY).fa -o $(TESTDIR) >> $(TESTDIR)/log 2>&1;
 	@if diff $(TESTDIR)/out_query_Reindeer_P40_$(QUERY)_0.out query_results/out_query_Reindeer_P40_$(QUERY)_0.out > /dev/null; \
 		then echo "    -> $(GREEN)Query test passed.$(NoColor)";\
-		else echo "    -> $(RED)Query test error.$(NoColor)"; fi;
+		else echo "    -> $(RED)Query test error.$(NoColor)"; touch $(TESTDIR)/error_query; fi;
 
 test_query_format:
 	@for f in sum average normalize; do \
@@ -52,7 +53,7 @@ test_query_format:
 	../Reindeer --query -l $(TESTDIR) -q $(QUERY).fa -o $(TESTDIR) --format $$f >> $(TESTDIR)/log 2>&1 ;\
 	if diff $(TESTDIR)/out_query_Reindeer_P40_$(QUERY)_0.out query_results/out_query_Reindeer_P40_$(QUERY)_0-format_$$f.out > /dev/null; \
 		then echo "    -> $(GREEN)Query test passed.$(NoColor)";\
-		else echo "    -> $(RED)Query test error.$(NoColor)"; fi; done
+		else echo "    -> $(RED)Query test error.$(NoColor)"; touch $(TESTDIR)/error_query; fi; done
 
 benchmark: $(EXEC)
 
