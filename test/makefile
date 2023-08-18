@@ -18,51 +18,27 @@ ifeq ($(DEBUG_SYMS), 1)
 endif
 CFLAGS2+= -w -Wall -std=gnu99 -DUSE_THREADS  -fstrict-aliasing -Iext $(DEFS)
 CFLAGS+=-std=c++11 -pipe -lz -fopenmp -Iblight/lz4 ${WARNS}
-INC=../blight/blight.h ../blight/bbhash.h ../blight/common.h ../trle/trle.h ../trle/trle_.h ../trle/conf.h ../blight/utils.h ../blight/zstr.hpp ../blight/common.h ../blight/robin_hood.h ../src/monotig.hpp ../blight/lz4/lz4_stream.h ../src/utils.hpp
+
 EXEC=bench_monotig
-LZ4H=lz4frame.o lz4.o xxhash.o lz4hc.o
+SRC = bench_monotig.cpp ../src/utils.cpp ../src/monotig.cpp ../blight/blight.cpp ../blight/utils.cpp ../trle/trlec.c ../trle/trled.c ../blight/lz4/lz4frame.c ../blight/lz4/lz4.c ../blight/lz4/lz4hc.c ../blight/lz4/xxhash.c
+OBJ = $(addsuffix .o, $(basename $(SRC)))
 
+all:
 
-all: $(EXEC)
+benchmark: $(EXEC)
 
-bench_monotig: bench_monotig.o blight.o utils_b.o trlec.o trled.o monotig.o utils.o $(LZ4H)
+bench_monotig: $(OBJ)
 	$(CXX) -o $@ $^ $(CFLAGS)
 
-utils.o: ../src/utils.cpp $(INC)
+%.o: %.cpp
 	$(CXX) -o $@ -c $< $(CFLAGS)
 
-bench_monotig.o: bench_monotig.cpp $(INC)
-	$(CXX) -o $@ -c $< $(CFLAGS)
-
-monotig.o: ../src/monotig.cpp $(INC)
-	$(CXX) -o $@ -c $< $(CFLAGS)
-
-blight.o: ../blight/blight.cpp $(INC)
-	$(CXX) -o $@ -c $< $(CFLAGS)
-	
-utils_b.o: ../blight/utils.cpp $(INC)
-	$(CXX) -o $@ -c $< $(CFLAGS)
-
-trlec.o: ../trle/trlec.c $(INC)
+%.o: %.c
 	$(CC) -o $@ -c $< $(CFLAGS2)
 
-trled.o: ../trle/trled.c $(INC)
-	$(CC) -o $@ -c $< $(CFLAGS2)
-
-lz4frame.o: ../blight/lz4/lz4frame.c $(INC)
-	$(CC) -o $@ -c $< $(CFLAGS2)
-
-lz4.o: ../blight/lz4/lz4.c $(INC)
-	$(CC) -o $@ -c $< $(CFLAGS2)
-
-lz4hc.o: ../blight/lz4/lz4hc.c $(INC)
-	$(CC) -o $@ -c $< $(CFLAGS2)
-	
-xxhash.o: ../blight/lz4/xxhash.c $(INC)
-	$(CC) -o $@ -c $< $(CFLAGS2) 
+.PHONY:= clean rebuild
 
 clean:
-	rm -rf trlec.o trled.o utils.o main.o blight.o utils_b.o reindeer.o query.o build_index.o eq_classes.o launch_bcalm.o monotig.o matrix_operation.o bench_monotig.o lz4*.o xxhash.o
-	rm -rf $(EXEC)
+	rm -rf $(OBJ) $(EXEC)
 
 rebuild: clean $(EXEC)
