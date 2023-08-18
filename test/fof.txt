@@ -1,2 +1,2 @@
-test/input_bcalm/SRR10092187_10k.fastq
-test/input_bcalm/SRR10092188_10k.fastq
+input_bcalm/SRR10092187_10k.fastq
+input_bcalm/SRR10092188_10k.fastq

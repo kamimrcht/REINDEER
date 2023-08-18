@@ -106,6 +106,11 @@ update_clean:
 
 update_rebuild: update_clean update_info
 
+# do test
+test:
+	cd test && $(MAKE) all
+
+.PHONY: test
 
 clean:
 	rm -rf trlec.o trled.o utils.o main.o blight.o utils_b.o reindeer.o query.o build_index.o eq_classes.o launch_bcalm.o monotig.o matrix_operation.o

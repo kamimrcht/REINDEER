@@ -62,7 +62,7 @@ or
 
 Test can be run:
 
-`sh test.sh`
+`make test`
 
 ### Compilation tips
 
