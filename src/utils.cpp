@@ -538,17 +538,6 @@ uint64_t get_color_number(string& fof, string& output)
     return color;
 }
 
-void init_outputfile(string& toW, string& fof)
-{
-    string line;
-    ifstream fof_file(fof);
-    while (not fof_file.eof()) {
-        getline(fof_file, line);
-        break;
-    }
-    toW += "query " + line;
-}
-
 string parse_filename(const string& filename) {
     string clean_filename = "";
     auto last_slash_pos = filename.find_last_of('/');

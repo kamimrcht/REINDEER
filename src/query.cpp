@@ -249,9 +249,12 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t& color_n
 
     ifstream query_file(input);
     ofstream out(name);
-    string initW;
-    init_outputfile(initW, fof); //todo give fof file (todo retain fof file name in attributes) and output
-    out << initW << endl;
+    // output header line
+    out << "query";
+    for (auto afile : kmers_by_file)
+      out << "\t" << afile.first;
+    out << endl;
+
     uint64_t num_seq(0);
     string qline;
     mutex mm;
