@@ -54,7 +54,7 @@ public:
     bool output_monotigs;
 
     //variables
-    vector<pair<string,uint64_t>> kmers_by_file;
+    vector<pair<string,uint64_t>> kmers_by_file; // total of kmers for each file
     string query;
     uint threshold;
     vector<long> position_in_file;
@@ -96,16 +96,25 @@ public:
     void load_index();
     void querying();
 
-    void build_index(kmer_Set_Light* ksl);
+    void build_index();
     void read_info();
-    void do_coloring(kmer_Set_Light* ksl, vector<pair<string,uint64_t>>& kmers_by_file);
+    void do_coloring();
     kmer_Set_Light* load_rle_index();
-    void write_matrix_in_bucket_files(kmer_Set_Light* ksl, vector<pair<string,uint64_t>>& kmers_by_file);
+    void write_matrix_in_bucket_files();
     void write_eq_class_matrix(vector<ofstream*>& all_files, ofstream* out_info);
 
     //query
-    void perform_query(kmer_Set_Light& ksl, uint threshold, string& query, vector<long>& position_in_file, string& output_format, vector<pair<string,uint64_t>>& kmers_by_file);
+    void perform_query(string& query);
+    void query_by_file(uint& counter, string& entry);
     vector<long> get_position_vector_query_disk();
+    void doQuery(string& input, string& name, vector<vector<uint32_t>>& query_unitigID);
+    void get_colors_counts_query_eq_classes(vector<int64_t>& kmer_ids, vector<vector<uint16_t>>& query_counts, vector<vector<uint8_t>>& query_colors);
+    // for all queried k-mers, get the colors/counts in vector<vector<uint16_t>>& query_counts
+    void get_colors_counts(vector<int64_t>& kmer_ids, vector<int64_t>& kmers_colors, vector<vector<uint16_t>>& query_counts);
+    void write_output(vector<int64_t>& kmers_colors, string& toWrite, vector<vector<uint32_t>>& query_unitigID, vector<vector<uint32_t>>& query_unitigID_tmp, string& header, string& line, vector<vector<uint16_t>>& query_counts, vector<vector<uint8_t>>& query_colors);
+    // compute a string that sums up the count(s) for each dataset
+    vector<uint> write_count_output(vector<vector<uint16_t>>& query_counts, vector<string>& toW, vector<string>& color_counts);
+    void write_results_above_threshold(string& toWrite, vector<vector<uint16_t>>& query_counts, vector<string>& toW, vector<string>& color_counts, string& header, string& line, vector<uint>& covered_positions);
 };
 
 template class Reindeer_Index<uint8_t>;

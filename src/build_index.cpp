@@ -59,7 +59,7 @@ void get_header_monotig_file(zstr::ifstream& in, string& header)
 
 // dispatch count vectors in files. Similar counts go in similar files
 template <class T>
-void Reindeer_Index<T>::write_matrix_in_bucket_files(kmer_Set_Light* ksl, vector<pair<string,uint64_t>>& kmers_by_file)
+void Reindeer_Index<T>::write_matrix_in_bucket_files()
 {
     //create bucket files for partitionning the compressed counts -> finding eq classes
     vector<ofstream*> all_files;
@@ -156,7 +156,7 @@ void Reindeer_Index<T>::write_matrix_in_bucket_files(kmer_Set_Light* ksl, vector
 
 // color using monotig file: either build and dump the color matrix during the index construction, or load it during the query
 template <class T>
-void Reindeer_Index<T>::do_coloring(kmer_Set_Light* ksl, vector<pair<string,uint64_t>>& kmers_by_file)
+void Reindeer_Index<T>::do_coloring()
 {
     vector<string> file_names;
     if (not color_load_file.empty()) //query
@@ -185,7 +185,7 @@ void Reindeer_Index<T>::do_coloring(kmer_Set_Light* ksl, vector<pair<string,uint
             cerr << "[ERROR] File of file problem" << endl;
         }
 
-        write_matrix_in_bucket_files(ksl, kmers_by_file);
+        write_matrix_in_bucket_files();
     }
 }
 
@@ -195,7 +195,7 @@ kmer_Set_Light* Reindeer_Index<T>::load_rle_index()
 {
     vector<pair<string,uint64_t>> kmers_by_file {0};
     kmer_Set_Light* ksl = new kmer_Set_Light(reindeer_index_files + "/reindeer_index.gz");
-    do_coloring(ksl, kmers_by_file);
+    do_coloring();
     if (dele_monotig_file) {
         string cmd("rm -rf " + reindeer_index_files + "/monotig_files");
         int sysRet(system(cmd.c_str()));
@@ -205,7 +205,7 @@ kmer_Set_Light* Reindeer_Index<T>::load_rle_index()
 
 // build index from new file
 template <class T>
-void Reindeer_Index<T>::build_index(kmer_Set_Light* ksl)
+void Reindeer_Index<T>::build_index()
 {
     vector<pair<string,uint64_t>> kmers_by_file; // total of kmers for each file
     if (output_monotigs) {
@@ -254,7 +254,7 @@ void Reindeer_Index<T>::build_index(kmer_Set_Light* ksl)
     }
     cout << "#Building colors and equivalence classes matrix to be written on disk..." << endl;
     high_resolution_clock::time_point t3 = high_resolution_clock::now();
-    do_coloring(ksl, kmers_by_file);
+    do_coloring();
     high_resolution_clock::time_point t4 = high_resolution_clock::now();
     duration<double> time_span34 = duration_cast<duration<double>>(t4 - t3);
     cout << "Matrix done: " << time_span34.count() << " seconds." << endl;

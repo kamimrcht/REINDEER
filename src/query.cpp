@@ -60,16 +60,17 @@ long get_matrix_line_query(int64_t rank, unsigned char* color, unsigned& line_si
     return pos;
 }
 
-void get_colors_counts_query_eq_classes(vector<int64_t>& kmer_ids, uint64_t color_number, vector<vector<uint16_t>>& query_counts, vector<unsigned char*>& compr_monotig_color, vector<unsigned>& compr_monotig_color_size, vector<long>& position_in_file, bool record_counts, vector<vector<uint8_t>>& query_colors, bool do_query_on_disk, string& rd_file)
+template <class T>
+void Reindeer_Index<T>::get_colors_counts_query_eq_classes(vector<int64_t>& kmer_ids, vector<vector<uint16_t>>& query_counts, vector<vector<uint8_t>>& query_colors)
 {
-    ifstream in(rd_file);
+    ifstream in(matrix_name);
     unsigned char* color;
-    color = new unsigned char[2 * color_number + 1204];
+    color = new unsigned char[2 * nb_colors + 1204];
     unsigned size;
     int64_t lastId(-1);
     vector<uint16_t> qcounts, lastV;
     vector<uint8_t> qcolors;
-    vector<uint16_t> vec(color_number, 0);
+    vector<uint16_t> vec(nb_colors, 0);
 
     for (uint64_t i(0); i < kmer_ids.size(); ++i) {
         if (kmer_ids[i] >= 0) {
@@ -82,16 +83,16 @@ void get_colors_counts_query_eq_classes(vector<int64_t>& kmer_ids, uint64_t colo
                 unsigned char* lo;
                 if (do_query_on_disk) {
                     pos = get_matrix_line_query_disk(kmer_ids[i], color, size, position_in_file, in);
-                    lo = decode_vector((unsigned char*)&color[0], size, color_number, record_counts);
+                    lo = decode_vector((unsigned char*)&color[0], size, nb_colors, record_counts);
                 } else {
-                    pos = get_matrix_line_query(kmer_ids[i], color, size, position_in_file, compr_monotig_color);
-                    lo = decode_vector((unsigned char*)&compr_monotig_color[pos][0], compr_monotig_color_size[pos], color_number, record_counts);
+                    pos = get_matrix_line_query(kmer_ids[i], color, size, position_in_file, compressed_monotig_color);
+                    lo = decode_vector((unsigned char*)&compressed_monotig_color[pos][0], compressed_monotig_color_sizes[pos], nb_colors, record_counts);
                 }
                 if (record_counts) {
-                    qcounts = count_string_to_count_vector(lo, color_number * 2);
+                    qcounts = count_string_to_count_vector(lo, nb_colors * 2);
                 } else {
                     qcounts = {};
-                    vector<uint8_t> qcounts8 = count_string_to_count_vector8(lo, color_number);
+                    vector<uint8_t> qcounts8 = count_string_to_count_vector8(lo, nb_colors);
                     copy(qcounts8.begin(), qcounts8.end(), back_inserter(qcounts));
                 }
                 delete[] lo;
@@ -111,7 +112,8 @@ void get_colors_counts_query_eq_classes(vector<int64_t>& kmer_ids, uint64_t colo
 }
 
 // for all queried k-mers, get the colors/counts in vector<vector<uint16_t>>& query_counts
-void get_colors_counts(vector<int64_t>& kmer_ids, bool record_counts, uint64_t color_number, vector<int64_t>& kmers_colors, vector<vector<uint16_t>>& query_counts, vector<unsigned char*>& compr_monotig_color, vector<unsigned>& compr_monotig_color_size, vector<long>& position_in_file)
+template <class T>
+void Reindeer_Index<T>::get_colors_counts(vector<int64_t>& kmer_ids, vector<int64_t>& kmers_colors, vector<vector<uint16_t>>& query_counts)
 {
     vector<uint16_t> counts;
     int64_t lastId(-1);
@@ -123,7 +125,7 @@ void get_colors_counts(vector<int64_t>& kmer_ids, bool record_counts, uint64_t c
                 lastId = kmer_ids[i];
                 query_counts.push_back(lastV);
             } else {
-                qcounts = get_count_monotig(compr_monotig_color[kmer_ids[i]], compr_monotig_color_size[kmer_ids[i]], color_number, record_counts);
+                qcounts = get_count_monotig(compressed_monotig_color[kmer_ids[i]], compressed_monotig_color_sizes[kmer_ids[i]], nb_colors, record_counts);
                 lastV = qcounts;
                 if (not qcounts.empty())
                     query_counts.push_back(qcounts);
@@ -133,7 +135,8 @@ void get_colors_counts(vector<int64_t>& kmer_ids, bool record_counts, uint64_t c
 }
 
 // compute a string that sums up the count(s) for each dataset
-vector<uint> write_count_output(bool record_counts, vector<vector<uint16_t>>& query_counts, uint64_t color_number, vector<string>& toW, vector<string>& color_counts, uint k_size, string& output_format, vector<pair<string,uint64_t>>& kmers_by_file)
+template <class T>
+vector<uint> Reindeer_Index<T>::write_count_output(vector<vector<uint16_t>>& query_counts, vector<string>& toW, vector<string>& color_counts)
 {
     bool average = false, sum = false, normalize = false;
     if (output_format != "raw") {
@@ -147,7 +150,7 @@ vector<uint> write_count_output(bool record_counts, vector<vector<uint16_t>>& qu
     }
     vector<uint> covered_positions;
     string nc("*");
-    vector<string> last(color_number, "*");
+    vector<string> last(nb_colors, "*");
     for (auto&& c : query_counts) {
         for (uint color(0); color < c.size(); ++color) {
             nc = to_string(c[color]);
@@ -161,7 +164,7 @@ vector<uint> write_count_output(bool record_counts, vector<vector<uint16_t>>& qu
     }
     uint covered_pos = 0;
 
-    for (uint color(0); color < color_number; ++color) {
+    for (uint color(0); color < nb_colors; ++color) {
         string out_str("");
         uint total_for_average = 0;
         float out_number = 0;
@@ -184,7 +187,7 @@ vector<uint> write_count_output(bool record_counts, vector<vector<uint16_t>>& qu
             }
             nc = to_string(query_counts[c][color]);
         }
-        uint cov_positions(query_counts.size() + k_size - 1);
+        uint cov_positions(query_counts.size() + k - 1);
         for (auto&& coo : coords) {
             if (sum) {
                 if (coo.second != "*") {
@@ -213,14 +216,15 @@ vector<uint> write_count_output(bool record_counts, vector<vector<uint16_t>>& qu
             out_str.pop_back(); //remove last comma
         }
         color_counts.push_back(out_str);
-        covered_positions.push_back(cov_positions * 100 / (query_counts.size() + k_size - 1));
+        covered_positions.push_back(cov_positions * 100 / (query_counts.size() + k - 1));
     }
     return covered_positions;
 }
 
-void write_results_above_threshold(string& toWrite, vector<vector<uint16_t>>& query_counts, uint64_t color_number , vector<string>& toW, vector<string>& color_counts,  string& header, bool record_counts, uint threshold, string& line, uint k, vector<uint>& covered_positions)
+template <class T>
+void Reindeer_Index<T>::write_results_above_threshold(string& toWrite, vector<vector<uint16_t>>& query_counts, vector<string>& toW, vector<string>& color_counts,  string& header, string& line, vector<uint>& covered_positions)
 {
-    vector<double_t> percent(color_number, 0);
+    vector<double_t> percent(nb_colors, 0);
     toWrite += header.substr(1,50) ; // remove the '>' of fasta format for query sequence
     for (uint cp(0); cp < covered_positions.size(); ++cp) {
         if (covered_positions[cp] >= threshold) {
@@ -236,15 +240,17 @@ void write_results_above_threshold(string& toWrite, vector<vector<uint16_t>>& qu
     toWrite += "\n";
 }
 
-void write_output(vector<int64_t>& kmers_colors, string& toWrite, bool record_counts, vector<vector<uint32_t>>& query_unitigID, vector<vector<uint32_t>>& query_unitigID_tmp, uint64_t& color_number, string& header, string& line, uint k, uint threshold, vector<vector<uint16_t>>& query_counts, vector<vector<uint8_t>>& query_colors, string& output_format, vector<pair<string,uint64_t>>& kmers_by_file)
+template <class T>
+void Reindeer_Index<T>::write_output(vector<int64_t>& kmers_colors, string& toWrite, vector<vector<uint32_t>>& query_unitigID, vector<vector<uint32_t>>& query_unitigID_tmp, string& header, string& line, vector<vector<uint16_t>>& query_counts, vector<vector<uint8_t>>& query_colors)
 {
     vector<string> color_counts;
-    vector<string> toW(color_number, "");
-    vector<uint> covered_positions = write_count_output(record_counts, query_counts, color_number, toW, color_counts, k, output_format, kmers_by_file);
-    write_results_above_threshold(toWrite, query_counts, color_number, toW, color_counts, header, record_counts, threshold, line, k, covered_positions);
+    vector<string> toW(nb_colors, "");
+    vector<uint> covered_positions = write_count_output(query_counts, toW, color_counts);
+    write_results_above_threshold(toWrite, query_counts, toW, color_counts, header, line, covered_positions);
 }
 
-void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t& color_number, uint k, bool record_counts, uint threshold, vector<vector<uint32_t>>& query_unitigID, uint nb_threads, vector<unsigned char*>& compr_monotig_color, vector<unsigned>& compr_monotig_color_size, bool do_query_on_disk, string& rd_file, long eq_class_nb, uint64_t nb_monotig, vector<long>& position_in_file, string& output_format, vector<pair<string,uint64_t>>& kmers_by_file)
+template <class T>
+void Reindeer_Index<T>::doQuery(string& input, string& name, vector<vector<uint32_t>>& query_unitigID)
 {
 
     ifstream query_file(input);
@@ -263,7 +269,7 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t& color_n
     // FOR EACH LINE OF THE QUERY FILE
     bool first(true);
     while (not query_file.eof()) {
-#pragma omp parallel num_threads(nb_threads)
+#pragma omp parallel num_threads(threads)
         {
 #pragma omp critical(i_file)
             {
@@ -285,12 +291,12 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t& color_n
                         vector<int64_t> kmers_colors;
                         vector<string> color_counts;
                         vector<int64_t> kmer_ids;
-                        kmer_ids = ksl.get_rank_query(line);
+                        kmer_ids = ksl->get_rank_query(line);
                         vector<vector<uint16_t>> query_counts;
                         vector<vector<uint8_t>> query_colors;
-                        get_colors_counts_query_eq_classes(kmer_ids, color_number, query_counts, compr_monotig_color, compr_monotig_color_size, position_in_file, record_counts, query_colors, do_query_on_disk, rd_file);
+                        get_colors_counts_query_eq_classes(kmer_ids, query_counts, query_colors);
                         mm.lock();
-                        write_output(kmers_colors, toWrite, record_counts, query_unitigID, query_unitigID_tmp, color_number, header, line, k, threshold, query_counts, query_colors, output_format, kmers_by_file);
+                        write_output(kmers_colors, toWrite, query_unitigID, query_unitigID_tmp, header, line, query_counts, query_colors);
                         mm.unlock();
                     } else {
                         header = line;
@@ -312,24 +318,26 @@ void doQuery(string& input, string& name, kmer_Set_Light& ksl, uint64_t& color_n
     out.close();
 }
 
-void query_by_file(uint& counter, string& entry, kmer_Set_Light& ksl, uint64_t& color_number, uint k, bool record_counts, uint threshold, string& output, uint nb_threads, vector<unsigned char*>& compr_monotig_color, vector<unsigned>& compr_monotig_color_size, bool do_query_on_disk, string& rd_file, long eq_class_nb, uint64_t nb_monotig, vector<long>& position_in_file, string& output_format, vector<pair<string,uint64_t>>& kmers_by_file)
+template <class T>
+void Reindeer_Index<T>::query_by_file(uint& counter, string& entry)
 {
+  // TODO correction to do for output filename
     string outName(output + "/out_query_Reindeer_P" + to_string(threshold) + "_" + get_file_name(entry).substr(0, 50) + "_" + to_string(counter) + ".out");
     cout << "Result will be written in " << outName << endl;
-    vector<vector<uint32_t>> query_unitigID(color_number, { 0 });
-    doQuery(entry, outName, ksl, color_number, k, record_counts, threshold, query_unitigID, nb_threads, compr_monotig_color, compr_monotig_color_size, do_query_on_disk, rd_file, eq_class_nb, nb_monotig, position_in_file, output_format, kmers_by_file);
+    vector<vector<uint32_t>> query_unitigID(nb_colors, { 0 });
+    doQuery(entry, outName, query_unitigID);
     counter++;
 }
 
 template <class T>
-void Reindeer_Index<T>::perform_query(kmer_Set_Light& ksl, uint threshold, string& query, vector<long>& position_in_file, string& output_format, vector<pair<string,uint64_t>>& kmers_by_file)
+void Reindeer_Index<T>::perform_query(string& query)
 {
     uint counter(0), patience(0);
     string entry;
     if (not query.empty()) {
         if (exists_test(query)) {
             high_resolution_clock::time_point t121 = high_resolution_clock::now();
-            query_by_file(counter, query, ksl, nb_colors, k, record_counts, threshold, output, threads, compressed_monotig_color, compressed_monotig_color_sizes, do_query_on_disk, matrix_name, nb_eq_class, nb_monotig, position_in_file, output_format, kmers_by_file);
+            query_by_file(counter, query);
             high_resolution_clock::time_point t13 = high_resolution_clock::now();
             duration<double> time_span13 = duration_cast<duration<double>>(t13 - t121);
             cout << "Query done: " << time_span13.count() << " seconds." << endl;
@@ -357,17 +365,16 @@ void Reindeer_Index<T>::perform_query(kmer_Set_Light& ksl, uint threshold, strin
                     patience++;
                 }
             } else {
-                uint thresh(threshold);
                 patience = 0;
                 if (exists_test(entry)) {
                     if (entries.size() > 1) {
                         if (entries[1] != "") {
-                            thresh = stoi(entries[1]);
+                            threshold= stoi(entries[1]);
                         }
                     }
-                    cout << "Queried file: " << entry << " option -P: " << thresh << endl;
+                    cout << "Queried file: " << entry << " option -P: " << threshold << endl;
                     high_resolution_clock::time_point t121 = high_resolution_clock::now();
-                    query_by_file(counter, entry, ksl, nb_colors, k, record_counts, thresh, output, threads, compressed_monotig_color, compressed_monotig_color_sizes, do_query_on_disk, matrix_name, nb_eq_class, nb_monotig, position_in_file, output_format, kmers_by_file);
+                    query_by_file(counter, entry);
                     memset(str, 0, 255);
                     high_resolution_clock::time_point t13 = high_resolution_clock::now();
                     duration<double> time_span13 = duration_cast<duration<double>>(t13 - t121);

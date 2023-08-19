@@ -46,7 +46,7 @@ Reindeer_Index<T>::Reindeer_Index(uint pk, string& pfof, bool precord_counts, st
     int systemRet;
     // BUILD THE INDEX
     nb_colors = get_color_number(fof);
-    build_index(&ksl);
+    build_index();
     high_resolution_clock::time_point t12 = high_resolution_clock::now();
     duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
     cout << "Index building and Coloration done total: " << time_span12.count() << " seconds." << endl;
@@ -144,7 +144,7 @@ template <class T>
 void Reindeer_Index<T>::querying(){
     cout << "\n#Computing query..." << endl;
     high_resolution_clock::time_point tnew = high_resolution_clock::now();
-    perform_query(*ksl, threshold, query, position_in_file, output_format, kmers_by_file);
+    perform_query(query);
     high_resolution_clock::time_point tnew2 = high_resolution_clock::now();
     duration<double> time_spannew2 = duration_cast<duration<double>>(tnew2 - tnew);
     cout << "Querying sequences took " << time_spannew2.count() << " seconds in total." << endl;
