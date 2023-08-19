@@ -517,24 +517,20 @@ string getRealPath(string file, string& dir)
 }
 
 // count the number of datasets in the fof
-// store their names for the query output
-uint64_t get_color_number(string& fof, string& output)
+uint64_t get_color_number(string& fof)
 {
     uint color(0);
     string line;
     ifstream fof_file(fof);
-    ofstream stored_fof_file(output);
     string filename;
     while (not fof_file.eof()) {
         getline(fof_file, line);
         filename = get_file_name(line);
-        stored_fof_file << filename << " ";
         if (not line.empty()) {
             color++;
         }
     }
     fof_file.close();
-    stored_fof_file.close();
     return color;
 }
 

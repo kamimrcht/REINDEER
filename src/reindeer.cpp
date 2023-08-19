@@ -41,12 +41,11 @@ Reindeer_Index<T>::Reindeer_Index(uint pk, string& pfof, bool precord_counts, st
     dele_monotig_file = dele_tmp;
 
     fof = pfof;
-    fof_file = reindeer_index_files + "/fof";
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
     kmer_Set_Light ksl(k, m1, m2, m3, threads, bit);
     int systemRet;
     // BUILD THE INDEX
-    nb_colors = get_color_number(fof, fof_file);
+    nb_colors = get_color_number(fof);
     build_index(&ksl);
     high_resolution_clock::time_point t12 = high_resolution_clock::now();
     duration<double> time_span12 = duration_cast<duration<double>>(t12 - t1);
@@ -123,7 +122,6 @@ Reindeer_Index<T>::Reindeer_Index(string& poutput, string& poutput_query, uint t
     matrix_eqc_info_file = matrix_name + "_info";
     matrix_eqc_position_file = matrix_name + "_position";
     dele_monotig_file = dele_tmp;
-    fof_file = reindeer_index_files + "/fof";
 }
 
 template <class T>

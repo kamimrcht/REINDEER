@@ -80,7 +80,6 @@ public:
     string matrix_eqc_info_file;
     string matrix_eqc_file;
     string matrix_eqc_position_file;
-    string fof_file;
     bool dele_monotig_file;
 
     string color_load_file;
