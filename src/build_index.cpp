@@ -207,7 +207,6 @@ kmer_Set_Light* Reindeer_Index<T>::load_rle_index()
 template <class T>
 void Reindeer_Index<T>::build_index()
 {
-    vector<pair<string,uint64_t>> kmers_by_file; // total of kmers for each file
     if (output_monotigs) {
         string monotigs_file(reindeer_index_files + "/monotigs.tsv");
         set_monotigs_output(monotigs_file);
