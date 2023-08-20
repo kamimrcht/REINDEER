@@ -37,7 +37,6 @@ class Reindeer_Index {
 public:
     // MPHF options
     uint m2;
-    uint c;
     uint bit;
     uint ex;
     uint m1;
@@ -108,13 +107,13 @@ public:
     void query_by_file(uint& counter, string& entry);
     vector<long> get_position_vector_query_disk();
     void doQuery(string& input, string& name, vector<vector<uint32_t>>& query_unitigID);
-    void get_colors_counts_query_eq_classes(vector<int64_t>& kmer_ids, vector<vector<uint16_t>>& query_counts, vector<vector<uint8_t>>& query_colors);
+    void get_colors_counts_query_eq_classes(vector<int64_t>& kmer_ids, vector<vector<uint16_t>>& query_counts);
     // for all queried k-mers, get the colors/counts in vector<vector<uint16_t>>& query_counts
     void get_colors_counts(vector<int64_t>& kmer_ids, vector<int64_t>& kmers_colors, vector<vector<uint16_t>>& query_counts);
-    void write_output(vector<int64_t>& kmers_colors, string& toWrite, vector<vector<uint32_t>>& query_unitigID, vector<vector<uint32_t>>& query_unitigID_tmp, string& header, string& line, vector<vector<uint16_t>>& query_counts, vector<vector<uint8_t>>& query_colors);
+    void write_output(string& toWrite, string& header, vector<vector<uint16_t>>& query_counts);
     // compute a string that sums up the count(s) for each dataset
     vector<uint> write_count_output(vector<vector<uint16_t>>& query_counts, vector<string>& toW, vector<string>& color_counts);
-    void write_results_above_threshold(string& toWrite, vector<vector<uint16_t>>& query_counts, vector<string>& toW, vector<string>& color_counts, string& header, string& line, vector<uint>& covered_positions);
+    void write_results_above_threshold(string& toWrite, vector<string>& color_counts, string& header, vector<uint>& covered_positions);
 };
 
 template class Reindeer_Index<uint8_t>;

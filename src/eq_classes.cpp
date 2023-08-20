@@ -10,8 +10,8 @@ void sort_vectors(vector<count_vector>& matrix_lines)
 }
 
 // write final matrix of equivalence classes
-//~ void get_eq_classes(string& output, robin_hood::unordered_map<string, pair<count_vector, vector<uint64_t>>>& bucket_class, uint64_t unitig_nb, uint64_t color_number, vector<long>& final_positions, long& prev_pos, zstr::ofstream* out)
-void get_eq_classes(string& output, robin_hood::unordered_map<string, pair<count_vector, vector<uint64_t>>>& bucket_class, uint64_t unitig_nb, uint64_t color_number, vector<long>& final_positions, long& prev_pos, ofstream* out)
+//~ void get_eq_classes(string& output, robin_hood::unordered_map<string, pair<count_vector, vector<uint64_t>>>& bucket_class, uint64_t color_number, vector<long>& final_positions, long& prev_pos, zstr::ofstream* out)
+void get_eq_classes(robin_hood::unordered_map<string, pair<count_vector, vector<uint64_t>>>& bucket_class, vector<long>& final_positions, long& prev_pos, ofstream* out)
 {
     string prev_comp("");
     // for each representant, write the compressed size, index and compressed counts on disk
@@ -30,7 +30,7 @@ void get_eq_classes(string& output, robin_hood::unordered_map<string, pair<count
     }
 }
 
-void get_eq_classes_disk_query(string& output, robin_hood::unordered_map<string, pair<count_vector, vector<uint64_t>>>& bucket_class, uint64_t unitig_nb, uint64_t color_number, vector<long>& final_positions, long& prev_pos, ofstream* out)
+void get_eq_classes_disk_query(robin_hood::unordered_map<string, pair<count_vector, vector<uint64_t>>>& bucket_class, vector<long>& final_positions, long& prev_pos, ofstream* out)
 {
     string prev_comp("");
     // for each representant, write the compressed size, index and compressed counts on disk
@@ -116,10 +116,10 @@ void Reindeer_Index<T>::write_eq_class_matrix(vector<ofstream*>& all_files, ofst
             mm.lock();
             if (do_query_on_disk) {
                 //~ get_eq_classes_disk_query(output, bucket_class,  nb_unitigs, nb_colors, final_positions, prev_pos, out);
-                get_eq_classes_disk_query(reindeer_index_files, bucket_class, nb_monotig, nb_colors, final_positions, prev_pos, out);
+                get_eq_classes_disk_query(bucket_class, final_positions, prev_pos, out);
             } else {
                 //~ get_eq_classes(output, bucket_class,  nb_unitigs, nb_colors, final_positions, prev_pos, outz);
-                get_eq_classes(reindeer_index_files, bucket_class, nb_monotig, nb_colors, final_positions, prev_pos, out);
+                get_eq_classes(bucket_class, final_positions, prev_pos, out);
             }
             mm.unlock();
         }

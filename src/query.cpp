@@ -53,15 +53,14 @@ long get_matrix_line_query_disk(int64_t rank, unsigned char* color, unsigned& li
     return pos;
 }
 
-long get_matrix_line_query(int64_t rank, unsigned char* color, unsigned& line_size, vector<long>& position_in_file, vector<unsigned char*>& compr_monotig_color)
+long get_matrix_line_query(int64_t rank, unsigned char* color, vector<long>& position_in_file, vector<unsigned char*>& compr_monotig_color)
 {
     long pos = position_in_file[rank];
-    color = compr_monotig_color[pos];
     return pos;
 }
 
 template <class T>
-void Reindeer_Index<T>::get_colors_counts_query_eq_classes(vector<int64_t>& kmer_ids, vector<vector<uint16_t>>& query_counts, vector<vector<uint8_t>>& query_colors)
+void Reindeer_Index<T>::get_colors_counts_query_eq_classes(vector<int64_t>& kmer_ids, vector<vector<uint16_t>>& query_counts)
 {
     ifstream in(matrix_name);
     unsigned char* color;
@@ -85,7 +84,7 @@ void Reindeer_Index<T>::get_colors_counts_query_eq_classes(vector<int64_t>& kmer
                     pos = get_matrix_line_query_disk(kmer_ids[i], color, size, position_in_file, in);
                     lo = decode_vector((unsigned char*)&color[0], size, nb_colors, record_counts);
                 } else {
-                    pos = get_matrix_line_query(kmer_ids[i], color, size, position_in_file, compressed_monotig_color);
+                    pos = get_matrix_line_query(kmer_ids[i], color, position_in_file, compressed_monotig_color);
                     lo = decode_vector((unsigned char*)&compressed_monotig_color[pos][0], compressed_monotig_color_sizes[pos], nb_colors, record_counts);
                 }
                 if (record_counts) {
@@ -162,7 +161,6 @@ vector<uint> Reindeer_Index<T>::write_count_output(vector<vector<uint16_t>>& que
             }
         }
     }
-    uint covered_pos = 0;
 
     for (uint color(0); color < nb_colors; ++color) {
         string out_str("");
@@ -222,7 +220,7 @@ vector<uint> Reindeer_Index<T>::write_count_output(vector<vector<uint16_t>>& que
 }
 
 template <class T>
-void Reindeer_Index<T>::write_results_above_threshold(string& toWrite, vector<vector<uint16_t>>& query_counts, vector<string>& toW, vector<string>& color_counts,  string& header, string& line, vector<uint>& covered_positions)
+void Reindeer_Index<T>::write_results_above_threshold(string& toWrite, vector<string>& color_counts, string& header, vector<uint>& covered_positions)
 {
     vector<double_t> percent(nb_colors, 0);
     toWrite += header.substr(1,50) ; // remove the '>' of fasta format for query sequence
@@ -241,12 +239,12 @@ void Reindeer_Index<T>::write_results_above_threshold(string& toWrite, vector<ve
 }
 
 template <class T>
-void Reindeer_Index<T>::write_output(vector<int64_t>& kmers_colors, string& toWrite, vector<vector<uint32_t>>& query_unitigID, vector<vector<uint32_t>>& query_unitigID_tmp, string& header, string& line, vector<vector<uint16_t>>& query_counts, vector<vector<uint8_t>>& query_colors)
+void Reindeer_Index<T>::write_output(string& toWrite, string& header, vector<vector<uint16_t>>& query_counts)
 {
     vector<string> color_counts;
     vector<string> toW(nb_colors, "");
     vector<uint> covered_positions = write_count_output(query_counts, toW, color_counts);
-    write_results_above_threshold(toWrite, query_counts, toW, color_counts, header, line, covered_positions);
+    write_results_above_threshold(toWrite, color_counts, header, covered_positions);
 }
 
 template <class T>
@@ -261,13 +259,11 @@ void Reindeer_Index<T>::doQuery(string& input, string& name, vector<vector<uint3
       out << "\t" << afile.first;
     out << endl;
 
-    uint64_t num_seq(0);
     string qline;
     mutex mm;
     vector<string> lines;
     vector<vector<uint32_t>> query_unitigID_tmp;
     // FOR EACH LINE OF THE QUERY FILE
-    bool first(true);
     while (not query_file.eof()) {
 #pragma omp parallel num_threads(threads)
         {
@@ -294,9 +290,9 @@ void Reindeer_Index<T>::doQuery(string& input, string& name, vector<vector<uint3
                         kmer_ids = ksl->get_rank_query(line);
                         vector<vector<uint16_t>> query_counts;
                         vector<vector<uint8_t>> query_colors;
-                        get_colors_counts_query_eq_classes(kmer_ids, query_counts, query_colors);
+                        get_colors_counts_query_eq_classes(kmer_ids, query_counts);
                         mm.lock();
-                        write_output(kmers_colors, toWrite, query_unitigID, query_unitigID_tmp, header, line, query_counts, query_colors);
+                        write_output(toWrite, header, query_counts);
                         mm.unlock();
                     } else {
                         header = line;

@@ -164,7 +164,7 @@ void Reindeer_Index<T>::do_coloring()
         if (not do_query_on_disk) {
             uint64_t color_number;
             uint64_t monotig_number;
-            compressed_monotig_color = load_compressed_vectors(color_load_file, compressed_monotig_color_sizes, color_number, monotig_number, nb_eq_class);
+            compressed_monotig_color = load_compressed_vectors(color_load_file, compressed_monotig_color_sizes, color_number, nb_eq_class);
         }
     } else //indexing
     {

@@ -9,7 +9,6 @@ Reindeer_Index<T>::Reindeer_Index(uint pk, string& pfof, bool precord_counts, st
 {
     // MPHF options
     m2 = 10;
-    c = 1;
     bit = 0;
     ex = 0;
     m1 = pm1;
@@ -157,7 +156,6 @@ template <class T>
 void Reindeer_Index<T>::print_Reindeer()
 {
     cout << "m2 " << m2 << endl;
-    cout << "c " << c << endl;
     cout << "bit " << bit << endl;
     cout << "ex " << ex << endl;
     cout << "m1 " << m1 << endl;
