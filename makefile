@@ -62,25 +62,25 @@ blight/lz4/xxhash.o: blight/lz4/xxhash.c $(INC)
 
 
 utils.o: src/utils.cpp  $(INC)
-	$(CC) -o $@ -c $< $(CFLAGS)
+	$(CXX) -o $@ -c $< $(CFLAGS)
 
 reindeer.o: src/reindeer.cpp  $(INC)
-	$(CC) -o $@ -c $< $(CFLAGS)
+	$(CXX) -o $@ -c $< $(CFLAGS)
 
 query.o: src/query.cpp  $(INC)
-	$(CC) -o $@ -c $< $(CFLAGS)
+	$(CXX) -o $@ -c $< $(CFLAGS)
 
 eq_classes.o: src/eq_classes.cpp $(INC)
-	$(CC) -o $@ -c $< $(CFLAGS)
+	$(CXX) -o $@ -c $< $(CFLAGS)
 
 build_index.o: src/build_index.cpp $(INC)
-	$(CC) -o $@ -c $< $(CFLAGS)
+	$(CXX) -o $@ -c $< $(CFLAGS)
 
 launch_bcalm.o: src/launch_bcalm.cpp $(INC)
-	$(CC) -o $@ -c $< $(CFLAGS)
+	$(CXX) -o $@ -c $< $(CFLAGS)
 
 matrix_operation.o: src/matrix_operation.cpp $(INC)
-	$(CC) -o $@ -c $< $(CFLAGS)
+	$(CXX) -o $@ -c $< $(CFLAGS)
 
 
 socket: socket.o blight.o utils_b.o trlec.o trled.o monotig.o utils.o reindeer.o query.o build_index.o eq_classes.o launch_bcalm.o matrix_operation.o $(LZ4H)
