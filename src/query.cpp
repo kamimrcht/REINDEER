@@ -126,18 +126,6 @@ vector<uint> Reindeer_Index<T>::write_count_output(vector<vector<uint16_t>>& que
     }
     vector<uint> covered_positions;
     string nc("*");
-    vector<string> last(nb_colors, "*");
-    for (auto&& c : query_counts) {
-        for (uint color(0); color < c.size(); ++color) {
-            nc = to_string(c[color]);
-            if (nc == "0")
-                nc = "*";
-            if (last[color] != nc) {
-                toW[color] += nc + ":";
-                last[color] = nc;
-            }
-        }
-    }
 
     for (uint color(0); color < nb_colors; ++color) {
         string out_str("");
