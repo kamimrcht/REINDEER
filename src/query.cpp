@@ -110,29 +110,6 @@ void Reindeer_Index<T>::get_colors_counts_query_eq_classes(vector<int64_t>& kmer
     in.close();
 }
 
-// for all queried k-mers, get the colors/counts in vector<vector<uint16_t>>& query_counts
-template <class T>
-void Reindeer_Index<T>::get_colors_counts(vector<int64_t>& kmer_ids, vector<int64_t>& kmers_colors, vector<vector<uint16_t>>& query_counts)
-{
-    vector<uint16_t> counts;
-    int64_t lastId(-1);
-    vector<uint16_t> qcounts, lastV;
-    for (int64_t i(0); i < kmer_ids.size(); ++i) {
-        if (kmer_ids[i] >= 0) {
-            // no need to compute for a kmer if it comes from the same monotig than the previous, just copy the result
-            if (kmer_ids[i] == lastId) {
-                lastId = kmer_ids[i];
-                query_counts.push_back(lastV);
-            } else {
-                qcounts = get_count_monotig(compressed_monotig_color[kmer_ids[i]], compressed_monotig_color_sizes[kmer_ids[i]], nb_colors, record_counts);
-                lastV = qcounts;
-                if (not qcounts.empty())
-                    query_counts.push_back(qcounts);
-            }
-        }
-    }
-}
-
 // compute a string that sums up the count(s) for each dataset
 template <class T>
 vector<uint> Reindeer_Index<T>::write_count_output(vector<vector<uint16_t>>& query_counts, vector<string>& toW, vector<string>& color_counts)
