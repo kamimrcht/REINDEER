@@ -54,7 +54,6 @@ public:
 
     //variables
     vector<pair<string,uint64_t>> kmers_by_file; // total of kmers for each file
-    string query;
     uint threshold;
     vector<long> position_in_file;
     kmer_Set_Light* ksl;
@@ -93,7 +92,7 @@ public:
     // methods
     void print_Reindeer();
     void load_index();
-    void querying();
+    void querying(string query);
 
     void build_index();
     void read_info();

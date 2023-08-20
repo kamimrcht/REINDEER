@@ -283,7 +283,7 @@ int main(int argc, char** argv)
             }
             Reindeer_Index<uint16_t> reindeer_index(color_load_file, output, threshold, query, threads, !(keep_tmp), output_format);
             reindeer_index.load_index();
-            reindeer_index.querying();
+            reindeer_index.querying(query);
         }
     }
     return 0;

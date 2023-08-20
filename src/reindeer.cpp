@@ -113,7 +113,6 @@ Reindeer_Index<T>::Reindeer_Index(string& poutput, string& poutput_query, uint t
     threads = pthreads;
     output_format = poutput_format;
     this->threshold = threshold;
-    this->query = query;
     // QUERY //
     //check if loading directory exists and all reindeer files are present
     color_load_file = getRealPath("reindeer_matrix_eqc", poutput);
@@ -140,7 +139,7 @@ void Reindeer_Index<T>::load_index(){
 }
 
 template <class T>
-void Reindeer_Index<T>::querying(){
+void Reindeer_Index<T>::querying(string query){
     cout << "\n#Computing query..." << endl;
     high_resolution_clock::time_point tnew = high_resolution_clock::now();
     perform_query(query);
