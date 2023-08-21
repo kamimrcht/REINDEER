@@ -8,6 +8,7 @@
 #include <ctype.h>
 #include <dirent.h>
 #include <fstream>
+#include <filesystem>
 #include <iomanip>
 #include <iostream>
 #include <iterator>
@@ -99,5 +100,7 @@ vector<uint8_t> count_string_to_count_vector8(unsigned char* count_char_monotig,
 void init_outputfile(string& toW, string& fof);
 
 string parse_filename(const string& filename);
+
+bool Is_Writeable(const string& aPath);
 
 #endif

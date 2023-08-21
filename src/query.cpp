@@ -213,11 +213,11 @@ void Reindeer_Index<T>::write_output(string& toWrite, string& header, vector<vec
 }
 
 template <class T>
-void Reindeer_Index<T>::doQuery(string& input, string& name, vector<vector<uint32_t>>& query_unitigID)
+void Reindeer_Index<T>::doQuery(string& input, vector<vector<uint32_t>>& query_unitigID)
 {
 
     ifstream query_file(input);
-    ofstream out(name);
+    ofstream out(output);
     // output header line
     out << "query";
     for (auto afile : kmers_by_file)
@@ -280,13 +280,16 @@ void Reindeer_Index<T>::doQuery(string& input, string& name, vector<vector<uint3
 }
 
 template <class T>
-void Reindeer_Index<T>::query_by_file(uint& counter, string& entry)
+void Reindeer_Index<T>::query_by_file(uint& counter, string& query)
 {
-  // TODO correction to do for output filename
-    string outName(output + "/out_query_Reindeer_P" + to_string(threshold) + "_" + get_file_name(entry).substr(0, 50) + "_" + to_string(counter) + ".out");
-    cout << "Result will be written in " << outName << endl;
+    // add filename if end with query_results, otherwise take as a filename
+    // see main.cpp which add /query_results
+    if (output.size() > 13 && output.substr(output.size()-13, 13) == "query_results") {
+        output = output + "/out_query_Reindeer_P" + to_string(threshold) + "_" + get_file_name(query).substr(0, 50) + "_" + to_string(counter) + ".out";
+    }
+    cout << "Result will be written in " << output << endl;
     vector<vector<uint32_t>> query_unitigID(nb_colors, { 0 });
-    doQuery(entry, outName, query_unitigID);
+    doQuery(query, query_unitigID);
     counter++;
 }
 

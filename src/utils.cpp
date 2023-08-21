@@ -554,3 +554,24 @@ string parse_filename(const string& filename) {
     }
     return clean_filename;
 }
+
+
+// Test if we can write in a path p (file or dir)
+// return false if not writable or do not exists
+bool Is_Writeable(const string& aPath)
+{
+    std::filesystem::path p(aPath);
+    // test if exists, otherwise, perms return always true
+    if (std::filesystem::exists(p))
+    {
+        auto perms = std::filesystem::status(p).permissions();
+        if ((perms & std::filesystem::perms::owner_write) != std::filesystem::perms::none ||
+            (perms & std::filesystem::perms::group_write) != std::filesystem::perms::none ||
+            (perms & std::filesystem::perms::others_write) != std::filesystem::perms::none
+           )
+        {
+          return true;
+        }
+    }
+    return false;
+}

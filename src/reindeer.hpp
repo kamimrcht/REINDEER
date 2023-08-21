@@ -105,7 +105,7 @@ public:
     void perform_query(string& query);
     void query_by_file(uint& counter, string& entry);
     vector<long> get_position_vector_query_disk();
-    void doQuery(string& input, string& name, vector<vector<uint32_t>>& query_unitigID);
+    void doQuery(string& input, vector<vector<uint32_t>>& query_unitigID);
     // for all queried k-mers, get the colors/counts in vector<vector<uint16_t>>& query_counts
     void get_colors_counts_query_eq_classes(vector<int64_t>& kmer_ids, vector<vector<uint16_t>>& query_counts);
     void write_output(string& toWrite, string& header, vector<vector<uint16_t>>& query_counts);

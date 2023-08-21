@@ -74,7 +74,7 @@ void PrintHelp()
                                                           "      * Optional parameters\n"
                                                           "-P                      :     Threshold: at least P% of the positions in the query must be covered by k-mers present in a dataset for the dataset to be reported (default: "
          << threshold << "%)\n"
-                         "-o <file>               :     Directory to write query output files (default: output_reindeer_query/)\n"
+                         "-o <dir|file>           :     Directory to write query output files (default: query_results/out_query_Reindeer), or a file\n"
                          "--disk-query            :     On-disk query (default: in-memory). To be used for large indexes that won't fit in RAM, if the index was constructed with the same option.\n\n"
                          "--format, -F <format>   :     Choose output format : <sum> <s> | <average> <a> | <normalize> <n> (default : raw)\n"
 
@@ -259,14 +259,53 @@ int main(int argc, char** argv)
             return EINVAL;
         } else {
             cout << "Querying..." << endl;
-            string output_query(output + "/query_results");
-            if (!filesystem::exists(output_query)){
+            // Test if we have write access to output directory, and avoid loading index
+            // define output filename later (in ::query_by_file)
+            filesystem::path testPath("");
+            if (output == "reindeer_index_files") {
+                // default value, no output arg given, test current path to write
+                // save in output, the final directory
+                testPath = filesystem::current_path();
+                testPath /= "query_results";
+                output = testPath.string();
+            } else {
+                // -o is given check if a directory or a file given
+                filesystem::path outputPath(output);
+                // test if has an extension = file, otherwise consider directory
+                // can't test if exists, because the output file will exists after the query
+                if (outputPath.extension() == "") {
+                    // it's directory
+                    if (! Is_Writeable(outputPath)) {
+                        cerr << "Can't write in the given path: " << outputPath << ", change to a writeable path with -o option" << endl;
+                        return EINVAL;
+                    }
+                    testPath = outputPath;
+                    testPath /= "query_results";
+                    output = testPath.string();
+                } else {
+                    // it's a file
+                    testPath = outputPath.parent_path();
+                    // stupid, return empty if current_path
+                    if (testPath == "")
+                      testPath = ".";
+                }
+            }
+            cerr << "final output: " << output << " and testPath: " << testPath << endl;
+            if (filesystem::exists(testPath)) {
+                if (! Is_Writeable(testPath)) {
+                    cerr << "Can't write in the given path: " << testPath << ", change to a writeable path with -o option" << endl;
+                    return EINVAL;
+                }
+            } else {
+                // try to create it
                 try {
-                    filesystem::create_directories(output_query);
+                    filesystem::create_directories(testPath);
                 } catch (const exception& e) {
+                    cerr << "error eival, createdir: final output: " << output << " and testPath: " << testPath << endl;
                     return EINVAL;
                 }
             }
+
             if (not(query.empty() or exists_test(query))) {
                 cout << "[ERROR] " << strerror(EINVAL) << " | " << "Invalid query file" << endl;
                 return EINVAL;

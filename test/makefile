@@ -29,33 +29,55 @@ OBJ = $(addsuffix .o, $(basename $(SRC)))
 TESTDIR:=out_test_tmp
 QUERY:=query_test
 
-all: test_build test_query_def test_query_format
+all: test_build $(addprefix test_query_, def in_a_dir in_a_file in_a_dir_not_writreable format)
 	@if [ ! -f $(TESTDIR)/error_query ]; then rm -fr $(TESTDIR); fi
 
 test_build:
 	@rm -rf $(TESTDIR) # remove it if previous run was in error
 	@mkdir -p $(TESTDIR);
 	@echo "$(YELLFG)Building REINDEER index $(NoColor)....................................................."
-	../Reindeer --index -f fof_unitigs.txt -o $(TESTDIR) > $(TESTDIR)/log 2>&1;
-	@eqc=$$(grep "Number of equivalence classes found" $(TESTDIR)/log | awk '{print $6}'); \
+	../Reindeer --index -f fof_unitigs.txt -o $(TESTDIR) > $(TESTDIR)/log 2>&1
+	@eqc=$$(grep "Number of equivalence classes found" $(TESTDIR)/log | awk '{print $6}') ;\
 	if (( eqc==180 )); then echo "    -> $(GREEN)Construction test passed.$(NoColor)" ; else echo "    -> $(RED)Construction test error.$(NoColor)"; fi;
 
 test_query_def:
-	@echo "$(YELLFG)Querying index format; default $(NoColor).............................................."
-	../Reindeer --query -l $(TESTDIR) -q $(QUERY).fa -o $(TESTDIR) >> $(TESTDIR)/log 2>&1;
-	@if diff $(TESTDIR)/out_query_Reindeer_P40_$(QUERY)_0.out query_results/out_query_Reindeer_P40_$(QUERY)_0.out > /dev/null; \
-		then echo "    -> $(GREEN)Query test passed.$(NoColor)";\
-		else echo "    -> $(RED)Query test error.$(NoColor)"; touch $(TESTDIR)/error_query; fi;
+	@echo "$(YELLFG)Querying index, all default $(NoColor).............................................."
+	../Reindeer --query -l $(TESTDIR) -q $(QUERY).fa  >> $(TESTDIR)/log 2>&1
+	@if diff query_results/out_query_Reindeer_P40_$(QUERY)_0.out query_resultsOK/out_query_Reindeer_P40_$(QUERY)_0.out > /dev/null ;\
+		then echo "    -> $(GREEN)Query test passed.$(NoColor)"; rm -rf query_results ;\
+		else echo "    -> $(RED)Query test error.$(NoColor)"; touch $(TESTDIR)/error_query; fi
+
+test_query_in_a_dir:
+	@echo "$(YELLFG)Querying index output in outputdir $(NoColor)..................................................."
+	../Reindeer --query -l $(TESTDIR) -q $(QUERY).fa -o $(TESTDIR) >> $(TESTDIR)/log 2>&1
+	@if diff $(TESTDIR)/query_results/out_query_Reindeer_P40_$(QUERY)_0.out query_resultsOK/out_query_Reindeer_P40_$(QUERY)_0.out > /dev/null ;\
+		then echo "    -> $(GREEN)Query test passed.$(NoColor)" ;\
+		else echo "    -> $(RED)Query test error.$(NoColor)"; touch $(TESTDIR)/error_query; fi
+
+test_query_in_a_file:
+	@echo "$(YELLFG)Querying index output in outputfile $(NoColor)..................................................."
+	../Reindeer --query -l $(TESTDIR) -q $(QUERY).fa -o $(TESTDIR)/outputfile.tsv >> $(TESTDIR)/log 2>&1
+	@if diff $(TESTDIR)/outputfile.tsv query_resultsOK/out_query_Reindeer_P40_$(QUERY)_0.out > /dev/null ;\
+		then echo "    -> $(GREEN)Query test passed.$(NoColor)" ;\
+		else echo "    -> $(RED)Query test error.$(NoColor)"; touch $(TESTDIR)/error_query; fi
+
+test_query_in_a_dir_not_writreable:
+	@echo "$(YELLFG)Querying index, Get Error in a dir with no writre access$(NoColor)..................................................."
+	@mkdir -p $(TESTDIR)/notwritable && chmod -w $(TESTDIR)/notwritable
+	@../Reindeer --query -l $(TESTDIR) -q $(QUERY).fa -o $(TESTDIR)/notwritable >> $(TESTDIR)/log 2>&1 && \
+		( echo "    -> $(RED)Query test error.$(NoColor)"; touch $(TESTDIR)/error_query)  || \
+		echo "    -> $(GREEN)Query test passed.$(NoColor)"
 
 test_query_format:
 	@for f in sum average normalize; do \
 	echo "$(YELLFG)Querying index format $$f $(NoColor)..................................................." ;\
-	../Reindeer --query -l $(TESTDIR) -q $(QUERY).fa -o $(TESTDIR) --format $$f >> $(TESTDIR)/log 2>&1 ;\
-	if diff $(TESTDIR)/out_query_Reindeer_P40_$(QUERY)_0.out query_results/out_query_Reindeer_P40_$(QUERY)_0-format_$$f.out > /dev/null; \
+	../Reindeer --query -l $(TESTDIR) -q $(QUERY).fa -o $(TESTDIR)/query-results-$$f.tsv --format $$f >> $(TESTDIR)/log 2>&1 ;\
+	if diff $(TESTDIR)/query-results-$$f.tsv query_resultsOK/out_query_Reindeer_P40_$(QUERY)_0-format_$$f.out > /dev/null; \
 		then echo "    -> $(GREEN)Query test passed.$(NoColor)";\
 		else echo "    -> $(RED)Query test error.$(NoColor)"; touch $(TESTDIR)/error_query; fi; done
 
 benchmark: $(EXEC)
+	mkdir -p wdir
 
 bench_monotig: $(OBJ)
 	$(CXX) -o $@ $^ $(CFLAGS)
@@ -66,7 +88,7 @@ bench_monotig: $(OBJ)
 %.o: %.c
 	$(CC) -o $@ -c $< $(CFLAGS2)
 
-.PHONY:= clean rebuild
+.PHONY: clean rebuild
 
 clean:
 	rm -rf $(OBJ) $(EXEC)
