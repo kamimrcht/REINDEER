@@ -187,7 +187,7 @@ int main (int argc, char* argv[]) {
                     message = " * HELP = help message\n";
                     message.append(" * QUIT = quit message\n");
                     message.append(" * INDEX = ask index in use\n");
-                    message.append(" * FILE:myfile.fasta[:THRESHOLD:value][:OUTFILE:myoutfile]\n");
+                    message.append(" * FILE:myfile.fasta[:THRESHOLD:value][:OUTFILE:myoutfile][:FORMAT:format]\n");
                     write(connection, message.c_str(), message.size());
                     break;
                 // INDEX message: ask which index is in memory
@@ -203,25 +203,30 @@ int main (int argc, char* argv[]) {
                     vector<string> subcmds = split_utils(strBuffer, ':');
                     if (not (subcmds.size() % 2)) {
                         for (auto it = subcmds.begin(); it < subcmds.end(); it++) {
-                            char option = toupper(string(*it).at(0));
+                            char option = toupper(string(*it).at(1));
                             switch(option) {
                                 // get fasta file: FILE
-                                case 'F':
+                                case 'I':
                                     it++;
                                     reindeer_index.query = *it;
                                     cout << "FILE = " << reindeer_index.query << endl;
                                     break;
                                 // get threshold: THRESHOLD
-                                case 'T':
+                                case 'H':
                                     it++;
                                     reindeer_index.threshold = stoi(*it);
                                     cout << "THRESHOLD = " << reindeer_index.threshold  << endl;
                                     break;
                                 // get output file: OUTFILE
-                                case 'O':
+                                case 'U':
                                     it++;
                                     outFile = *it;
                                     cout << "OUTFILE = " << outFile << endl;
+                                    break;
+                                case 'O':
+                                    it++;
+                                    reindeer_index.output_format = *it;
+                                    cout << "FORMAT = " << reindeer_index.output_format << endl;
                                     break;
                                 default :
                                     message = "UNKNOWN command: ";
