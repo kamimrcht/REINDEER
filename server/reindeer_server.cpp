@@ -144,7 +144,7 @@ int main (int argc, char* argv[]) {
 
     string output = "reindeer_index_files", query_file = "", format = "raw";
     // create reindeer index object
-    Reindeer_Index<uint16_t> reindeer_index(data.index_directory, output, 40, query_file, 1, true, format);
+    Reindeer_Index<uint16_t> reindeer_index(data.index_directory, output, 1, true);
     //load index
     reindeer_index.load_index();
 
@@ -200,6 +200,7 @@ int main (int argc, char* argv[]) {
                 case 'F':
                 // informations are by pair
                 { // to be able to initialize subcmds var, case are like goto
+                    string query_file {};
                     vector<string> subcmds = split_utils(strBuffer, ':');
                     if (not (subcmds.size() % 2)) {
                         for (auto it = subcmds.begin(); it < subcmds.end(); it++) {
@@ -208,8 +209,8 @@ int main (int argc, char* argv[]) {
                                 // get fasta file: FILE
                                 case 'I':
                                     it++;
-                                    reindeer_index.query = *it;
-                                    cout << "FILE = " << reindeer_index.query << endl;
+                                    query_file = *it;
+                                    cout << "FILE = " << query_file << endl;
                                     break;
                                 // get threshold: THRESHOLD
                                 case 'H':
@@ -236,9 +237,9 @@ int main (int argc, char* argv[]) {
                                     write(connection, message.c_str(), message.size());
                             }
                         }
-                        if (fs::exists(reindeer_index.query)) {
+                        if (fs::exists(query_file)) {
                             if (!outFile.empty()) reindeer_index.output = outFile;
-                            reindeer_index.querying();
+                            reindeer_index.querying(query_file, reindeer_index.threshold, reindeer_index.output_format);
                             // we have finished
                             message = "DONE\n";
                             write(connection, message.c_str(), message.length());

@@ -88,11 +88,11 @@ public:
 
     //constructor
     Reindeer_Index(uint pk, string& pfof, bool precord_counts, string& preindeer_index_files, uint pthreads, bool pdo_query_on_disk, bool pquantize, bool pdo_log, uint pm1, uint pm3, bool dele_tmp, bool poutput_monotigs);
-    Reindeer_Index(string& output, string& output_query, uint threshold, string& query, uint threads, bool dele_tmp, string& output_format);
+    Reindeer_Index(string& output, string& output_query, uint threads, bool dele_tmp);
     // methods
     void print_Reindeer();
     void load_index();
-    void querying(string query);
+    void querying(string query, uint threshold, string& output_format);
 
     void build_index();
     void read_info();
