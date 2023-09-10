@@ -19,7 +19,7 @@ endif
 CFLAGS2+= -w -Wall -std=gnu99 -DUSE_THREADS  -fstrict-aliasing -Iext $(DEFS)
 CFLAGS+=-std=c++17 -pipe -lz -fopenmp -Iblight/lz4 ${WARNS}
 INC=blight/blight.h blight/bbhash.h blight/common.h src/utils.hpp src/reindeer.hpp src/launch_bcalm.hpp trle/trle.h trle/trle_.h trle/conf.h src/eq_classes.hpp src/query.hpp src/build_index.hpp blight/utils.h src/eq_classes.hpp blight/zstr.hpp blight/common.h blight/robin_hood.h src/monotig.hpp src/matrix_operation.hpp blight/lz4/lz4_stream.h
-EXEC=Reindeer
+EXEC=Reindeer reindeer_socket update_info
 LZ4H=blight/lz4/lz4frame.o blight/lz4/lz4.o blight/lz4/xxhash.o blight/lz4/lz4hc.o
 
 VERSION := $(shell git describe --tags --always)
@@ -83,28 +83,17 @@ matrix_operation.o: src/matrix_operation.cpp $(INC)
 	$(CXX) -o $@ -c $< $(CFLAGS)
 
 
-socket: socket.o blight.o utils_b.o trlec.o trled.o monotig.o utils.o reindeer.o query.o build_index.o eq_classes.o launch_bcalm.o matrix_operation.o $(LZ4H)
+reindeer_socket: reindeer_socket.o blight.o utils_b.o trlec.o trled.o utils.o reindeer.o query.o build_index.o eq_classes.o matrix_operation.o $(LZ4H)
 	$(CXX) -o $@ $^ $(CFLAGS)
 
-socket.o: src/socket.cpp
+reindeer_socket.o: src/reindeer_socket.cpp
 	$(CXX) -o $@ -c $< $(CFLAGS)
-
-socket_clean:
-	rm -rf *.o socket
-
-socket_rebuild: socket_clean socket
-
 
 update_info: update_reindeer_info.o
 	$(CXX) -o $@ $^ $(CFLAGS)
 
 update_reindeer_info.o: script/update_reindeer_info.cpp
 	$(CXX) -o $@ -c $< $(CFLAGS)
-
-update_clean:
-	rm -rf update_reindeer_info.o update_info
-
-update_rebuild: update_clean update_info
 
 # do test
 test:
@@ -113,7 +102,6 @@ test:
 .PHONY: test
 
 clean:
-	rm -rf trlec.o trled.o utils.o main.o blight.o utils_b.o reindeer.o query.o build_index.o eq_classes.o launch_bcalm.o monotig.o matrix_operation.o
-	rm -rf $(EXEC)
+	rm -f *.o $(EXEC)
 
 rebuild: clean $(EXEC)
