@@ -11,6 +11,7 @@
 #include <getopt.h>
 #include <cstring>
 #include <system_error>
+#include "../version.h" // manage version from git
 
 using namespace std;
 namespace fs = filesystem;
@@ -29,14 +30,15 @@ void help() {
     cout << endl;
     cout <<
     "* Mandatory parameters *\n"
-    "-f, --fof <file>                   :       fof (File of files), file containing paths to files used to construct index\n"
-    "-i, --info <directory or file>     :       Either the directory where the index is stored or the reindeer_maxtrix_eqc_info file\n"
+    "  -f, --fof <file>                 :       fof (File of files), file containing paths to files used to construct index\n"
+    "  -i, --info <directory or file>   :       Either the directory where the index is stored or the reindeer_maxtrix_eqc_info file\n"
     "\n"
     "* Optional parameters *\n"
-    "--text                             :       If the info file is already a text file and you want to update it again\n"
+    "  --text                           :       If the info file is already a text file and you want to update it again\n"
     "\n"
     "* General parameters *\n"
-    "-h, --help                         :       Print help (what you are currently seeing)\n"
+    "  --version, -V                    :       Show version\n"
+    "  -h, --help                       :       Print help (what you are currently seeing)\n"
     << endl;
     exit(0);
 }
@@ -45,10 +47,11 @@ vector<pair<string,string>> process_args(int argc, char** argv, bool& is_text) {
 
     vector<pair<string,string>> paths;
 
-    const char* const short_opts = "hf:i:";
+    const char* const short_opts = "hf:i:V";
     const option long_opts[] = {
         { "fof", required_argument, nullptr, 'f' },
         { "info", required_argument, nullptr, 'i' },
+        { "version", no_argument, nullptr, 'V' },
         { "help", no_argument, nullptr, 'h' },
         { "text", no_argument, nullptr, 't' },
         { nullptr, no_argument, nullptr, 0 }
@@ -69,6 +72,10 @@ vector<pair<string,string>> process_args(int argc, char** argv, bool& is_text) {
             break;
         case 't':
             is_text = true;
+            break;
+        case 'V':
+            cout << VERSION << endl;
+            exit(0);
             break;
         case 'h':
         case '?': // Unrecognized option

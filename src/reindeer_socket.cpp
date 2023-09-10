@@ -34,6 +34,7 @@
 #include <unistd.h>
 #include "reindeer.hpp"
 #include "utils.hpp"
+#include "../version.h" // manage version from git
 
 using namespace std;
 namespace fs = filesystem;
@@ -47,20 +48,22 @@ void help() {
     cout << endl;
     cout <<
     "* Mandatory parameters *\n"
-    "-p, --port <number>                :       Port\n"
-    "-l <directory>                     :       Index directory\n"
+    "  -p, --port <number>                :       Port\n"
+    "  -l <directory>                     :       Index directory\n"
     "\n"
     "* General parameters *\n"
-    "-h, --help                         :       Print help (what you are currently seeing)\n"
+    "  --version, -V                      :       Show version\n"
+    "  -h, --help                         :       Print help (what you are currently seeing)\n"
     << endl;
     exit(0);
 }
 
 void process_args(int argc, char** argv, DataSoc& data) {
 
-    const char* const short_opts = "hp:l:";
+    const char* const short_opts = "Vhp:l:";
     const option long_opts[] = {
         { "port", required_argument, nullptr, 'p' },
+        { "version", no_argument, nullptr, 'V' },
         { "help", no_argument, nullptr, 'h' },
         { nullptr, no_argument, nullptr, 0 }
     };
@@ -77,6 +80,10 @@ void process_args(int argc, char** argv, DataSoc& data) {
                 break;
             case 'l':
                 data.index_directory = optarg;
+                break;
+            case 'V':
+                cout << VERSION << endl;
+                exit(0);
                 break;
             case 'h':
             case '?': // Unrecognized option
