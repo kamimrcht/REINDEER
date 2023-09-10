@@ -153,12 +153,12 @@ Info read_binary(const string& in_file) {
 }
 
 Info read_text(const string& in_file){
-    if (is_binary(in_file+"_txt")) {
+    if (is_binary(in_file)) {
         cerr << "[ERROR] " << strerror(EINVAL) << " : Input info file is binary, try without --text if you want to update it or see help (-h, --help)" << endl;
         exit(EINVAL);
     }
     Info data_read_txt;
-    ifstream info_file_txt(in_file+"_txt");
+    ifstream info_file_txt(in_file);
 
     string line;
     getline(info_file_txt, line);
@@ -229,10 +229,12 @@ vector<pair<string,uint64_t>> calc_kbf(const string& fof) {
         getline(ifof,line);
         if (fs::exists(line) && !fs::is_empty(line)) {
             input_files.push_back(line);
-        }
+        } else
+          cout << "Error with file: " << line << " not present or empty" << endl;
     }
     vector<pair<string,uint64_t>> kbf(input_files.size(),make_pair("",0));
     for (uint32_t file = 0; file < input_files.size(); file++) {
+        //TODO: kbf[file].first = fs::path(input_files[file]).stem();
         kbf[file].first = parse_filename(input_files[file]);
         auto reading = new ifstream(input_files[file]);
         string ref = "", header = "";
@@ -258,8 +260,10 @@ vector<pair<string,uint64_t>> calc_kbf(const string& fof) {
 }
 
 void write_info_txt(const string& in_file, Info& data) {
-    string extension = "_txt";
-    ofstream info_file_txt(in_file+extension);
+    // rename old binary info file
+    if (fs::exists(in_file) & is_binary(in_file))
+      fs::rename(in_file, in_file + ".reindeer1.1");
+    ofstream info_file_txt(in_file);
     info_file_txt << "nb_monotig:" << to_string(data.nb_monotig) << endl;
     info_file_txt << "k:" << to_string(data.k) << endl;
     info_file_txt << "record_option:" << to_string(data.record_option) << endl;
@@ -313,7 +317,7 @@ int main (int argc, char* argv[]) {
     }
     data_read.kbf = calc_kbf(fof);
     write_info_txt(in_file, data_read);
-    cout << info_path << "reindeer_matrix_eqc_info_txt" << endl;
+    cout << info_path << "reindeer_matrix_eqc_info" << endl;
     //clear(in_file);
     return 0;
 }
