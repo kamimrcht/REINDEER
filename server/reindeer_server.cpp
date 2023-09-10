@@ -177,7 +177,7 @@ int main (int argc, char* argv[]) {
             switch(toupper(strBuffer.at(0))) {
                 // QUIT message: Quit and Send a message to the connection
                 case 'Q':
-                    message = "See you soon !";
+                    message = "See you soon !\n";
                     cout << message << endl;
                     write(connection, message.c_str(), message.size());
                     quit = true;

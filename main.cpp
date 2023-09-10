@@ -55,13 +55,13 @@ void PrintHelp()
                                                           "--nocount               :     Only compute presence/absence, not abundance\n"
                                                           "--bcalm                 :     Launch bcalm on each single read dataset\n"
                                                           "--paired-end            :     Index using paired-end files (provide pairs of files one after another in the fof). Works only with --bcalm.\n"
-                                                          "--mem-query            :     Index for in-memory query (default: on-disk). To be used for very large query batches if the index fits in RAM.\n"
+                                                          "--mem-query             :     Index for in-memory query (default: on-disk). To be used for very large query batches if the index fits in RAM.\n"
                                                           "--quantization          :     Quantize the abundances in bins (to use only with --count).\n"
                                                           "--log-count             :     Record the log of the counts, gives approximate counts that save space (to use only with --count).\n"
                                                           "      * Output options\n"
                                                           "-o <file>               :     Directory to write reindeer index files (default: reindeer_index_files)\n\n"
                                                           "      * Advanced parameters (we recommend not to change these values unless you are very aware of REINDEER's inner components)\n"
-                                                          "--minimizer-size <integer>          :    MPHF option: minimizer size\n"
+                                                          "--minimizer-size <integer>   :    MPHF option: minimizer size\n"
                                                           "--buckets <integer>          :    MPHF option: number of buckets (log)\n"
                                                           "--keep-tmp                   :    keep tmp files\n"
                                                           "--monotigs                   :    Save the monotigs into monotigs.tsv inside of the output directory\n"
@@ -76,12 +76,12 @@ void PrintHelp()
          << threshold << "%)\n"
                          "-o <dir|file>           :     Directory to write query output files (default: query_results/out_query_Reindeer), or a file\n"
                          "--disk-query            :     On-disk query (default: in-memory). To be used for large indexes that won't fit in RAM, if the index was constructed with the same option.\n\n"
-                         "--format, -F <format>   :     Choose output format : <sum> <s> | <average> <a> | <normalize> <n> (default : raw)\n"
+                         "--format, -F <format>   :     Choose output format : raw | <sum> <s> | <average> <a> | <normalize> <n> (default : raw)\n"
 
                          "                    General\n\n"
                          "-t <integer>            :     Number of threads (default 1)\n"
-                         "--help, -h             :     Show help\n"
-                         "--version, -V          :     Show version\n";
+                         "--help, -h              :     Show help\n"
+                         "--version, -V           :     Show version\n";
     exit(1);
 }
 
