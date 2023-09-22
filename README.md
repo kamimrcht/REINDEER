@@ -126,14 +126,41 @@ In order to have k-mer presence/absence instead of abundance per indexed dataset
 `./Reindeer --query -l output_reindeer -q test/query_test.fa --nocount`
 
 
-
 # Output
 
 By default, query outputs are written in `output_reindeer/query_results/`.
 
+If you provide a directory via the -o option, results will be write in : `my_dir/query_results/`.
+
+`./Reindeer --query -l output_reindeer -q test/query_test.fa -o my_dir`
+`
+But if you provide a file with -o option, results will be write in this file (any extension is require).
+
+`./Reindeer --query -l output_reindeer -q test/query_test.fa -o ../my_path/my_file.tsv`
+
+For all output the directory can be the current directory or any directory, until you have write access.
 
 
-## k-mer abundances
+## Output values format
+
+
+
+When using output with counts, we have 4 kinds of counts:
+
+|  Format name  |                       Count                      |
+|:-------------:|:------------------------------------------------:|
+| raw = default |                 k-mer abundances                 |
+|      sum      |              sum of all k-mer counts             |
+|  average/mean |          sum all k-mer / number of k-mer         |
+|   normalize   | sum * 1.10^9 / total kmer in unitig file (bcalm) |
+
+The last 3 formats are available since version 1.4.
+
+These formats compute the sum of all k-mer in query sequence, so if length(query sequence) = k, you will
+get sum = average.
+
+
+### k-mer abundances (format raw)
 
 Let's say that the query is 51 bases long and we look for 31-mers.
 There are 21 k-mers in the query, from k-mer 0 to k-mer 20.
@@ -143,7 +170,7 @@ The output of REINDEER looks like:
 
 
 Why can we observe different values for k-mers in a single query?  I answer this question in the [advanced FAQ](#advanced-faq).
-
+i
 # Beta options
 
 ## query the index on the disk instead of loading the index in-ram
@@ -209,4 +236,25 @@ Citations:
 ## Why can we observe different values for k-mers in a single query
 
 <img src="./Images/output_advanced.png" alt="drawing" width="500"/>
+
+
+# Changelog
+
+ * See [Changelog.md](changelog.md) file.
+
+ * Major modification:
+
+   - since version 1.4, we change the format of reindeer_matrix_eqc_info file.
+     It is now a text file instead of a binary format. To convert the file, you
+     can use the update_reindeer_info program to update the file for index
+     build with previous version of Reindeer.  The normalisation format require
+     the total number of k-mer in each unitig file (bcalm output).  For
+     previous index build, 2 possibility:
+     - You have access to the unitig files: If you give in argument the fof.txt
+       file (-f option), listing the location of unitig file, the program will
+       count the total k-mer in each unitig file and store them in the file.
+     - You don't have the unitig files: convert the reindeer_matrix_eqc_info
+       with the converter without -f option.
+       - If you don't insert the total k-mer per sample in this file, it will
+        be not possible to use the format 'normalization'.
 

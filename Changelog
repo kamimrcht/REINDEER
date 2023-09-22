@@ -1,0 +1,30 @@
+# Changelog
+
+## v1.4.8
+
+ * 20230818-1: Output file for query is not the filename given in cmd line
+   - contain out_query_Reindeer_P40_$(basename .ext)_0.out
+   - create empty dir query_results
+	 - correction: commit b38c562
+
+## v1.4.7
+
+ * remove usage for query of a fof file (store information in reindeer_matrix_eqc_info
+ * clean-up code
+
+## v1.4.6
+ * 20230816-1: Output format maintains '>' of query fasta
+   - correction: commit 197e0cc
+ * 20230816-2: Output format contains spaces in header line
+   - correction: commit 4635ae3
+ * Code refactoring:
+   - query function are now in the Reindeer_Index class
+	 - simplify function declaration by removing args when they are members
+
+
+
+ * 20230614-3: Switch to c++17 to debug output directory creation using filesystem library
+   - correction: commit 949551e
+ * 20230614-2: Error codes > 0, using c++ error codes
+   - correction: commit 9874fac
+ * 20230614-1:
