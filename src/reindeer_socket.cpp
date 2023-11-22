@@ -118,17 +118,40 @@ int main (int argc, char* argv[]) {
         cerr << "Failed to create socket. errno: " << errno << endl;
         exit(EXIT_FAILURE);
     }
+    if (data.verbose)
+        cerr << " * Socket created\n";
 
-    // avoid err 98: socket already in use, due to timeout when server close
-    int yes = 1;
-    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (void*)&yes, sizeof(yes)) < 0) {
-        cout << "setsockopt() failed. Error: errno: " << errno << endl;
-    }
     // Listen to port data.port on any address
     sockaddr_in sockaddr;
     sockaddr.sin_family = AF_INET;
     sockaddr.sin_addr.s_addr = INADDR_ANY;
     sockaddr.sin_port = htons(data.port); // htons is necessary to convert a number to
+
+      // ********************
+      // in client mode
+      // ********************
+    if (data.index_directory == "") {
+      if (connect(sockfd, (struct sockaddr*) &sockaddr, sizeof(sockaddr)) < 0) {
+        cerr << "Connection failed to server on port " << data.port << endl;
+        exit(EXIT_FAILURE);
+      }
+      if (data.verbose)
+        cerr << " * Connection established with the server on port " << data.port << endl;
+
+      // wait welcome message
+      auto bytesRead = read(sockfd, buffer, 256);
+      if (strlen(buffer))
+        cerr << " <- " << buffer << endl ;
+    else {
+      // ********************
+      // in server mode
+      // ********************
+    // avoid err 98: socket already in use, due to timeout when server close
+    int yes = 1;
+    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (void*)&yes, sizeof(yes)) < 0) {
+        cerr << "setsockopt() failed. Error: errno: " << errno << endl;
+        exit(EXIT_FAILURE);
+    }
     if (data.verbose)
         cerr << " * Connection options set to SOL_SOCKET and SO_REUSEADDR\n";
     // network byte order
@@ -286,6 +309,7 @@ int main (int argc, char* argv[]) {
     } // while
     // Close the connections
     close(connection);
+    } // end of server mode
     close(sockfd);
     return 0;
 }
