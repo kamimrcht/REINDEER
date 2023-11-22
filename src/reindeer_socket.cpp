@@ -109,7 +109,7 @@ int main (int argc, char* argv[]) {
     // Create a socket (IPv4, TCP)
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd == -1) {
-        cout << "Failed to create socket. errno: " << errno << endl;
+        cerr << "Failed to create socket. errno: " << errno << endl;
         exit(EXIT_FAILURE);
     }
 
@@ -125,26 +125,26 @@ int main (int argc, char* argv[]) {
     sockaddr.sin_port = htons(data.port); // htons is necessary to convert a number to
     // network byte order
     if (bind(sockfd, (struct sockaddr*)&sockaddr, sizeof(sockaddr)) < 0) {
-        cout << "Failed to bind to port " << data.port << ". errno: " << errno << endl;
+        cerr << "Failed to bind to port " << data.port << ". errno: " << errno << endl;
         exit(EXIT_FAILURE);
     }
 
     // Start listening. Hold at most 10 connections in the queue
     if (listen(sockfd, 1) < 0) {
-        cout << "Failed to listen on socket. errno: " << errno << endl;
+        cerr << "Failed to listen on socket. errno: " << errno << endl;
         exit(EXIT_FAILURE);
     }
+       cerr << " * Going to listen message from client" << endl;
+       cerr << " * Waiting for client to connect" << endl;
 
-    cout << " * created socket on port " << data.port << endl;
-    cout << " * waiting for client to connect" << endl;
     // Grab a connection from the queue
     auto addrlen = sizeof(sockaddr);
     int connection = accept(sockfd, (struct sockaddr*)&sockaddr, (socklen_t*)&addrlen);
     if (connection < 0) {
-        cout << "Failed to grab connection. errno: " << errno << endl;
+        cerr << "Failed to grab connection. errno: " << errno << endl;
         exit(EXIT_FAILURE);
     }
-    cout << " * connected to one client" << endl;
+      cerr << " * connected to one client" << endl;
     // give a welcome message
     message = "WELCOME to Reindeer socket server\n";
     write(connection, message.c_str(), message.size());
@@ -185,7 +185,7 @@ int main (int argc, char* argv[]) {
                 // QUIT message: Quit and Send a message to the connection
                 case 'Q':
                     message = "See you soon !\n";
-                    cout << message << endl;
+                    cerr << message << endl;
                     write(connection, message.c_str(), message.size());
                     quit = true;
                     break;
@@ -217,30 +217,30 @@ int main (int argc, char* argv[]) {
                                 case 'I':
                                     it++;
                                     query_file = *it;
-                                    cout << "FILE = " << query_file << endl;
+                                    cerr << "FILE = " << query_file << endl;
                                     break;
                                 // get threshold: THRESHOLD
                                 case 'H':
                                     it++;
                                     reindeer_index.threshold = stoi(*it);
-                                    cout << "THRESHOLD = " << reindeer_index.threshold  << endl;
+                                    cerr << "THRESHOLD = " << reindeer_index.threshold  << endl;
                                     break;
                                 // get output file: OUTFILE
                                 case 'U':
                                     it++;
                                     outFile = *it;
-                                    cout << "OUTFILE = " << outFile << endl;
+                                    cerr << "OUTFILE = " << outFile << endl;
                                     break;
                                 case 'O':
                                     it++;
                                     reindeer_index.output_format = *it;
-                                    cout << "FORMAT = " << reindeer_index.output_format << endl;
+                                    cerr << "FORMAT = " << reindeer_index.output_format << endl;
                                     break;
                                 default :
                                     message = "UNKNOWN command: ";
                                     message.append(1, option);
                                     message.append("\n");
-                                    cout << message << endl;
+                                    cerr << message << endl;
                                     write(connection, message.c_str(), message.size());
                             }
                         }
@@ -252,7 +252,7 @@ int main (int argc, char* argv[]) {
                             write(connection, message.c_str(), message.length());
                         } else {
                             message = "ERROR:The entry is not a file or not given (FILE:path.fa is required)\n";
-                            cout << message << endl;
+                            cerr << message << endl;
                             write(connection, message.c_str(), message.size());
                         }
                     } else {
