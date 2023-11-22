@@ -42,6 +42,7 @@ namespace fs = filesystem;
 typedef struct data_for_socket{
     int port = 0;
     string index_directory = "";
+    bool verbose = 0;
 } DataSoc;
 
 void help() {
@@ -52,6 +53,7 @@ void help() {
     "  -l <directory>                     :       Index directory\n"
     "\n"
     "* General parameters *\n"
+    "  --verbose, -v                      :       Verbose mode\n"
     "  --version, -V                      :       Show version\n"
     "  -h, --help                         :       Print help (what you are currently seeing)\n"
     << endl;
@@ -60,9 +62,10 @@ void help() {
 
 void process_args(int argc, char** argv, DataSoc& data) {
 
-    const char* const short_opts = "Vhp:l:";
+    const char* const short_opts = "vVhp:l:";
     const option long_opts[] = {
         { "port", required_argument, nullptr, 'p' },
+        { "verbose", no_argument, nullptr, 'v' },
         { "version", no_argument, nullptr, 'V' },
         { "help", no_argument, nullptr, 'h' },
         { nullptr, no_argument, nullptr, 0 }
@@ -84,6 +87,9 @@ void process_args(int argc, char** argv, DataSoc& data) {
             case 'V':
                 cout << VERSION << endl;
                 exit(0);
+                break;
+            case 'v':
+                data.verbose = 1;
                 break;
             case 'h':
             case '?': // Unrecognized option
@@ -123,19 +129,25 @@ int main (int argc, char* argv[]) {
     sockaddr.sin_family = AF_INET;
     sockaddr.sin_addr.s_addr = INADDR_ANY;
     sockaddr.sin_port = htons(data.port); // htons is necessary to convert a number to
+    if (data.verbose)
+        cerr << " * Connection options set to SOL_SOCKET and SO_REUSEADDR\n";
     // network byte order
     if (bind(sockfd, (struct sockaddr*)&sockaddr, sizeof(sockaddr)) < 0) {
         cerr << "Failed to bind to port " << data.port << ". errno: " << errno << endl;
         exit(EXIT_FAILURE);
     }
+    if (data.verbose)
+        cerr << " * Connection bind to port " << data.port << endl;
 
     // Start listening. Hold at most 10 connections in the queue
     if (listen(sockfd, 1) < 0) {
         cerr << "Failed to listen on socket. errno: " << errno << endl;
         exit(EXIT_FAILURE);
     }
+    if (data.verbose) {
        cerr << " * Going to listen message from client" << endl;
        cerr << " * Waiting for client to connect" << endl;
+    }
 
     // Grab a connection from the queue
     auto addrlen = sizeof(sockaddr);
@@ -144,6 +156,7 @@ int main (int argc, char* argv[]) {
         cerr << "Failed to grab connection. errno: " << errno << endl;
         exit(EXIT_FAILURE);
     }
+    if (data.verbose)
       cerr << " * connected to one client" << endl;
     // give a welcome message
     message = "WELCOME to Reindeer socket server\n";
@@ -160,6 +173,8 @@ int main (int argc, char* argv[]) {
     message.append(reindeer_index.matrix_name);
     message.append("\n");
     write(connection, message.c_str(), message.size());
+    if (data.verbose)
+      cerr << message << endl;
 
     // Read from the connection
     bool quit = false;
