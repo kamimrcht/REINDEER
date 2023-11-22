@@ -163,181 +163,181 @@ int main (int argc, char* argv[]) {
       // in server mode
       // ********************
 
-    // avoid err 98: socket already in use, due to timeout when server close
-    int yes = 1;
-    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (void*)&yes, sizeof(yes)) < 0) {
-        cerr << "setsockopt() failed. Error: errno: " << errno << endl;
-        exit(EXIT_FAILURE);
-    }
-    if (data.verbose)
-        cerr << " * Connection options set to SOL_SOCKET and SO_REUSEADDR\n";
+      // avoid err 98: socket already in use, due to timeout when server close
+      int yes = 1;
+      if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (void*)&yes, sizeof(yes)) < 0) {
+          cerr << "setsockopt() failed. Error: errno: " << errno << endl;
+          exit(EXIT_FAILURE);
+      }
+      if (data.verbose)
+          cerr << " * Connection options set to SOL_SOCKET and SO_REUSEADDR\n";
 
-    // network byte order
-    if (bind(sockfd, (struct sockaddr*)&sockaddr, sizeof(sockaddr)) < 0) {
-        cerr << "Failed to bind to port " << data.port << ". errno: " << errno << endl;
-        exit(EXIT_FAILURE);
-    }
-    if (data.verbose)
-        cerr << " * Connection bind to port " << data.port << endl;
+      // network byte order
+      if (bind(sockfd, (struct sockaddr*)&sockaddr, sizeof(sockaddr)) < 0) {
+          cerr << "Failed to bind to port " << data.port << ". errno: " << errno << endl;
+          exit(EXIT_FAILURE);
+      }
+      if (data.verbose)
+          cerr << " * Connection bind to port " << data.port << endl;
 
-    // Start listening. Hold at most 10 connections in the queue
-    if (listen(sockfd, 1) < 0) {
-        cerr << "Failed to listen on socket. errno: " << errno << endl;
-        exit(EXIT_FAILURE);
-    }
-    if (data.verbose) {
-       cerr << " * Going to listen message from client" << endl;
-       cerr << " * Waiting for client to connect" << endl;
-    }
+      // Start listening. Hold at most 10 connections in the queue
+      if (listen(sockfd, 1) < 0) {
+          cerr << "Failed to listen on socket. errno: " << errno << endl;
+          exit(EXIT_FAILURE);
+      }
+      if (data.verbose) {
+         cerr << " * Going to listen message from client" << endl;
+         cerr << " * Waiting for client to connect" << endl;
+      }
 
-    // Grab a connection from the queue
-    auto addrlen = sizeof(sockaddr);
-    int connection = accept(sockfd, (struct sockaddr*)&sockaddr, (socklen_t*)&addrlen);
-    if (connection < 0) {
-        cerr << "Failed to grab connection. errno: " << errno << endl;
-        exit(EXIT_FAILURE);
-    }
-    if (data.verbose)
-      cerr << " * connected to one client" << endl;
+      // Grab a connection from the queue
+      auto addrlen = sizeof(sockaddr);
+      int connection = accept(sockfd, (struct sockaddr*)&sockaddr, (socklen_t*)&addrlen);
+      if (connection < 0) {
+          cerr << "Failed to grab connection. errno: " << errno << endl;
+          exit(EXIT_FAILURE);
+      }
+      if (data.verbose)
+        cerr << " * connected to one client" << endl;
 
-    // give a welcome message
-    message = "WELCOME to Reindeer socket server\n";
-    write(connection, message.c_str(), message.size());
+      // give a welcome message
+      message = "WELCOME to Reindeer socket server\n";
+      write(connection, message.c_str(), message.size());
 
-    // Loading index before client is connected
-    message = "LOADING index ";
-    message.append(data.index_directory);
-    message.append("\n");
-    write(connection, message.c_str(), message.size());
-    if (data.verbose)
-      cerr << message << endl;
+      // Loading index before client is connected
+      message = "LOADING index ";
+      message.append(data.index_directory);
+      message.append("\n");
+      write(connection, message.c_str(), message.size());
+      if (data.verbose)
+        cerr << message << endl;
 
-    string output = "reindeer_index_files", query_file = "", format = "raw";
-    // create reindeer index object
-    Reindeer_Index<uint16_t> reindeer_index(data.index_directory, output, 1, true);
-    //load index
-    reindeer_index.load_index();
-    message = "LOADED index \n";
-    write(connection, message.c_str(), message.size());
-    if (data.verbose)
-      cerr << message << endl;
+      string output = "reindeer_index_files", query_file = "", format = "raw";
+      // create reindeer index object
+      Reindeer_Index<uint16_t> reindeer_index(data.index_directory, output, 1, true);
+      //load index
+      reindeer_index.load_index();
+      message = "LOADED index \n";
+      write(connection, message.c_str(), message.size());
+      if (data.verbose)
+        cerr << message << endl;
 
-    // give which index is used
-    message = "INDEX:";
-    message.append(reindeer_index.matrix_name);
-    message.append("\n");
-    write(connection, message.c_str(), message.size());
-    if (data.verbose)
-      cerr << message << endl;
+      // give which index is used
+      message = "INDEX:";
+      message.append(reindeer_index.matrix_name);
+      message.append("\n");
+      write(connection, message.c_str(), message.size());
+      if (data.verbose)
+        cerr << message << endl;
 
-    // Read from the connection
-    bool quit = false;
+      // Read from the connection
+      bool quit = false;
 
-    while (!quit) {
-        auto bytesRead = read(connection, buffer, 256);
+      while (!quit) {
+          auto bytesRead = read(connection, buffer, 256);
 
-        // check if something on connection
-        // if something but len=0 => client hangout
-        if (strlen(buffer) > 2) {
-            // remove the \n send
-            buffer[bytesRead] = '\0';
-            string outFile;
+          // check if something on connection
+          // if something but len=0 => client hangout
+          if (strlen(buffer) > 2) {
+              // remove the \n send
+              buffer[bytesRead] = '\0';
+              string outFile;
 
-            // convert buffer to string obj
-            string strBuffer(buffer, bytesRead);
-            // remove end char if control ASCII
-            strBuffer.erase(strBuffer.find_last_not_of(" \t\n\r\f\v") + 1);
-            // analysis args coming from socket message
-            switch(toupper(strBuffer.at(0))) {
-                // QUIT message: Quit and Send a message to the connection
-                case 'Q':
-                    message = "See you soon !\n";
-                    cerr << message << endl;
-                    write(connection, message.c_str(), message.size());
-                    quit = true;
-                    break;
-                // HELP message
-                case 'H':
-                    message = " * HELP = help message\n";
-                    message.append(" * QUIT = quit message\n");
-                    message.append(" * INDEX = ask index in use\n");
-                    message.append(" * FILE:myfile.fasta[:THRESHOLD:value][:OUTFILE:myoutfile][:FORMAT:format]\n");
-                    write(connection, message.c_str(), message.size());
-                    break;
-                // INDEX message: ask which index is in memory
-                case 'I':
-                    message = "INDEX:";
-                    message.append(reindeer_index.matrix_name);
-                    message.append("\n");
-                    write(connection, message.c_str(), message.size());
-                    break;
-                case 'F':
-                // informations are by pair
-                { // to be able to initialize subcmds var, case are like goto
-                    string query_file {};
-                    vector<string> subcmds = split_utils(strBuffer, ':');
-                    if (not (subcmds.size() % 2)) {
-                        for (auto it = subcmds.begin(); it < subcmds.end(); it++) {
-                            char option = toupper(string(*it).at(1));
-                            switch(option) {
-                                // get fasta file: FILE
-                                case 'I':
-                                    it++;
-                                    query_file = *it;
-                                    cerr << "FILE = " << query_file << endl;
-                                    break;
-                                // get threshold: THRESHOLD
-                                case 'H':
-                                    it++;
-                                    reindeer_index.threshold = stoi(*it);
-                                    cerr << "THRESHOLD = " << reindeer_index.threshold  << endl;
-                                    break;
-                                // get output file: OUTFILE
-                                case 'U':
-                                    it++;
-                                    outFile = *it;
-                                    cerr << "OUTFILE = " << outFile << endl;
-                                    break;
-                                case 'O':
-                                    it++;
-                                    reindeer_index.output_format = *it;
-                                    cerr << "FORMAT = " << reindeer_index.output_format << endl;
-                                    break;
-                                default :
-                                    message = "UNKNOWN command: ";
-                                    message.append(1, option);
-                                    message.append("\n");
-                                    cerr << message << endl;
-                                    write(connection, message.c_str(), message.size());
-                            }
-                        }
-                        if (fs::exists(query_file)) {
-                            if (!outFile.empty()) reindeer_index.output = outFile;
-                            reindeer_index.querying(query_file, reindeer_index.threshold, reindeer_index.output_format);
-                            // we have finished
-                            message = "DONE\n";
-                            write(connection, message.c_str(), message.length());
-                        } else {
-                            message = "ERROR:The entry is not a file or not given (FILE:path.fa is required)\n";
-                            cerr << message << endl;
-                            write(connection, message.c_str(), message.size());
-                        }
-                    } else {
-                        message = "ERROR: no file given to command FILE, or not paired command\n";
-                        write(connection, message.c_str(), message.size());
-                    }  // if subcmds.size %2
-                    break;
-                }
-                default :
-                    message = "UNKNOWN command: ";
-                    message.append(1, strBuffer.at(0));
-                    message.append("\n");
-                    write(connection, message.c_str(), message.size());
-            }
-        } // if len > 2
-    } // while
-    // Close the connections
-    close(connection);
+              // convert buffer to string obj
+              string strBuffer(buffer, bytesRead);
+              // remove end char if control ASCII
+              strBuffer.erase(strBuffer.find_last_not_of(" \t\n\r\f\v") + 1);
+              // analysis args coming from socket message
+              switch(toupper(strBuffer.at(0))) {
+                  // QUIT message: Quit and Send a message to the connection
+                  case 'Q':
+                      message = "See you soon !\n";
+                      cerr << message << endl;
+                      write(connection, message.c_str(), message.size());
+                      quit = true;
+                      break;
+                  // HELP message
+                  case 'H':
+                      message = " * HELP = help message\n";
+                      message.append(" * QUIT = quit message\n");
+                      message.append(" * INDEX = ask index in use\n");
+                      message.append(" * FILE:myfile.fasta[:THRESHOLD:value][:OUTFILE:myoutfile][:FORMAT:format]\n");
+                      write(connection, message.c_str(), message.size());
+                      break;
+                  // INDEX message: ask which index is in memory
+                  case 'I':
+                      message = "INDEX:";
+                      message.append(reindeer_index.matrix_name);
+                      message.append("\n");
+                      write(connection, message.c_str(), message.size());
+                      break;
+                  case 'F':
+                  // informations are by pair
+                  { // to be able to initialize subcmds var, case are like goto
+                      string query_file {};
+                      vector<string> subcmds = split_utils(strBuffer, ':');
+                      if (not (subcmds.size() % 2)) {
+                          for (auto it = subcmds.begin(); it < subcmds.end(); it++) {
+                              char option = toupper(string(*it).at(1));
+                              switch(option) {
+                                  // get fasta file: FILE
+                                  case 'I':
+                                      it++;
+                                      query_file = *it;
+                                      cerr << "FILE = " << query_file << endl;
+                                      break;
+                                  // get threshold: THRESHOLD
+                                  case 'H':
+                                      it++;
+                                      reindeer_index.threshold = stoi(*it);
+                                      cerr << "THRESHOLD = " << reindeer_index.threshold  << endl;
+                                      break;
+                                  // get output file: OUTFILE
+                                  case 'U':
+                                      it++;
+                                      outFile = *it;
+                                      cerr << "OUTFILE = " << outFile << endl;
+                                      break;
+                                  case 'O':
+                                      it++;
+                                      reindeer_index.output_format = *it;
+                                      cerr << "FORMAT = " << reindeer_index.output_format << endl;
+                                      break;
+                                  default :
+                                      message = "UNKNOWN command: ";
+                                      message.append(1, option);
+                                      message.append("\n");
+                                      cerr << message << endl;
+                                      write(connection, message.c_str(), message.size());
+                              }
+                          }
+                          if (fs::exists(query_file)) {
+                              if (!outFile.empty()) reindeer_index.output = outFile;
+                              reindeer_index.querying(query_file, reindeer_index.threshold, reindeer_index.output_format);
+                              // we have finished
+                              message = "DONE\n";
+                              write(connection, message.c_str(), message.length());
+                          } else {
+                              message = "ERROR:The entry is not a file or not given (FILE:path.fa is required)\n";
+                              cerr << message << endl;
+                              write(connection, message.c_str(), message.size());
+                          }
+                      } else {
+                          message = "ERROR: no file given to command FILE, or not paired command\n";
+                          write(connection, message.c_str(), message.size());
+                      }  // if subcmds.size %2
+                      break;
+                  }
+                  default :
+                      message = "UNKNOWN command: ";
+                      message.append(1, strBuffer.at(0));
+                      message.append("\n");
+                      write(connection, message.c_str(), message.size());
+              }
+          } // if len > 2
+      } // while
+      // Close the connections
+      close(connection);
     } // end of server mode
     close(sockfd);
     return 0;
