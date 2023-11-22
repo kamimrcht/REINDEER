@@ -118,6 +118,8 @@ int main (int argc, char* argv[]) {
 
     DataSoc data;
     process_args(argc, argv, data);
+    char buffer[256];
+    memset(buffer, 0, 255);
 
     string message;
 
@@ -151,6 +153,7 @@ int main (int argc, char* argv[]) {
       auto bytesRead = read(sockfd, buffer, 256);
       if (strlen(buffer))
         cerr << " <- " << buffer << endl ;
+
       // ask for index
       message = "INDEX\n";
       write(sockfd, message.c_str(), message.size());
@@ -168,6 +171,7 @@ int main (int argc, char* argv[]) {
     }
     if (data.verbose)
         cerr << " * Connection options set to SOL_SOCKET and SO_REUSEADDR\n";
+
     // network byte order
     if (bind(sockfd, (struct sockaddr*)&sockaddr, sizeof(sockaddr)) < 0) {
         cerr << "Failed to bind to port " << data.port << ". errno: " << errno << endl;
@@ -195,15 +199,28 @@ int main (int argc, char* argv[]) {
     }
     if (data.verbose)
       cerr << " * connected to one client" << endl;
+
     // give a welcome message
     message = "WELCOME to Reindeer socket server\n";
     write(connection, message.c_str(), message.size());
+
+    // Loading index before client is connected
+    message = "LOADING index ";
+    message.append(data.index_directory);
+    message.append("\n");
+    write(connection, message.c_str(), message.size());
+    if (data.verbose)
+      cerr << message << endl;
 
     string output = "reindeer_index_files", query_file = "", format = "raw";
     // create reindeer index object
     Reindeer_Index<uint16_t> reindeer_index(data.index_directory, output, 1, true);
     //load index
     reindeer_index.load_index();
+    message = "LOADED index \n";
+    write(connection, message.c_str(), message.size());
+    if (data.verbose)
+      cerr << message << endl;
 
     // give which index is used
     message = "INDEX:";
@@ -217,8 +234,6 @@ int main (int argc, char* argv[]) {
     bool quit = false;
 
     while (!quit) {
-        char buffer[256];
-        memset(buffer, 0, 255);
         auto bytesRead = read(connection, buffer, 256);
 
         // check if something on connection
