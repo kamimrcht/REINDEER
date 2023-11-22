@@ -42,6 +42,7 @@ namespace fs = filesystem;
 typedef struct data_for_socket{
     int port = 0;
     string index_directory = "";
+    string command_file = "";
     bool verbose = 0;
 } DataSoc;
 
@@ -50,7 +51,10 @@ void help() {
     cout <<
     "* Mandatory parameters *\n"
     "  -p, --port <number>                :       Port\n"
-    "  -l <directory>                     :       Index directory\n"
+    "* Client mode parameter *\n"
+    "  -i, --input <file>                 :       Input file with command to send to a reindeer_socket server\n"
+    "* Server mode parameter *\n"
+    "  -l <directory>                     :       Reindeer index directory (should be reindeer_index_files if you've not used -o during indexing)\n"
     "\n"
     "* General parameters *\n"
     "  --verbose, -v                      :       Verbose mode\n"
@@ -65,6 +69,8 @@ void process_args(int argc, char** argv, DataSoc& data) {
     const char* const short_opts = "vVhp:l:";
     const option long_opts[] = {
         { "port", required_argument, nullptr, 'p' },
+        { "input", required_argument, nullptr, 'i' },
+        { "index", required_argument, nullptr, 'l' },
         { "verbose", no_argument, nullptr, 'v' },
         { "version", no_argument, nullptr, 'V' },
         { "help", no_argument, nullptr, 'h' },
@@ -80,6 +86,9 @@ void process_args(int argc, char** argv, DataSoc& data) {
         switch (opt) {
             case 'p':
                 data.port = stoi(optarg);
+                break;
+            case 'i':
+                data.command_file = optarg;
                 break;
             case 'l':
                 data.index_directory = optarg;
@@ -142,10 +151,15 @@ int main (int argc, char* argv[]) {
       auto bytesRead = read(sockfd, buffer, 256);
       if (strlen(buffer))
         cerr << " <- " << buffer << endl ;
+      // ask for index
+      message = "INDEX\n";
+      write(sockfd, message.c_str(), message.size());
+    }
     else {
       // ********************
       // in server mode
       // ********************
+
     // avoid err 98: socket already in use, due to timeout when server close
     int yes = 1;
     if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (void*)&yes, sizeof(yes)) < 0) {
