@@ -190,6 +190,18 @@ int main (int argc, char* argv[]) {
          cerr << " * Waiting for client to connect" << endl;
       }
 
+      // Loading index before client is connected
+      if (data.verbose)
+        cerr << "LOADING index " << data.index_directory << endl;
+
+      string output = "reindeer_index_files", query_file = "", format = "raw";
+      // create reindeer index object
+      Reindeer_Index<uint16_t> reindeer_index(data.index_directory, output, 1, true);
+      //load index
+      reindeer_index.load_index();
+      // validate loading to stdout
+      cout << "LOADED index\n";
+
       // Grab a connection from the queue
       auto addrlen = sizeof(sockaddr);
       int connection = accept(sockfd, (struct sockaddr*)&sockaddr, (socklen_t*)&addrlen);
@@ -203,32 +215,6 @@ int main (int argc, char* argv[]) {
       // give a welcome message
       message = "WELCOME to Reindeer socket server\n";
       write(connection, message.c_str(), message.size());
-
-      // Loading index before client is connected
-      message = "LOADING index ";
-      message.append(data.index_directory);
-      message.append("\n");
-      write(connection, message.c_str(), message.size());
-      if (data.verbose)
-        cerr << message << endl;
-
-      string output = "reindeer_index_files", query_file = "", format = "raw";
-      // create reindeer index object
-      Reindeer_Index<uint16_t> reindeer_index(data.index_directory, output, 1, true);
-      //load index
-      reindeer_index.load_index();
-      message = "LOADED index \n";
-      write(connection, message.c_str(), message.size());
-      if (data.verbose)
-        cerr << message << endl;
-
-      // give which index is used
-      message = "INDEX:";
-      message.append(reindeer_index.matrix_name);
-      message.append("\n");
-      write(connection, message.c_str(), message.size());
-      if (data.verbose)
-        cerr << message << endl;
 
       // Read from the connection
       bool quit = false;
