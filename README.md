@@ -177,7 +177,7 @@ We provide a page with scripts to reproduce the results we show in our manuscrip
 # Citation and resources
 
 REINDEER has been published in [Bioinformatics](https://academic.oup.com/bioinformatics/article/36/Supplement_1/i177/5870500?login=true). 
-It was presented during ISMB conference in 2020.
+It was presented during ISMB conference in 2020. Main developper: Camille Marchet.
 
 Access to the preprint: [REINDEER: efficient indexing of k-mer presence and abundance
 in sequencing datasets](https://www.biorxiv.org/content/10.1101/2020.03.29.014159v1.full.pdf).
