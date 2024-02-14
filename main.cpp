@@ -75,7 +75,6 @@ void PrintHelp()
                                                           "-P                      :     Threshold: at least P% of the positions in the query must be covered by k-mers present in a dataset for the dataset to be reported (default: "
          << threshold << "%)\n"
                          "-o <dir|file>           :     Directory to write query output files (default: query_results/out_query_Reindeer), or a file\n"
-                         "--disk-query            :     On-disk query (default: in-memory). To be used for large indexes that won't fit in RAM, if the index was constructed with the same option.\n\n"
                          "--format, -F <format>   :     Choose output format : raw | <sum> <s> | <average> <a> | <normalize> <n> (default : raw)\n"
 
                          "                    General\n\n"
@@ -96,7 +95,7 @@ void ProcessArgs(int argc, char** argv)
         { "bcalm", no_argument, nullptr, 'b' },
         { "query", no_argument, nullptr, 'Q' },
         { "paired-end", no_argument, nullptr, 'p' },
-        { "disk-query", no_argument, nullptr, 'd' },
+        { "mem-query", no_argument, nullptr, 'd' },
         { "quantization", no_argument, nullptr, 'u' },
         { "log-count", no_argument, nullptr, 'L' },
         { "minimizer-size", required_argument, nullptr, 'm' },
