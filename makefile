@@ -102,6 +102,6 @@ test:
 .PHONY: test
 
 clean:
-	rm -f *.o $(EXEC)
+	rm -f *.o blight/lz4/*.o $(EXEC)
 
 rebuild: clean $(EXEC)
