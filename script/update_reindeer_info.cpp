@@ -266,10 +266,11 @@ vector<pair<string,uint64_t>> calc_kbf(const string& fof) {
     while (!ifof.eof()) {
         string line;
         getline(ifof,line);
-        if (fs::exists(line) && !fs::is_empty(line)) {
-            input_files.push_back(line);
-        } else
-          cout << "Error with file: " << line << " not present or empty" << endl;
+        if (line != "") // the last line is empty
+            if (fs::exists(line) && !fs::is_empty(line)) {
+                input_files.push_back(line);
+            } else
+                cerr << "Error with file: '" << line << "' not present or empty" << endl;
     }
     vector<pair<string,uint64_t>> kbf(input_files.size(),make_pair("",0));
     for (uint32_t file = 0; file < input_files.size(); file++) {
