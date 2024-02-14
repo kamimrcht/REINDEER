@@ -16,13 +16,14 @@
 using namespace std;
 namespace fs = filesystem;
 
-typedef struct info{
 typedef struct filespath {
     string fof = "";        // store fof file = list of unitigs files
     string info_file = "";  // reindeer_matrix_eqc_info file to convert
     string info_new = "";   // reindeer_matrix_eqc_info file converted
     string info_path = "";  // path given for index directory
 } Files_Path;
+
+typedef struct info {
     uint64_t nb_monotig = 0;
     uint k = 0;
     uint record_option = 0;
@@ -71,6 +72,10 @@ Files_Path process_args(int argc, char** argv, bool& is_text) {
         }
         switch (opt) {
         case 'f':
+            if (!fs::is_regular_file(optarg)) {
+              cerr << "Error: the fof file given (" << optarg << ") is not present" << endl;
+              exit(1);
+            }
             paths.fof = optarg;
             break;
         case 'i':
@@ -94,13 +99,13 @@ Files_Path process_args(int argc, char** argv, bool& is_text) {
 }
 
 uint16_t parseCoverage(const string& str) {
-	size_t pos(str.find("km:f:"));
+	size_t pos(str.find("KC:i:"));
+  // we must have KC count
 	if (pos == string::npos) {
-		pos = (str.find("KM:f:"));
+    cerr << "Error didn't find bcalm header: KC:i:" << endl;
+    exit(1);
 	}
-	if (pos == string::npos) {
-		return 1;
-	}
+  // find end of field KC
 	uint i(1);
 	while (str[i + pos + 5] != ' ') {
 		++i;
@@ -233,11 +238,11 @@ Info read_text(const string& in_file){
         string do_query_on_disk_string = line.substr(colon_pos + 1);
         data_read_txt.do_query_on_disk = (do_query_on_disk_string != "0");
     }
-    cout << "Text file read ✓" << endl;
+    cerr << "Text file read ✓" << endl;
     return data_read_txt;
 }
 
-vector<pair<string,uint64_t>> calc_kbf(const string& fof) {
+vector<pair<string,uint64_t>> calc_kbf(const string& fof, Info& data) {
     // ------ calculating kmers_by_file ------ //
     cout << "Calculating kmers by file..." << endl;
     ifstream ifof(fof);
@@ -251,10 +256,11 @@ vector<pair<string,uint64_t>> calc_kbf(const string& fof) {
             } else
                 cerr << "Error with file: '" << line << "' not present or empty" << endl;
     }
-    vector<pair<string,uint64_t>> kbf(input_files.size(),make_pair("",0));
+    vector<pair<string,uint64_t>> kbf(input_files.size(), make_pair("", 0));
     for (uint32_t file = 0; file < input_files.size(); file++) {
         // get sample name (without path and extension
         kbf[file].first = fs::path(input_files[file]).stem();
+        // count if unitig is present, otherwise keep 0
         auto reading = new ifstream(input_files[file]);
         string ref = "", header = "";
         while (!reading->eof()) {
@@ -267,14 +273,14 @@ vector<pair<string,uint64_t>> calc_kbf(const string& fof) {
         delete reading;
     }
     ifof.close();
-    cout << "Done ✓" << endl;
+    cerr << "Done ✓" << endl;
     return kbf;
 }
 
 void write_info_txt(const string& in_file, Info& data) {
-    // rename old binary info file
+    // check in case the info_new.txt file is in binary format, and backup just in case
     if (fs::exists(in_file) & is_binary(in_file))
-      fs::rename(in_file, in_file + ".reindeer1.1");
+      fs::rename(in_file, in_file + ".backup");
     ofstream info_file_txt(in_file);
     info_file_txt << "nb_monotig:" << to_string(data.nb_monotig) << endl;
     info_file_txt << "k:" << to_string(data.k) << endl;
