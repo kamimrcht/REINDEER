@@ -159,7 +159,33 @@ Info read_binary(const string& in_file) {
     info_file_bin.read(reinterpret_cast<char*>(&data_read_bin.record_option), sizeof(uint));
     info_file_bin.read(reinterpret_cast<char*>(&data_read_bin.nb_eq_class), sizeof(long));
     info_file_bin.read(reinterpret_cast<char*>(&data_read_bin.nb_colors), sizeof(uint64_t));
-    info_file_bin.read(reinterpret_cast<char*>(&data_read_bin.do_query_on_disk), sizeof(bool));
+    // Reindeer <v1.2, do not store the disk query value
+    // Try to read something, if nothing, value will be unchanged
+    int try_disk_query {3};
+    info_file_bin.read(reinterpret_cast<char*>(&try_disk_query), sizeof(bool));
+    if (!info_file_bin) {
+        cerr << "Warning: reindeer index was built with a version < 1.2" << endl
+             << "   so I don't known if it is built with the disk query mode" << endl
+             << "   Try to guess." << endl;
+        // Try to guess if disk query mode was used ?
+        // in disk_query mode: reindeer_matrix_eqc file is not gz
+        string eqc_file = in_file.substr(0, in_file.size()-5);
+        // try if there a file not empty
+        // (BUG Reindeer that want the eqc.gz file even in disk query mode, and we create an empty file)
+        if (fs::exists(eqc_file) && fs::is_regular_file(eqc_file) && !fs::is_empty(eqc_file)) {
+          cerr << "I think that the index was build with the disk query mode" << endl;
+          data_read_bin.do_query_on_disk = 1;
+        }
+        eqc_file = eqc_file + ".gz";
+        if (fs::exists(eqc_file) && fs::is_regular_file(eqc_file) && !fs::is_empty(eqc_file)) {
+          cerr << "I think that the index was NOT build with the disk query mode" << endl;
+          data_read_bin.do_query_on_disk = 0;
+        }
+        cerr << "If I'm wrong, you can change the value in the reindeer_matrix_eqc_info.txt file, option: do_query_on_disk" << endl;
+
+    } else if (try_disk_query < 3)
+          data_read_bin.do_query_on_disk = try_disk_query;
+
     info_file_bin.close();
     cout << "Binary file read ✓" << endl;
     return data_read_bin;
