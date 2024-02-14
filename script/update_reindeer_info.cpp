@@ -37,7 +37,7 @@ void help() {
     cout <<
     "* Mandatory parameters *\n"
     "  -f, --fof <file>                 :       fof (File of files), file containing paths to files used to construct index\n"
-    "  -i, --info <directory or file>   :       Either the directory where the index is stored or the reindeer_maxtrix_eqc_info file\n"
+    "  -i, --info <directory or file>   :       The directory where the index is stored\n"
     "\n"
     "* Optional parameters *\n"
     "  --text                           :       If the info file is already a text file and you want to update it again\n"
