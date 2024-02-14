@@ -279,18 +279,11 @@ vector<pair<string,uint64_t>> calc_kbf(const string& fof) {
         auto reading = new ifstream(input_files[file]);
         string ref = "", header = "";
         while (!reading->eof()) {
-            uint64_t occurrence_kmer = 0;
             getline(*reading, header);
             getline(*reading, ref);
-            if (ref.size() < 31){
-                ref = "";
-            } else {
-                occurrence_kmer = ref.size() - 30;
-            }
             if (!header.empty() && !ref.empty()) {
-                occurrence_kmer *= parseCoverage(header);
+                kbf[file].second += parseCoverage(header);
             }
-            kbf[file].second += occurrence_kmer;
         }
         delete reading;
     }
