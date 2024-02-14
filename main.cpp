@@ -114,64 +114,72 @@ void ProcessArgs(int argc, char** argv)
             break;
 
         switch (opt) {
+        //
+        // BUILD mode options
         case 'i':
             do_Index = true;
             break;
         case 'f':
             fof = optarg;
             break;
-        case 'Q':
-            do_Query = true;
-            break;
-        case 'u':
-            quantize = true;
-            break;
-        case 'L':
-            do_log = true;
-            break;
-        case 'q':
-            query = optarg;
-            break;
-        case 'm':
-            m1 = stoi(optarg);
-            break;
-        case 'n':
-            m3 = stoi(optarg);
-            break;
+        // kmer size
         case 'k':
             k = stoi(optarg);
             break;
-        case 't':
-            threads = stoi(optarg);
-            break;
+        // do not keep count
         case 'c':
             record_counts = false;
             break;
-        case 'p':
-            PE = true;
-            break;
-        case 'P':
-            threshold = stoi(optarg);
-            break;
-        case 'r':
-            keep_tmp = true;
-            break;
-        case 'l':
-            color_load_file = optarg;
-            break;
-        case 'o':
-            output = optarg;
-            break;
+        // Do bcalm ?
         case 'b':
             bcalm = true;
             break;
+        // pair-end mode for bcalm
+        case 'p':
+            PE = true;
+            break;
+        // mem-query, was disk_query
         case 'd':
             do_query_on_disk = false;
             break;
-        case 'V':
-            cout << VERSION << endl;
-            exit(0);
+        // quantization
+        case 'u':
+            quantize = true;
             break;
+        // use log of count
+        case 'L':
+            do_log = true;
+            break;
+        // minimizer-size
+        case 'm':
+            m1 = stoi(optarg);
+            break;
+        // buckets number
+        case 'n':
+            m3 = stoi(optarg);
+            break;
+        // keep tmp file
+        case 'r':
+            keep_tmp = true;
+            break;
+        // output monotigs
+        case 'M':
+            output_monotigs = true;
+            break;
+        //
+        //QUERY mode options
+        case 'Q':
+            do_Query = true;
+            break;
+        // index directory
+        case 'l':
+            color_load_file = optarg;
+            break;
+        // fasta query file
+        case 'q':
+            query = optarg;
+            break;
+        // count output Format
         case 'F':
             if (strcmp("s",optarg) == 0) {
                 output_format = "sum";
@@ -183,8 +191,24 @@ void ProcessArgs(int argc, char** argv)
                 output_format = optarg;
             }
             break;
-        case 'M':
-            output_monotigs = true;
+        // Threshold
+        case 'P':
+            threshold = stoi(optarg);
+            break;
+        //
+        // General options
+        // output directory/file for both mode
+        case 'o':
+            output = optarg;
+            break;
+        // Number of threads to use (works only in built mode)
+        case 't':
+            threads = stoi(optarg);
+            break;
+        // Version
+        case 'V':
+            cout << VERSION << endl;
+            exit(0);
             break;
         case 'h': // -h or --help
         case '?': // Unrecognized option
