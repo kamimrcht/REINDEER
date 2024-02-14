@@ -17,6 +17,12 @@ using namespace std;
 namespace fs = filesystem;
 
 typedef struct info{
+typedef struct filespath {
+    string fof = "";        // store fof file = list of unitigs files
+    string info_file = "";  // reindeer_matrix_eqc_info file to convert
+    string info_new = "";   // reindeer_matrix_eqc_info file converted
+    string info_path = "";  // path given for index directory
+} Files_Path;
     uint64_t nb_monotig = 0;
     uint k = 0;
     uint record_option = 0;
@@ -43,9 +49,9 @@ void help() {
     exit(0);
 }
 
-vector<pair<string,string>> process_args(int argc, char** argv, bool& is_text) {
+Files_Path process_args(int argc, char** argv, bool& is_text) {
 
-    vector<pair<string,string>> paths;
+    Files_Path paths;
 
     const char* const short_opts = "hf:i:V";
     const option long_opts[] = {
@@ -65,10 +71,10 @@ vector<pair<string,string>> process_args(int argc, char** argv, bool& is_text) {
         }
         switch (opt) {
         case 'f':
-            paths.push_back(make_pair("fof",optarg));
+            paths.fof = optarg;
             break;
         case 'i':
-            paths.push_back(make_pair("path_info",optarg));
+            paths.info_path = optarg;
             break;
         case 't':
             is_text = true;
@@ -299,32 +305,44 @@ int main (int argc, char* argv[]) {
         exit(EINVAL);
     }
     bool is_text = false;
-    vector<pair<string,string>> paths = process_args(argc, argv, is_text);
-    string fof = "", in_file = "", info_path = "";
-    for (auto& p : paths) {
-        if (p.first == "fof") {
-            fof = p.second;
-        } else {
-            auto last_underscore_pos = p.second.find_last_of('_');
-            if (last_underscore_pos != string::npos) {
-                if (p.second.substr(last_underscore_pos + 1) == "info") {
-                    in_file = p.second;
-                }
-            } else {
-                in_file = p.second+"/reindeer_matrix_eqc_info";
-            }
-            info_path = p.second.substr(0,p.second.find_last_of("/")+1);
+    Files_Path paths = process_args(argc, argv, is_text);
+    // check if give directory for index files
+    if (fs::is_directory(paths.info_path)) {
+        paths.info_file = paths.info_path + "/reindeer_matrix_eqc_info";
+        paths.info_new = paths.info_file + ".txt";
+    } else if (fs::is_regular_file(paths.info_path)) {
+        // given the info file ?
+        string extension = paths.info_path.substr(paths.info_path.size() -4, 4);
+        if (extension == "info") {
+           paths.info_file = paths.info_path;
+           paths.info_path = fs::path(paths.info_path).parent_path();
+        } else if (extension == ".txt") {
+           paths.info_new = paths.info_path;
+           paths.info_file = paths.info_path.substr(0, paths.info_path.size()-4);
+           paths.info_path = fs::path(paths.info_path).parent_path();
+           is_text = true;
         }
+    } else {
+        cerr << "Error, the directory given for the reindeer index (" << paths.info_path << ") is not right" << endl;
+        exit(1);
     }
     Info data_read;
     if (!is_text) {
-        data_read = read_binary(in_file);
+        if (! fs::is_regular_file(paths.info_file)) {
+            cerr << "Error: reindeer info file (" << paths.info_file << ") is not present, check it" << endl;
+            exit(1);
+        }
+        data_read = read_binary(paths.info_file);
     } else {
-        data_read = read_text(in_file);
+        if (! fs::is_regular_file(paths.info_new)) {
+            cerr << "Error: reindeer new info file (text format) (" << paths.info_new << ") is not present, check it" << endl;
+            exit(1);
+        }
+        data_read = read_text(paths.info_new);
     }
-    data_read.kbf = calc_kbf(fof);
-    write_info_txt(in_file, data_read);
-    cout << info_path << "reindeer_matrix_eqc_info" << endl;
+    data_read.kbf = calc_kbf(paths.fof, data_read);
+    write_info_txt(paths.info_new, data_read);
+    cout << paths.info_path << "reindeer_matrix_eqc_info" << endl;
     //clear(in_file);
     return 0;
 }

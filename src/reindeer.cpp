@@ -34,7 +34,7 @@ Reindeer_Index<T>::Reindeer_Index(uint pk, string& pfof, bool precord_counts, st
     color_dump_file = reindeer_index_files + "/reindeer_matrix";
     monotig_files = reindeer_index_files + "/monotig_files";
     index_file = reindeer_index_files + "/reindeer_index.gz";
-    matrix_eqc_info_file = reindeer_index_files + "/reindeer_matrix_eqc_info";
+    matrix_eqc_info_file = reindeer_index_files + "/reindeer_matrix_eqc_info.txt";
     matrix_eqc_file = reindeer_index_files + "/reindeer_matrix_eqc";
     matrix_eqc_position_file = reindeer_index_files + "/reindeer_matrix_eqc_position";
     dele_monotig_file = dele_tmp;
