@@ -124,27 +124,6 @@ bool is_binary(const string& filename) {
     return isBinary;
 }
 
-string parse_filename(const string& filename) {
-    string clean_filename = "";
-    auto last_slash_pos = filename.find_last_of('/');
-    if (last_slash_pos != string::npos) {
-        auto first_period_pos = filename.find_first_of('.', last_slash_pos);
-        if (first_period_pos != string::npos) {
-            clean_filename = filename.substr(last_slash_pos + 1, first_period_pos - last_slash_pos - 1);
-        } else {
-            clean_filename = filename;
-        }
-    } else {
-        auto first_period_pos = filename.find_first_of('.');
-        if (first_period_pos != string::npos) {
-            clean_filename = filename.substr(0, first_period_pos);
-        } else {
-            clean_filename = filename;
-        }
-    }
-    return clean_filename;
-}
-
 Info read_binary(const string& in_file) {
     // ------ reading binary info file ------ //
     if (!is_binary(in_file)) {
@@ -274,8 +253,8 @@ vector<pair<string,uint64_t>> calc_kbf(const string& fof) {
     }
     vector<pair<string,uint64_t>> kbf(input_files.size(),make_pair("",0));
     for (uint32_t file = 0; file < input_files.size(); file++) {
-        //TODO: kbf[file].first = fs::path(input_files[file]).stem();
-        kbf[file].first = parse_filename(input_files[file]);
+        // get sample name (without path and extension
+        kbf[file].first = fs::path(input_files[file]).stem();
         auto reading = new ifstream(input_files[file]);
         string ref = "", header = "";
         while (!reading->eof()) {
