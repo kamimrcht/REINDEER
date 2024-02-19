@@ -252,7 +252,7 @@ class kmer_Set_Light {
 	string kmer2str(kmer num);
 	kmer regular_minimizer(kmer seq);
 	void create_super_buckets(const string&);
-	void create_super_buckets_list(const vector<string>& input_files);
+	void create_super_buckets_list(const vector<string>& input_files, vector<pair<string,uint64_t>>& kmers_by_file);
 	int64_t query_kmer_hash(kmer canon);
 	int64_t query_get_hash(const kmer canon, kmer minimizer);
 	vector<int64_t> query_sequence_hash(const string& query);
@@ -272,7 +272,7 @@ class kmer_Set_Light {
 	                            uint64_t number_color);
 	void merge_super_buckets(const string& input_file, uint64_t number_color, ofstream* out);
 	string compaction(const string& seq1, const string& seq2, bool);
-	void construct_index_fof(const string& input_file, const string& osef = "", int = 0);
+	void construct_index_fof(const string& input_file, vector<pair<string,uint64_t>>& kmers_by_file, const string& tmp_dir, int colormode);
 	void reset();
 	void dump_disk(const string& output_file);
 	vector<bool> get_presence_query(const string& seq);
