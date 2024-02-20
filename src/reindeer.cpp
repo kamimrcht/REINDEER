@@ -56,9 +56,9 @@ Reindeer_Index<T>::Reindeer_Index(uint pk, string& pfof, bool precord_counts, st
 template <class T>
 void Reindeer_Index<T>::read_info()
 {
-    ifstream info_file(matrix_name + "_info"); //todo change
+    ifstream info_file(matrix_eqc_info_file);
     if (!info_file.is_open()) {
-        cout << "Can't open an index file" << endl;
+        cout << "Can't open the index file: " << matrix_eqc_info_file << endl;
         exit(1);
     }
     uint record_option;
@@ -115,7 +115,7 @@ Reindeer_Index<T>::Reindeer_Index(string& poutput, string& poutput_query, uint p
     //check if loading directory exists and all reindeer files are present
     color_load_file = getRealPath("reindeer_matrix_eqc", poutput);
     matrix_name = color_load_file;
-    matrix_eqc_info_file = matrix_name + "_info";
+    matrix_eqc_info_file = matrix_name + "_info.txt";
     matrix_eqc_position_file = matrix_name + "_position";
     dele_monotig_file = dele_tmp;
 }
