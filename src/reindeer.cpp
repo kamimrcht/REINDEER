@@ -44,6 +44,7 @@ Reindeer_Index<T>::Reindeer_Index(uint pk, string& pfof, bool precord_counts, st
     ksl = new kmer_Set_Light(k, m1, m2, m3, threads, bit);
     int systemRet;
     // BUILD THE INDEX
+    // get color number and check that each files are present (BUG 20240220-1)
     nb_colors = get_color_number(fof);
     build_index();
     high_resolution_clock::time_point t12 = high_resolution_clock::now();

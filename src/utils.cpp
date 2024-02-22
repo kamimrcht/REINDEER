@@ -517,6 +517,7 @@ string getRealPath(string file, string& dir)
 }
 
 // count the number of datasets in the fof
+// check that each files are present (BUG 20240220-1)
 uint64_t get_color_number(string& fof)
 {
     uint color(0);
@@ -525,12 +526,19 @@ uint64_t get_color_number(string& fof)
     string filename;
     while (not fof_file.eof()) {
         getline(fof_file, line);
-        filename = get_file_name(line);
-        if (not line.empty()) {
+        //filename = get_file_name(line);
+        // check if file exists
+        if (not line.empty() and std::filesystem::exists(line) ) {
             color++;
         }
     }
     fof_file.close();
+    if (color == 0) {
+        // we got no fastq from fof
+        cerr << "Error: didn't find any samples files to analyze" << endl;
+        cerr << "Check your fof file (option -f)" << endl;
+        exit(1);
+    }
     return color;
 }
 
