@@ -69,52 +69,34 @@ Test can be run:
 If REINDEER gives a `Error: no such instruction` during compilation, try replacing `-march=native -mtune=native` by `-msse4` in the file `makefile`. If this did not work, please file an issue.
 
 ## Quick start
-Have a look at the file of file format in `test/fof_unitigs.txt`.
+Have a look at the file of file format in `test/fof_unitigs.txt`. REINDEER assumes unitig files have been created using BCALM. You can provide a file of file of each unitig file (fasta) instead of the read files (-f) and an output directory for the index files (-o). By default, index files will be written in `reindeer_index_files_` + date + a tag.
 Then build the index:
 
 `./Reindeer --index -f test/fof_unitigs.txt -o quick_out`
 
-and query:
+and query: simply provide the fasta query file (**single line**) to Reindeer using `-q`, along with the directory of index files that were generated during index construction (-l), and a writeable path for the output (-o). Default output will be written in the `query_result` directory:
 
-`./Reindeer --query -q test/query_test.fa -l quick_out -o quick_query`
 
-Results should be in `quick_query/query_results/out_query_Reindeer0.out`.
+`./Reindeer --query -q test/query_test.fa -l quick_out -o quick_out/result_test.txt`
+
+In this example, results should be in `quick_out/result_test.txt`.
 
 Help:
 
 `./Reindeer --help`
 
-# Index construction
 
-## Starting with read files (raw or gzipped fasta/fastq)
-
-Make sure you have installed Bcalm by doing `sh install.sh`.
-Let's assume you work with two files, `reads_1.fastq` and `reads_2.fastq`.
-The first thing needed to is to create a file of file (fof) that records the path to the reads.
-An example file can be found here: `test/fof.txt`
-Then this file of file is provided for the index construction:
-
-`./Reindeer --index -f test/fof.txt --bcalm`
-
-By default, the output will be written in `output_reindeer`.
-If you want to change the output, you can use the `-o` option:
-
-`./Reindeer --index -f test/fof.txt --bcalm -o output_dir`
-
-## Starting with De Bruijn graph files (raw or gzipped fasta files)
-
-Let's assume you have already computed a De Bruijn graph for each dataset.
-You can provide a file of file of each unitig file (fasta) instead of the read files.
-This allows to skip the first Bcalm step.
-
-`./Reindeer --index -f test/fof_unitigs.txt`
-
-
-# Query fasta files
-
-Simply provide the fasta query file (**single line**) to Reindeer using `-q`, along with the directory of index files that were generated during index construction (`output_reindeer` by default, can be changed with `-o`), using `-l`:
-
-`./Reindeer --query -q test/query_test.fa -l output_reindeer`
+# Notes on last release (1.4.6)
+Major
+    - Default disk mode (index written on disk and disk queries)
+    - Dependency on C++17
+    - Various k-mer counting format (sum, average, normalized)
+Minor
+    - Change of index file names
+    - Correction of various bugs
+    - switched to object implementation
+    - some modifications to pass the input/output files
+    - implementation of code for socket mode [beta]
 
 
 # Index and query k-mers presence/absence only (not abundances)
@@ -122,23 +104,8 @@ Simply provide the fasta query file (**single line**) to Reindeer using `-q`, al
 By default, REINDEER records k-mers abundances in each input dataset.
 In order to have k-mer presence/absence instead of abundance per indexed dataset, use `--nocount` option.
 
-`./Reindeer --index -f test/fof_unitigs.txt --nocount`
-`./Reindeer --query -l output_reindeer -q test/query_test.fa --nocount`
-
-
-# Output
-
-By default, query outputs are written in `output_reindeer/query_results/`.
-
-If you provide a directory via the -o option, results will be write in : `my_dir/query_results/`.
-
-`./Reindeer --query -l output_reindeer -q test/query_test.fa -o my_dir`
-`
-But if you provide a file with -o option, results will be write in this file (any extension is require).
-
-`./Reindeer --query -l output_reindeer -q test/query_test.fa -o ../my_path/my_file.tsv`
-
-For all output the directory can be the current directory or any directory, until you have write access.
+`./Reindeer --index -f test/fof_unitigs.txt --nocount -o index_nocount`
+`./Reindeer --query -l index_nocount -q test/query_test.fa --nocount`
 
 
 ## Output values format
@@ -172,16 +139,6 @@ The output of REINDEER looks like:
 Why can we observe different values for k-mers in a single query?  I answer this question in the [advanced FAQ](#advanced-faq).
 i
 # Beta options
-
-## query the index on the disk instead of loading the index in-ram
-
-First build the index:
-
-`./Reindeer --index --disk-query -f fof_unitigs.txt`
-
-Then query:
-
-`./Reindeer --query --disk-query -l output_reindeer -q query.fa`
 
 
 ## log counts/quantized counts

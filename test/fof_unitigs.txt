@@ -1,2 +1,2 @@
-output_bcalm/SRR10092187_10k.unitigs.fa
-output_bcalm/SRR10092188_10k.unitigs.fa
+test/output_bcalm/SRR10092187_10k.unitigs.fa
+test/output_bcalm/SRR10092188_10k.unitigs.fa
