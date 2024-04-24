@@ -4,15 +4,8 @@
    * [Installation](#installation)
       * [Requirements](#requirements)
       * [Quick start](#quick-start)
-   * [Index construction](#index-construction)
-      * [Starting with read files (raw or gzipped fasta/fastq)](#starting-with-read-files-raw-or-gzipped-fastafastq)
-      * [Starting with De Bruijn graph files (raw or gzipped fasta files)](#starting-with-de-bruijn-graph-files-raw-or-gzipped-fasta-files)
-   * [Query fasta files](#query-fasta-files)
-   * [Index and query k-mers presence/absence only (not abundances)](#index-and-query-k-mers-presenceabsence-only-not-abundances)
-   * [Output](#output)
-      * [k-mer abundances](#k-mer-abundances)
+   * [Output](#output-values-format)
    * [Beta options](#beta-options)
-      * [query the index on the disk instead of loading the index in-ram](#query-the-index-on-the-disk-instead-of-loading-the-index-in-ram)
       * [log counts/quantized counts](#log-countsquantized-counts)
       * [input paired-end reads (to bcalm)](#input-paired-end-reads-to-bcalm)
    * [Reproduce the manuscript's results](#reproduce-the-manuscripts-results)
@@ -86,17 +79,6 @@ Help:
 `./Reindeer --help`
 
 
-# Notes on last release (1.4.6)
-Major
-    - Default disk mode (index written on disk and disk queries)
-    - Dependency on C++17
-    - Various k-mer counting format (sum, average, normalized)
-Minor
-    - Change of index file names
-    - Correction of various bugs
-    - switched to object implementation
-    - some modifications to pass the input/output files
-    - implementation of code for socket mode [beta]
 
 
 # Index and query k-mers presence/absence only (not abundances)
@@ -105,6 +87,7 @@ By default, REINDEER records k-mers abundances in each input dataset.
 In order to have k-mer presence/absence instead of abundance per indexed dataset, use `--nocount` option.
 
 `./Reindeer --index -f test/fof_unitigs.txt --nocount -o index_nocount`
+
 `./Reindeer --query -l index_nocount -q test/query_test.fa --nocount`
 
 
@@ -197,10 +180,24 @@ Citations:
 
 # Changelog
 
- * See [Changelog.md](changelog.md) file.
+## Notes on last release (1.4.6)
+Major
 
- * Major modification:
+* Default disk mode (index written on disk and disk queries)
+* Dependency on C++17
+* Various k-mer counting format (sum, average, normalized)
 
+Minor
+* Change of index file names
+* Correction of various bugs
+* Switched to object implementation
+* Some modifications to pass the input/output files
+* Implementation of code for socket mode [beta]
+
+## See [Changelog.md](changelog.md) file.
+
+## Version 1.4
+Major
    - since version 1.4, we change the format of reindeer_matrix_eqc_info file.
      It is now a text file instead of a binary format. To convert the file, you
      can use the update_reindeer_info program to update the file for index
