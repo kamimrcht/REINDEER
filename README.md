@@ -18,7 +18,7 @@
 REINDEER builds a data-structure that indexes k-mers and their abundances in a collection of datasets (raw RNA-seq or metagenomic reads for instance).
 Then, a sequence (FASTA) can be queried for its presence and abundance in each indexed dataset.
 While other tools (e.g. SBT, BIGSI) were also designed for large-scale k-mer presence/absence queries, retrieving abundances was so far unsupported (except for single datasets, e.g. using some k-mer counters like KMC, Jellyfish). REINDEER combines fast queries, small index size, and low memory footprint during indexing and queries. We showed it allows to index 2585 RNA-seq datasets (~4 billions k-mers) using less than 60GB of RAM and a final index size lower than 60GB on the disk.
-Then, a REINDEER index can either be queried on disk (experimental feature, low RAM usage) or be loaded in RAM for faster queries.
+Then, a REINDEER index can either be queried on disk (low RAM usage) or be loaded in RAM for faster queries.
 
 <img src="./Images/reindeer.png" alt="drawing" width="400"/>
 
@@ -61,7 +61,7 @@ Test can be run:
 
 If REINDEER gives a `Error: no such instruction` during compilation, try replacing `-march=native -mtune=native` by `-msse4` in the file `makefile`. If this did not work, please file an issue.
 
-## Quick start
+# Quick start
 Have a look at the file of file format in `test/fof_unitigs.txt`. REINDEER assumes unitig files have been created using BCALM. You can provide a file of file of each unitig file (fasta) instead of the read files (-f) and an output directory for the index files (-o). By default, index files will be written in `reindeer_index_files_` + date + a tag.
 Then build the index:
 
@@ -80,18 +80,7 @@ Help:
 
 
 
-
-# Index and query k-mers presence/absence only (not abundances)
-
-By default, REINDEER records k-mers abundances in each input dataset.
-In order to have k-mer presence/absence instead of abundance per indexed dataset, use `--nocount` option.
-
-`./Reindeer --index -f test/fof_unitigs.txt --nocount -o index_nocount`
-
-`./Reindeer --query -l index_nocount -q test/query_test.fa --nocount`
-
-
-## Output values format
+# Output values format
 
 
 
@@ -110,7 +99,7 @@ These formats compute the sum of all k-mer in query sequence, so if length(query
 get sum = average.
 
 
-### k-mer abundances (format raw)
+## k-mer abundances (format raw)
 
 Let's say that the query is 51 bases long and we look for 31-mers.
 There are 21 k-mers in the query, from k-mer 0 to k-mer 20.
@@ -120,7 +109,19 @@ The output of REINDEER looks like:
 
 
 Why can we observe different values for k-mers in a single query?  I answer this question in the [advanced FAQ](#advanced-faq).
-i
+
+
+
+# Index and query k-mers presence/absence only (no abundances)
+
+By default, REINDEER records k-mers abundances in each input dataset.
+In order to have k-mer presence/absence instead of abundance per indexed dataset, use `--nocount` option.
+
+`./Reindeer --index -f test/fof_unitigs.txt --nocount -o index_nocount`
+
+`./Reindeer --query -l index_nocount -q test/query_test.fa --nocount`
+
+
 # Beta options
 
 
@@ -185,7 +186,7 @@ Major
 
 * Default disk mode (index written on disk and disk queries)
 * Dependency on C++17
-* Various k-mer counting format (sum, average, normalized)
+* Output now supports different k-mer countig modes (sum, average, normalized)
 
 Minor
 * Change of index file names
@@ -194,7 +195,7 @@ Minor
 * Some modifications to pass the input/output files
 * Implementation of code for socket mode [beta]
 
-## See [Changelog.md](changelog.md) file.
+## See [Changelog](Changelog) file.
 
 ## Version 1.4
 Major
