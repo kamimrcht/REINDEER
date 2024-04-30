@@ -189,11 +189,14 @@ Major
 * Output now supports different k-mer countig modes (sum, average, normalized)
 
 Minor
+
 * Change of index file names
 * Correction of various bugs
 * Switched to object implementation
 * Some modifications to pass the input/output files
 * Implementation of code for socket mode [beta]
+* Allowing lowercase in query files
+* Multi-threading inactivated in query mode
 
 ## See [Changelog](Changelog) file.
 
