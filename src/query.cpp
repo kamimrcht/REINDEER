@@ -166,8 +166,9 @@ vector<uint> Reindeer_Index<T>::write_count_output(vector<vector<uint16_t>>& que
         }
         if (sum) { // out_number is already equal to the sum at this point, testing if we need the average or the normalized values or just the sum
             if (normalize) {
-                out_number = ceil(((out_number/total_for_average)/kmers_by_file[color].second)*1000000000);
-                out_str = to_string((uint32_t)out_number);
+                out_number = ((out_number/total_for_average)/kmers_by_file[color].second)*1000000000;
+                out_str = to_string(out_number);
+                out_str.erase(out_str.end()-4,out_str.end());
             } else if (average) {
                 out_number = out_number/total_for_average;
                 out_str = to_string(out_number);
