@@ -1,0 +1,14 @@
+HELP
+INDEX
+FILE:test/query_test.fa:OUTFILE:/tmp/test_socket_def.fa
+FILE:test/query_test.fa:OUTFILE:/tmp/test_socket_raw.fa:FORMAT:raw
+FILE:test/query_test.fa:OUTFILE:/tmp/test_socket_RAW.fa:FORMAT:RAW
+FILE:test/query_test.fa:OUTFILE:/tmp/test_socket_sum.tsv:FORMAT:sum
+FILE:test/query_test.fa:OUTFILE:/tmp/test_socket_SUM.tsv:FORMAT:SUM
+FILE:test/query_test.fa:OUTFILE:/tmp/test_socket_average.tsv:FORMAT:average
+FILE:test/query_test.fa:OUTFILE:/tmp/test_socket_AVERAGE.tsv:FORMAT:AVERAGE
+FILE:test/query_test.fa:OUTFILE:/tmp/test_socket_mean.tsv:FORMAT:mean
+FILE:test/query_test.fa:OUTFILE:/tmp/test_socket_MEAN.tsv:FORMAT:MEAN
+FILE:test/query_test.fa:OUTFILE:/tmp/test_socket_normalize.tsv:FORMAT:normalize
+FILE:test/query_test.fa:OUTFILE:/tmp/test_socket_NORMALIZE.tsv:FORMAT:NORMALIZE
+QUIT

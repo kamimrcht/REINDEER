@@ -29,8 +29,9 @@ OBJ = $(addsuffix .o, $(basename $(SRC)))
 TESTDIR:=out_test_tmp
 QUERY:=query_test
 
-all: test_build $(addprefix test_query_, def in_a_dir in_a_file in_a_dir_not_writreable format)
+all: test_build $(addprefix test_query_, def in_a_dir in_a_file in_a_dir_not_writreable format) test_socket
 	@if [ ! -f $(TESTDIR)/error_query ]; then rm -fr $(TESTDIR); fi
+	../Reindeer --version
 
 test_build:
 	@rm -rf $(TESTDIR) # remove it if previous run was in error
@@ -69,12 +70,20 @@ test_query_in_a_dir_not_writreable:
 		echo "    -> $(GREEN)Query test passed.$(NoColor)"
 
 test_query_format:
-	@for f in sum average normalize; do \
+	@for f in sum average mean normalize; do \
 	echo "$(YELLFG)Querying index format $$f $(NoColor)..................................................." ;\
 	../Reindeer --query -l $(TESTDIR) -q $(QUERY).fa -o $(TESTDIR)/query-results-$$f.tsv --format $$f >> $(TESTDIR)/log 2>&1 ;\
 	if diff $(TESTDIR)/query-results-$$f.tsv query_resultsOK/out_query_Reindeer_P40_$(QUERY)_0-format_$$f.out > /dev/null; \
 		then echo "    -> $(GREEN)Query test passed.$(NoColor)";\
 		else echo "    -> $(RED)Query test error.$(NoColor)"; touch $(TESTDIR)/error_query; fi; done
+
+test_socket:
+	@echo "$(YELLFG)Querying socket mode$(NoColor).............................."
+	../reindeer_socket -p 5001 -l $(TESTDIR) 2>/dev/null &
+	../reindeer_socket -p 5001 -i command_socket.txt >/dev/null
+	@if md5sum -c command_socket.md5sum > /dev/null; \
+		then echo "    -> $(GREEN)Query socket test passed.$(NoColor)";\
+		else echo "    -> $(RED)Query socket test error.$(NoColor)"; touch $(TESTDIR)/error_query; fi
 
 benchmark: $(EXEC)
 	mkdir -p wdir
