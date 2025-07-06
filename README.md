@@ -181,7 +181,12 @@ Citations:
 
 # Changelog
 
-## Notes on last release (1.4.6)
+## Notes on last release (1.4.7)
+ * Output normalize format use 2 digit for decimal values
+ * Parse logan unitigs file with 'ka' instead of 'km'
+ * Fix: 'mean format' (alias for 'average format') is managed correctly (was default=raw)
+
+## Notes on previous release (1.4.6)
 Major
 
 * Default disk mode (index written on disk and disk queries)
@@ -198,21 +203,22 @@ Minor
 * Allowing lowercase in query files
 * Multi-threading inactivated in query mode
 
-## See [Changelog](Changelog) file.
+### See [Changelog](Changelog) file.
 
-## Version 1.4
-Major
-   - since version 1.4, we change the format of reindeer_matrix_eqc_info file.
+## Major change since version 1.4
+ * fully completion in version 1.4.6
+ * we change the format of reindeer_matrix_eqc_info file.
      It is now a text file instead of a binary format. To convert the file, you
      can use the update_reindeer_info program to update the file for index
-     build with previous version of Reindeer.  The normalisation format require
-     the total number of k-mer in each unitig file (bcalm output).  For
-     previous index build, 2 possibility:
+     build with previous version of Reindeer. The normalisation format require
+     the total number of k-mer in each unitig file (bcalm output).
+ * For previous index build, 2 choices are available:
      - You have access to the unitig files: If you give in argument the fof.txt
-       file (-f option), listing the location of unitig file, the program will
-       count the total k-mer in each unitig file and store them in the file.
+       file (-f option) to update_reindeer_info, listing the location of unitig
+       file, the program will count the total k-mer in each unitig file and
+       store them in the file.
      - You don't have the unitig files: convert the reindeer_matrix_eqc_info
        with the converter without -f option.
        - If you don't insert the total k-mer per sample in this file, it will
-        be not possible to use the format 'normalization'.
+         be not possible to use the format 'normalization'.
 

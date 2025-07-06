@@ -1,22 +1,24 @@
 # Changelog
 
-## v1.4.8
+## v1.4.7
+ * Output normalize format use 2 digit for decimal values
+ * Parse logan unitigs file with 'ka' instead of 'km'
+ * Fix: 'mean format' (alias for 'average format') is managed correctly (was default=raw)
 
+## v1.4.6
+ * New: remove usage for query of a fof file (store information in reindeer_matrix_eqc_info
+   - use reindeer_matrix_eqc_info.txt in text format now
+ * Fix: check unitigs files are present (bug 20240220-1)
+
+## v1.4.5
  * 20230818-1: Output file for query is not the filename given in cmd line
    - contain out_query_Reindeer_P40_$(basename .ext)_0.out
    - create empty dir query_results
-	 - correction: commit b38c562
-
-## v1.4.7
-
- * remove usage for query of a fof file (store information in reindeer_matrix_eqc_info
- * clean-up code
-
-## v1.4.6
+	 - correction: commit d3ecd80
  * 20230816-1: Output format maintains '>' of query fasta
-   - correction: commit 197e0cc
+   - correction: commit 85a9b5b
  * 20230816-2: Output format contains spaces in header line
-   - correction: commit 4635ae3
+   - correction: commit e42b035
  * Code refactoring:
    - query function are now in the Reindeer_Index class
 	 - simplify function declaration by removing args when they are members
