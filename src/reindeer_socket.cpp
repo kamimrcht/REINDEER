@@ -351,7 +351,7 @@ int main (int argc, char* argv[]) {
       if (data.verbose)
         cerr << "LOADING index " << data.index_directory << endl;
 
-      string output = "reindeer_index_files", query_file = "", format = "raw";
+      string output = "reindeer_index_files";
       // create reindeer index object
       Reindeer_Index<uint16_t> reindeer_index(data.index_directory, output, 1, true);
       //load index
@@ -409,6 +409,9 @@ int main (int argc, char* argv[]) {
                   { // to be able to initialize subcmds var, case are like goto
                       string query_file {};
                       string outFile {};
+                      string format_value {"raw"};
+                      // default output format when no subcommand FORMAT given
+                      reindeer_index.output_format = format_value;
                       vector<string> subcmds = split_utils(message, ':');
                       if (not (subcmds.size() % 2)) {
                           if (data.verbose)
@@ -435,8 +438,24 @@ int main (int argc, char* argv[]) {
                                       break;
                                   case Command::FORMAT:
                                       // get output format
+                                      // get option value
                                       it++;
-                                      reindeer_index.output_format = *it;
+                                      format_value = *it;
+                                      // check value
+                                      if (format_value == "RAW" || format_value == "raw") {
+                                        reindeer_index.output_format = "raw";
+                                      } else if (format_value == "SUM" || format_value == "sum") {
+                                        reindeer_index.output_format = "sum";
+                                      } else if (format_value == "MEAN" || format_value == "mean") {
+                                        reindeer_index.output_format = "average";
+                                      } else if (format_value == "AVERAGE" || format_value == "average") {
+                                        reindeer_index.output_format = "average";
+                                      } else if (format_value == "NORMALIZE" || format_value == "normalize") {
+                                        reindeer_index.output_format = "normalize";
+                                      } else {
+                                        // default value if FORMAT command given with otherthing
+                                        reindeer_index.output_format = "raw";
+                                      }
                                       cerr << "FORMAT = " << reindeer_index.output_format << endl;
                                       break;
                                   default :

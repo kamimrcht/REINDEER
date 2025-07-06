@@ -117,7 +117,7 @@ vector<uint> Reindeer_Index<T>::write_count_output(vector<vector<uint16_t>>& que
     bool average = false, sum = false, normalize = false;
     if (output_format != "raw") {
         sum = true;
-        if (output_format == "normalize" || output_format == "average") {
+        if (output_format == "normalize" || output_format == "average" || output_format == "mean") {
             average = true;
             if (output_format == "normalize") {
                 normalize = true;

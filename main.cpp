@@ -182,11 +182,13 @@ void ProcessArgs(int argc, char** argv)
         // count output Format
         case 'F':
             if (strcmp("s",optarg) == 0) {
-                output_format = "sum";
+                output_format = "sum";            // value = sum
             } else if (strcmp("a",optarg) == 0) {
-                output_format = "average";
+                output_format = "average";        // value = average
+            } else if (strcmp("m",optarg) == 0) {
+                output_format = "average";        // value = mean
             } else if (strcmp("n",optarg) == 0) {
-                output_format = "normalize";
+                output_format = "normalize";      // value = normalize
             } else {
                 output_format = optarg;
             }
