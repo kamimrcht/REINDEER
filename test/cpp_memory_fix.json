@@ -1,0 +1,245 @@
+{
+  "verified_utc": "2026-10-11T07:35:58.252131+00:00",
+  "failure": {
+    "failed_variant": "cpp-fixed",
+    "datasets": 1024,
+    "threads": 64,
+    "build": {
+      "command": [
+        "/DATA/alimasse/reindeer_cpp_rust_benchmark_20261009/bin/reindeer-cpp-fixed",
+        "--index",
+        "-f",
+        "/DATA/alimasse/reindeer_cpp_rust_benchmark_20261009/inputs/datasets-1024.fof",
+        "-o",
+        "/DATA/alimasse/reindeer_cpp_rust_benchmark_20261009/indexes/cpp-fixed-1024",
+        "-t",
+        "64"
+      ],
+      "exit_code": -9,
+      "wall_seconds": 13126.900257371366,
+      "peak_construction_disk_bytes_sampled": 302054913464,
+      "disk_sampling_interval_seconds": 20,
+      "resource_limit": "Available server RAM below 24 GiB for 15 seconds",
+      "temporary_roots_measured": [
+        "/DATA/alimasse/reindeer_cpp_rust_benchmark_20261009/indexes/cpp-fixed-1024"
+      ]
+    },
+    "largest_sampled_rss_bytes": 214443134976,
+    "failed_source_sha256": "7b74aa0c978b48bd3094082bc1b856f5041d023d3543df072b66829b1c23b3ae",
+    "repaired_source_sha256": "52db4ab052aaac3f58102f93df85eb5ac931d96565fe046f9725c2eb5c0b0a5d",
+    "repaired_cli_sha256": "7ccfb89e5b4be840221d80e99c57d6aeb94cf6f686b3cc065af38b0ec93a8b12",
+    "remaining_input_bucket_count": 261,
+    "largest_remaining_input_bucket_bytes": 1104818441,
+    "glibc": "ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39",
+    "full_report": "/DATA/alimasse/reindeer_cpp_rust_benchmark_20261009/cpp-stall-investigation/memory/failure-evidence.json"
+  },
+  "diagnosis": "Completed super-buckets free their node maps and count vectors, but glibc worker arenas retain unused pages. The 64-worker real-input prefix replay retained 4.15 GB after completion with only 9.81 MB of live allocator heap. These retained pages compound RAM pressure from concurrent active buckets; the original full build was stopped by the benchmark memory guard, not an observed kernel OOM kill. BWT also uses a ZFS ARC cache outside Linux page-cache accounting; the original guard did not credit evictable ARC data. Current ARC is about 240 GiB, with a roughly 16.2 GiB free-memory target, so the 24 GiB Linux-only guard can stop before ARC reclaim. No historical ARC snapshot exists for the instant of the failed run.",
+  "fix": "On glibc, call malloc_trim(0) after each merge_super_buckets_mem finishes destroying all pass maps and its output writer. Non-glibc builds retain the existing behavior. No CLI, serialization, graph or abundance algorithm changes; requested 64-worker construction remains enabled.",
+  "scope_of_evidence": "The controlled replays demonstrate reclaiming freed pages, not a cap on memory for live maps. A fresh 1024-dataset full build is required to establish whether all stages fit.",
+  "benchmark_guard_fix": {
+    "policy": "Credit half of clean evictable ARC data, capped above c_min; never credit ghost lists, dirty/referenced data or metadata. Keep 24 GiB effective headroom and an immediate 8 GiB Linux MemAvailable emergency floor. No server settings changed.",
+    "regression_tests": "passed locally and on BWT",
+    "current_snapshot": {
+      "mem_available_bytes": 260133502976,
+      "zfs_arc_bytes": 258125049576,
+      "zfs_evictable_data_bytes": 231218377216,
+      "zfs_arc_min_bytes": 16891680256,
+      "zfs_credit_bytes": 115609188608,
+      "effective_available_bytes": 375742691584
+    },
+    "original_driver": "/DATA/alimasse/reindeer_cpp_rust_benchmark_20261009/cpp-stall-investigation/memory/benchmark_server-before-memory.py",
+    "repaired_driver_sha256": "7888024d3b2983dcc33e56774ea909172ebacfbdb383a16b5ad65c9c08a7c32a",
+    "sources": [
+      "https://openzfs.github.io/openzfs-docs/Performance%20and%20Tuning/Module%20Parameters.html#zfs-arc-sys-free",
+      "https://github.com/openzfs/zfs/blob/master/module/os/linux/zfs/arc_os.c",
+      "https://www.man7.org/linux/man-pages/man3/malloc_trim.3.html"
+    ]
+  },
+  "eight_worker_test": {
+    "input": "First 1,000,000 complete records from the unfinished 1024-dataset bucket 5, repeated per worker",
+    "input_sha256": "7f05e0a481a82043e95e603ef7730d3390dbaf7177f4751cdb96bd9b77baf150",
+    "before": {
+      "stages": {
+        "BEFORE": {
+          "rss_bytes": 46469120,
+          "allocator_live_bytes": 83232,
+          "allocator_free_bytes": 51936
+        },
+        "AFTER_MERGE": {
+          "rss_bytes": 1281581056,
+          "allocator_live_bytes": 800320,
+          "allocator_free_bytes": 1236457920
+        },
+        "AFTER_TRIM": {
+          "rss_bytes": 56713216,
+          "allocator_live_bytes": 800320,
+          "allocator_free_bytes": 1235605952
+        }
+      },
+      "peak_rss_kib": 2182656,
+      "log": "/DATA/alimasse/reindeer_cpp_rust_benchmark_20261009/cpp-stall-investigation/memory/before.log"
+    },
+    "after": {
+      "stages": {
+        "BEFORE": {
+          "rss_bytes": 46514176,
+          "allocator_live_bytes": 83232,
+          "allocator_free_bytes": 51936
+        },
+        "AFTER_MERGE": {
+          "rss_bytes": 56729600,
+          "allocator_live_bytes": 800320,
+          "allocator_free_bytes": 1235605952
+        }
+      },
+      "peak_rss_kib": 2176000,
+      "log": "/DATA/alimasse/reindeer_cpp_rust_benchmark_20261009/cpp-stall-investigation/memory/after.log"
+    },
+    "byte_identical_outputs": true
+  },
+  "sixty_four_worker_test": {
+    "input": "First 250,000 complete records from the same bucket, repeated per worker",
+    "input_sha256": "432e5c2348fbb8217086f1acb3bd8bf9a93ab7ce4ff609a6c7d80127e9c4b45c",
+    "before": {
+      "stages": {
+        "BEFORE": {
+          "rss_bytes": 46575616,
+          "allocator_live_bytes": 83232,
+          "allocator_free_bytes": 51936
+        },
+        "AFTER_MERGE": {
+          "rss_bytes": 4154314752,
+          "allocator_live_bytes": 9812096,
+          "allocator_free_bytes": 4097709952
+        }
+      },
+      "peak_rss_kib": 5751912,
+      "log": "/DATA/alimasse/reindeer_cpp_rust_benchmark_20261009/cpp-stall-investigation/memory/before-64.log"
+    },
+    "after": {
+      "stages": {
+        "BEFORE": {
+          "rss_bytes": 46555136,
+          "allocator_live_bytes": 83232,
+          "allocator_free_bytes": 51936
+        },
+        "AFTER_MERGE": {
+          "rss_bytes": 106528768,
+          "allocator_live_bytes": 9811232,
+          "allocator_free_bytes": 4090526432
+        }
+      },
+      "peak_rss_kib": 5229196,
+      "log": "/DATA/alimasse/reindeer_cpp_rust_benchmark_20261009/cpp-stall-investigation/memory/after-64.log"
+    },
+    "output_equality": {
+      "byte_identical": true,
+      "outputs": 64
+    }
+  },
+  "local_tests": {
+    "make_test": "passed",
+    "mode_assertions": 6120,
+    "bcalm_solid_kmers_checked": 11932,
+    "oversized_minimizer_kmers": 2071,
+    "passes_tested": [
+      1,
+      2,
+      4
+    ]
+  },
+  "bwt_cli_mode_assertions": 6120,
+  "largest_remaining_bucket": {
+    "input": "/DATA/alimasse/reindeer_cpp_rust_benchmark_20261009/indexes/cpp-fixed-1024/_super_k_mers5.gz",
+    "input_bytes": 1104818441,
+    "build": {
+      "command": [
+        "/DATA/alimasse/reindeer_cpp_rust_benchmark_20261009/cpp-stall-investigation/replay-memory-after",
+        "/DATA/alimasse/reindeer_cpp_rust_benchmark_20261009/indexes/cpp-fixed-1024/_super_k_mers5.gz",
+        "/DATA/alimasse/reindeer_cpp_rust_benchmark_20261009/cpp-stall-investigation/memory/bucket-5",
+        "1",
+        "0"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 415.2248239964247,
+      "peak_construction_disk_bytes_sampled": 1184200984,
+      "disk_sampling_interval_seconds": 20,
+      "resource_limit": null,
+      "temporary_roots_measured": [
+        "/DATA/alimasse/reindeer_cpp_rust_benchmark_20261009/cpp-stall-investigation/memory/bucket-5"
+      ],
+      "elapsed_seconds": 415.2,
+      "user_seconds": 408.55,
+      "system_seconds": 6.53,
+      "peak_rss_kib": 10329088
+    },
+    "memory": {
+      "stages": {
+        "BEFORE": {
+          "rss_bytes": 46469120,
+          "allocator_live_bytes": 83232,
+          "allocator_free_bytes": 51936
+        },
+        "AFTER_MERGE": {
+          "rss_bytes": 47091712,
+          "allocator_live_bytes": 175456,
+          "allocator_free_bytes": 4621308576
+        }
+      },
+      "peak_rss_kib": null,
+      "log": "/DATA/alimasse/reindeer_cpp_rust_benchmark_20261009/cpp-stall-investigation/memory/largest-bucket.log"
+    },
+    "validation": {
+      "input_records": 106145833,
+      "input_kmer_windows": 350164565,
+      "output_monotigs": 40920389,
+      "output_nucleotides": 1327824838,
+      "output_unique_kmers": 100213168,
+      "largest_minimizer": 5830,
+      "largest_minimizer_unique_kmers": 77712008,
+      "sampled_kmers_checked": 12306,
+      "sampled_abundance_cells_checked": 12601344,
+      "mismatches": 0,
+      "missing_sampled_kmers": 0
+    }
+  },
+  "full_1024_retry": {
+    "started_utc": "2026-10-11T07:35:26.531765+00:00",
+    "pid": 1578801,
+    "command": [
+      "python3",
+      "-u",
+      "/DATA/alimasse/reindeer_cpp_rust_benchmark_20261009/scripts/benchmark_server.py",
+      "--base",
+      "/DATA/alimasse/reindeer_cpp_rust_benchmark_20261009",
+      "--minimum",
+      "1024",
+      "--maximum",
+      "1024",
+      "--threads",
+      "64",
+      "--kinds",
+      "cpp-memory"
+    ],
+    "binary_sha256": "7ccfb89e5b4be840221d80e99c57d6aeb94cf6f686b3cc065af38b0ec93a8b12",
+    "range": [
+      1024,
+      1024
+    ],
+    "threads": 64,
+    "status": "completed; construction, all six query runs, and source-oracle validation passed",
+    "results_checked_utc": "2026-10-12T08:03:05.901698+00:00",
+    "build_seconds": 31560.19,
+    "peak_rss_kib": 199733792,
+    "index_bytes": 277166534797,
+    "peak_construction_disk_bytes_sampled": 537090585788,
+    "short_query_seconds_median": 1940.91,
+    "bulk_query_seconds_median": 2025.81,
+    "correctness": {
+      "query_dataset_pairs_checked": 2359296,
+      "mismatches": 0,
+      "examples": [],
+      "output_sha256": "bb8ec3da263d50fe8cdaf35ad8836d79b58f8ac9b3c032f403946292f7847bbe"
+    }
+  }
+}

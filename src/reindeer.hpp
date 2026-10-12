@@ -54,7 +54,7 @@ public:
 
     //variables
     vector<pair<string,uint64_t>> kmers_by_file; // total of kmers for each file
-    uint threshold;
+    uint threshold {40};
     vector<long> position_in_file;
     kmer_Set_Light* ksl;
 

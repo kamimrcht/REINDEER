@@ -26,11 +26,19 @@ VERSION := $(shell git describe --tags --always)
 
 all: $(EXEC)
 
+# Keep fixes to the pinned dependency reproducible on a fresh checkout.
+prepare-dependencies:
+	sh script/prepare_dependencies.sh
+
+main.o blight.o utils_b.o trlec.o trled.o monotig.o utils.o reindeer.o query.o build_index.o eq_classes.o launch_bcalm.o matrix_operation.o reindeer_socket.o update_reindeer_info.o $(LZ4H): | prepare-dependencies
+
 Reindeer: main.o blight.o utils_b.o trlec.o trled.o monotig.o utils.o reindeer.o query.o build_index.o eq_classes.o launch_bcalm.o matrix_operation.o $(LZ4H)
 	$(CXX) -o $@ $^ $(CFLAGS)
 
-main.o: main.cpp $(INC)
+version.h:
 	echo "#define VERSION \"$(VERSION)\"" > version.h
+
+main.o: main.cpp $(INC) version.h
 	$(CXX) -o $@ -c $< $(CFLAGS)
 
 monotig.o: src/monotig.cpp $(INC)
@@ -86,7 +94,7 @@ matrix_operation.o: src/matrix_operation.cpp $(INC)
 reindeer_socket: reindeer_socket.o blight.o utils_b.o trlec.o trled.o utils.o reindeer.o query.o build_index.o eq_classes.o matrix_operation.o $(LZ4H)
 	$(CXX) -o $@ $^ $(CFLAGS)
 
-reindeer_socket.o: src/reindeer_socket.cpp
+reindeer_socket.o: src/reindeer_socket.cpp $(INC) version.h
 	$(CXX) -o $@ -c $< $(CFLAGS)
 
 update_info: update_reindeer_info.o
@@ -96,12 +104,15 @@ update_reindeer_info.o: script/update_reindeer_info.cpp
 	$(CXX) -o $@ -c $< $(CFLAGS)
 
 # do test
-test:
+test: all
 	cd test && $(MAKE) all
+	python3 test/test_modes.py
+	python3 test/test_monotig_stall.py
+	python3 test/test_benchmark_memory.py
 
-.PHONY: test
+.PHONY: test prepare-dependencies
 
 clean:
-	rm -f *.o blight/lz4/*.o $(EXEC)
+	rm -f *.o blight/lz4/*.o $(EXEC) version.h
 
 rebuild: clean $(EXEC)

@@ -1,0 +1,10 @@
+*.o
+/Reindeer
+/reindeer_socket
+/update_info
+/version.h
+/bin/
+/query_results/
+/test/out_test_tmp/
+/test/query_results/
+/test/__pycache__/

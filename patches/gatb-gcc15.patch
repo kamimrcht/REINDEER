@@ -1,0 +1,128 @@
+diff --git a/gatb-core/src/gatb/bcalm2/ograph.cpp b/gatb-core/src/gatb/bcalm2/ograph.cpp
+index 9b823063..f89b8368 100644
+--- a/gatb-core/src/gatb/bcalm2/ograph.cpp
++++ b/gatb-core/src/gatb/bcalm2/ograph.cpp
+@@ -235,11 +235,9 @@ void graph3<span>::debruijn(){
+ 	right.push_back({0,minusone, SEQ_LEFT});
+     //uint debug_index = 0;
+ 
+-    for (uint32_t i = 0; i< indiceUnitigs; i++)
+-    {
+-        connected_left[i]  = false;
+-        connected_right[i] = false;
+-    }
++    // reserve() allocates capacity but does not create indexable elements.
++    connected_left.assign(indiceUnitigs, false);
++    connected_right.assign(indiceUnitigs, false);
+ 
+     kmerIndiceT<span> kL,kR;
+     std::vector<std::pair<uint,uint>> to_compact;
+diff --git a/gatb-core/thirdparty/hdf5/src/H5Odeprec.c b/gatb-core/thirdparty/hdf5/src/H5Odeprec.c
+index 33ed7874..f99ff68f 100644
+--- a/gatb-core/thirdparty/hdf5/src/H5Odeprec.c
++++ b/gatb-core/thirdparty/hdf5/src/H5Odeprec.c
+@@ -31,6 +31,7 @@
+ /***********/
+ /* Headers */
+ /***********/
++#include "H5CXprivate.h"    /* API Contexts         */
+ #include "H5private.h"      /* Generic Functions    */
+ #include "H5Eprivate.h"     /* Error handling       */
+ #include "H5Opkg.h"         /* Object headers       */
+diff --git a/gatb-core/thirdparty/hdf5/src/H5Pdapl.c b/gatb-core/thirdparty/hdf5/src/H5Pdapl.c
+index ad2ae4c0..06f76796 100644
+--- a/gatb-core/thirdparty/hdf5/src/H5Pdapl.c
++++ b/gatb-core/thirdparty/hdf5/src/H5Pdapl.c
+@@ -114,10 +114,10 @@
+ /* Property class callbacks */
+ static herr_t H5P__dacc_reg_prop(H5P_genclass_t *pclass);
+ static herr_t H5P__encode_chunk_cache_nslots(const void *value, void **_pp,
+-    size_t *size);
++    size_t *size, void H5_ATTR_UNUSED *udata);
+ static herr_t H5P__decode_chunk_cache_nslots(const void **_pp, void *_value);
+ static herr_t H5P__encode_chunk_cache_nbytes(const void *value, void **_pp,
+-    size_t *size);
++    size_t *size, void H5_ATTR_UNUSED *udata);
+ static herr_t H5P__decode_chunk_cache_nbytes(const void **_pp, void *_value);
+ 
+ /* Property list callbacks */
+@@ -125,7 +125,7 @@ static herr_t H5P__dacc_vds_view_enc(const void *value, void **pp, size_t *size,
+ static herr_t H5P__dacc_vds_view_dec(const void **pp, void *value);
+ static herr_t H5P__dapl_vds_file_pref_set(hid_t prop_id, const char* name, size_t size, void* value);
+ static herr_t H5P__dapl_vds_file_pref_get(hid_t prop_id, const char* name, size_t size, void* value);
+-static herr_t H5P__dapl_vds_file_pref_enc(const void *value, void **_pp, size_t *size);
++static herr_t H5P__dapl_vds_file_pref_enc(const void *value, void **_pp, size_t *size, void H5_ATTR_UNUSED *udata);
+ static herr_t H5P__dapl_vds_file_pref_dec(const void **_pp, void *value);
+ static herr_t H5P__dapl_vds_file_pref_del(hid_t prop_id, const char* name, size_t size, void* value);
+ static herr_t H5P__dapl_vds_file_pref_copy(const char* name, size_t size, void* value);
+@@ -314,7 +314,7 @@ H5P__dapl_vds_file_pref_get(hid_t H5_ATTR_UNUSED prop_id, const char H5_ATTR_UNU
+  *-------------------------------------------------------------------------
+  */
+ static herr_t
+-H5P__dapl_vds_file_pref_enc(const void *value, void **_pp, size_t *size)
++H5P__dapl_vds_file_pref_enc(const void *value, void **_pp, size_t *size, void H5_ATTR_UNUSED *udata)
+ {
+     const char *vds_file_pref = *(const char * const *)value;
+     uint8_t **pp = (uint8_t **)_pp;
+@@ -879,7 +879,7 @@ done:
+  *-------------------------------------------------------------------------
+  */
+ static herr_t
+-H5P__encode_chunk_cache_nslots(const void *value, void **_pp, size_t *size)
++H5P__encode_chunk_cache_nslots(const void *value, void **_pp, size_t *size, void H5_ATTR_UNUSED *udata)
+ {
+     uint64_t enc_value;     /* Property value to encode */
+     uint8_t **pp = (uint8_t **)_pp;
+@@ -981,7 +981,7 @@ H5P__decode_chunk_cache_nslots(const void **_pp, void *_value)
+  *-------------------------------------------------------------------------
+  */
+ static herr_t
+-H5P__encode_chunk_cache_nbytes(const void *value, void **_pp, size_t *size)
++H5P__encode_chunk_cache_nbytes(const void *value, void **_pp, size_t *size, void H5_ATTR_UNUSED *udata)
+ {
+     uint64_t enc_value;     /* Property value to encode */
+     uint8_t **pp = (uint8_t **)_pp;
+diff --git a/gatb-core/thirdparty/hdf5/src/H5Pfapl.c b/gatb-core/thirdparty/hdf5/src/H5Pfapl.c
+index e5a0a63a..3997baa5 100644
+--- a/gatb-core/thirdparty/hdf5/src/H5Pfapl.c
++++ b/gatb-core/thirdparty/hdf5/src/H5Pfapl.c
+@@ -305,7 +305,7 @@ static herr_t H5P__facc_fclose_degree_enc(const void *value, void **_pp, size_t
+ static herr_t H5P__facc_fclose_degree_dec(const void **pp, void *value);
+ static herr_t H5P__facc_multi_type_enc(const void *value, void **_pp, size_t *size, void *udata);
+ static herr_t H5P__facc_multi_type_dec(const void **_pp, void *value);
+-static herr_t H5P__facc_libver_type_enc(const void *value, void **_pp, size_t *size);
++static herr_t H5P__facc_libver_type_enc(const void *value, void **_pp, size_t *size, void H5_ATTR_UNUSED *udata);
+ static herr_t H5P__facc_libver_type_dec(const void **_pp, void *value);
+ 
+ /* Metadata cache log location property callbacks */
+@@ -3871,7 +3871,7 @@ H5P__facc_multi_type_dec(const void **_pp, void *_value)
+  *-------------------------------------------------------------------------
+  */
+ static herr_t
+-H5P__facc_libver_type_enc(const void *value, void **_pp, size_t *size)
++H5P__facc_libver_type_enc(const void *value, void **_pp, size_t *size, void H5_ATTR_UNUSED *udata)
+ {
+     const H5F_libver_t *type = (const H5F_libver_t *)value; /* Create local alias for values */
+     uint8_t **pp = (uint8_t **)_pp;
+diff --git a/gatb-core/thirdparty/hdf5/src/H5Pocpypl.c b/gatb-core/thirdparty/hdf5/src/H5Pocpypl.c
+index 47bba059..349080d6 100644
+--- a/gatb-core/thirdparty/hdf5/src/H5Pocpypl.c
++++ b/gatb-core/thirdparty/hdf5/src/H5Pocpypl.c
+@@ -91,7 +91,7 @@ static herr_t H5P__ocpy_reg_prop(H5P_genclass_t *pclass);
+ /* Property callbacks */
+ static herr_t H5P__ocpy_merge_comm_dt_list_set(hid_t prop_id, const char *name, size_t size, void *value);
+ static herr_t H5P__ocpy_merge_comm_dt_list_get(hid_t prop_id, const char *name, size_t size, void *value);
+-static herr_t H5P__ocpy_merge_comm_dt_list_enc(const void *value, void **_pp, size_t *size);
++static herr_t H5P__ocpy_merge_comm_dt_list_enc(const void *value, void **_pp, size_t *size, void H5_ATTR_UNUSED *udata);
+ static herr_t H5P__ocpy_merge_comm_dt_list_dec(const void **_pp, void *value);
+ static herr_t H5P__ocpy_merge_comm_dt_list_del(hid_t prop_id, const char *name, size_t size, void *value);
+ static herr_t H5P__ocpy_merge_comm_dt_list_copy(const char* name, size_t size, void* value);
+@@ -364,7 +364,7 @@ done:
+  *-------------------------------------------------------------------------
+  */
+ static herr_t
+-H5P__ocpy_merge_comm_dt_list_enc(const void *value, void **_pp, size_t *size)
++H5P__ocpy_merge_comm_dt_list_enc(const void *value, void **_pp, size_t *size, void H5_ATTR_UNUSED *udata)
+ {
+     const H5O_copy_dtype_merge_list_t * const *dt_list_ptr = (const H5O_copy_dtype_merge_list_t * const *)value;
+     uint8_t **pp = (uint8_t **)_pp;

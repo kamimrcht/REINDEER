@@ -17,7 +17,7 @@ ifeq ($(DEBUG_SYMS), 1)
 	CFLAGS+=-g
 endif
 CFLAGS2+= -w -Wall -std=gnu99 -DUSE_THREADS  -fstrict-aliasing -Iext $(DEFS)
-CFLAGS+=-std=c++11 -pipe -lz -fopenmp -Iblight/lz4 ${WARNS}
+CFLAGS+=-std=c++17 -pipe -lz -fopenmp -Iblight/lz4 ${WARNS}
 
 EXEC=bench_monotig
 SRC = bench_monotig.cpp ../src/utils.cpp ../src/monotig.cpp ../blight/blight.cpp ../blight/utils.cpp ../trle/trlec.c ../trle/trled.c ../blight/lz4/lz4frame.c ../blight/lz4/lz4.c ../blight/lz4/lz4hc.c ../blight/lz4/xxhash.c
@@ -29,8 +29,11 @@ OBJ = $(addsuffix .o, $(basename $(SRC)))
 TESTDIR:=out_test_tmp
 QUERY:=query_test
 
+.NOTPARALLEL:
+
 all: test_build $(addprefix test_query_, def in_a_dir in_a_file in_a_dir_not_writreable format) test_socket
-	@if [ ! -f $(TESTDIR)/error_query ]; then rm -fr $(TESTDIR); fi
+	@test ! -f $(TESTDIR)/error_query
+	rm -fr $(TESTDIR)
 	../Reindeer --version
 
 test_build:
@@ -38,29 +41,29 @@ test_build:
 	@mkdir -p $(TESTDIR);
 	@echo "$(YELLFG)Building REINDEER index $(NoColor)....................................................."
 	../Reindeer --index -f fof_unitigs.txt -o $(TESTDIR) > $(TESTDIR)/log 2>&1
-	@eqc=$$(grep "Number of equivalence classes found" $(TESTDIR)/log | awk '{print $6}') ;\
-	if (( eqc==180 )); then echo "    -> $(GREEN)Construction test passed.$(NoColor)" ; else echo "    -> $(RED)Construction test error.$(NoColor)"; fi;
+	@eqc=$$(grep "Number of equivalence classes found" $(TESTDIR)/log | awk '{print $$6}') ;\
+	if [ "$$eqc" = 180 ]; then echo "    -> $(GREEN)Construction test passed.$(NoColor)" ; else echo "    -> $(RED)Construction test error.$(NoColor)"; exit 1; fi;
 
 test_query_def:
 	@echo "$(YELLFG)Querying index, all default $(NoColor).............................................."
 	../Reindeer --query -l $(TESTDIR) -q $(QUERY).fa  >> $(TESTDIR)/log 2>&1
 	@if diff query_results/out_query_Reindeer_P40_$(QUERY)_0.out query_resultsOK/out_query_Reindeer_P40_$(QUERY)_0.out > /dev/null ;\
 		then echo "    -> $(GREEN)Query test passed.$(NoColor)"; rm -rf query_results ;\
-		else echo "    -> $(RED)Query test error.$(NoColor)"; touch $(TESTDIR)/error_query; fi
+		else echo "    -> $(RED)Query test error.$(NoColor)"; touch $(TESTDIR)/error_query; exit 1; fi
 
 test_query_in_a_dir:
 	@echo "$(YELLFG)Querying index output in outputdir $(NoColor)..................................................."
 	../Reindeer --query -l $(TESTDIR) -q $(QUERY).fa -o $(TESTDIR) >> $(TESTDIR)/log 2>&1
 	@if diff $(TESTDIR)/query_results/out_query_Reindeer_P40_$(QUERY)_0.out query_resultsOK/out_query_Reindeer_P40_$(QUERY)_0.out > /dev/null ;\
 		then echo "    -> $(GREEN)Query test passed.$(NoColor)" ;\
-		else echo "    -> $(RED)Query test error.$(NoColor)"; touch $(TESTDIR)/error_query; fi
+		else echo "    -> $(RED)Query test error.$(NoColor)"; touch $(TESTDIR)/error_query; exit 1; fi
 
 test_query_in_a_file:
 	@echo "$(YELLFG)Querying index output in outputfile $(NoColor)..................................................."
-	../Reindeer --query -l $(TESTDIR) -q $(QUERY).fa -o $(TESTDIR)/outputfile.tsv >> $(TESTDIR)/log 2>&1
+	../Reindeer --query -l $(TESTDIR) -q $(QUERY).fa -o $(TESTDIR)/outputfile.tsv -t 4 >> $(TESTDIR)/log 2>&1
 	@if diff $(TESTDIR)/outputfile.tsv query_resultsOK/out_query_Reindeer_P40_$(QUERY)_0.out > /dev/null ;\
 		then echo "    -> $(GREEN)Query test passed.$(NoColor)" ;\
-		else echo "    -> $(RED)Query test error.$(NoColor)"; touch $(TESTDIR)/error_query; fi
+		else echo "    -> $(RED)Query test error.$(NoColor)"; touch $(TESTDIR)/error_query; exit 1; fi
 
 test_query_in_a_dir_not_writreable:
 	@echo "$(YELLFG)Querying index, Get Error in a dir with no writre access$(NoColor)..................................................."
@@ -73,9 +76,10 @@ test_query_format:
 	@for f in sum average mean normalize; do \
 	echo "$(YELLFG)Querying index format $$f $(NoColor)..................................................." ;\
 	../Reindeer --query -l $(TESTDIR) -q $(QUERY).fa -o $(TESTDIR)/query-results-$$f.tsv --format $$f >> $(TESTDIR)/log 2>&1 ;\
-	if diff $(TESTDIR)/query-results-$$f.tsv query_resultsOK/out_query_Reindeer_P40_$(QUERY)_0-format_$$f.out > /dev/null; \
+	expected=$$f; [ "$$f" != mean ] || expected=average; \
+	if diff $(TESTDIR)/query-results-$$f.tsv query_resultsOK/out_query_Reindeer_P40_$(QUERY)_0-format_$$expected.out > /dev/null; \
 		then echo "    -> $(GREEN)Query test passed.$(NoColor)";\
-		else echo "    -> $(RED)Query test error.$(NoColor)"; touch $(TESTDIR)/error_query; fi; done
+		else echo "    -> $(RED)Query test error.$(NoColor)"; touch $(TESTDIR)/error_query; exit 1; fi; done
 
 test_socket:
 	@echo "$(YELLFG)Querying socket mode$(NoColor).............................."
@@ -83,7 +87,7 @@ test_socket:
 	../reindeer_socket -p 5001 -i command_socket.txt >/dev/null
 	@if md5sum -c command_socket.md5sum > /dev/null; \
 		then echo "    -> $(GREEN)Query socket test passed.$(NoColor)";\
-		else echo "    -> $(RED)Query socket test error.$(NoColor)"; touch $(TESTDIR)/error_query; fi
+		else echo "    -> $(RED)Query socket test error.$(NoColor)"; touch $(TESTDIR)/error_query; exit 1; fi
 
 benchmark: $(EXEC)
 	mkdir -p wdir

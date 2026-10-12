@@ -13,6 +13,7 @@
 #include <iostream>
 #include <iterator>
 #include <linux/limits.h>
+#include <limits>
 #include <map>
 #include <mutex>
 #include <omp.h>
@@ -21,6 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
+#include <stdexcept>
 #include <sys/resource.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -65,6 +67,7 @@ inline bool exists_test(const string& name)
 vector<string> split_utils(const string& s, char delim);
 
 double parseCoverage_utils(const string& str);
+double parse_unitig_abundance(const string& header);
 
 uint32_t unitig_toui32(const string& s);
 

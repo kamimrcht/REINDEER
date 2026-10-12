@@ -21,7 +21,12 @@ unsigned char* decode_vector(unsigned char* monotig_counts, unsigned vector_size
 vector<uint16_t> get_count_monotig(unsigned char* monotig_counts, unsigned vector_size, uint64_t color_number, bool record_counts)
 {
     unsigned char* decoded(decode_vector(monotig_counts, vector_size, color_number, record_counts));
-    vector<uint16_t> counts(count_string_to_count_vector(decoded, color_number * 2));
+    vector<uint16_t> counts;
+    if (record_counts) {
+        counts = count_string_to_count_vector(decoded, color_number * 2);
+    } else {
+        counts.assign(decoded, decoded + color_number);
+    }
     delete[] decoded;
     return counts;
 }
@@ -78,6 +83,7 @@ void Reindeer_Index<T>::get_colors_counts_query_eq_classes(vector<int64_t>& kmer
                 lastId = kmer_ids[i];
                 query_counts.push_back(lastV);
             } else {
+                lastId = kmer_ids[i];
                 long pos;
                 unsigned char* lo;
                 if (do_query_on_disk) {
@@ -150,7 +156,7 @@ vector<uint> Reindeer_Index<T>::write_count_output(vector<vector<uint16_t>>& que
             }
             nc = to_string(query_counts[c][color]);
         }
-        uint cov_positions(query_counts.size() + k - 1);
+        uint64_t cov_positions(query_counts.size());
         for (auto&& coo : coords) {
             if (sum) {
                 if (coo.second != "*") {
@@ -180,7 +186,7 @@ vector<uint> Reindeer_Index<T>::write_count_output(vector<vector<uint16_t>>& que
             out_str.pop_back(); //remove last comma
         }
         color_counts.push_back(out_str);
-        covered_positions.push_back(cov_positions * 100 / (query_counts.size() + k - 1));
+        covered_positions.push_back(query_counts.empty() ? 0 : cov_positions * 100 / query_counts.size());
     }
     return covered_positions;
 }
@@ -192,11 +198,7 @@ void Reindeer_Index<T>::write_results_above_threshold(string& toWrite, vector<st
     toWrite += header.substr(1,50) ; // remove the '>' of fasta format for query sequence
     for (uint cp(0); cp < covered_positions.size(); ++cp) {
         if (covered_positions[cp] >= threshold) {
-            if (record_counts) {
-                toWrite += "\t" + color_counts[cp];
-            } else {
-                toWrite += "\t" + to_string(covered_positions[cp]);
-            }
+            toWrite += "\t" + color_counts[cp];
         } else {
             toWrite += "\t*";
         }
@@ -231,13 +233,11 @@ void Reindeer_Index<T>::doQuery(string& input, vector<vector<uint32_t>>& query_u
     vector<vector<uint32_t>> query_unitigID_tmp;
     // FOR EACH LINE OF THE QUERY FILE
     while (not query_file.eof()) {
+        // Read one immutable batch before workers start. Reading inside the
+        // parallel region replaced the shared batch while other threads used it.
+        lines = getLineFasta_buffer2(&query_file, 4000, k);
 #pragma omp parallel num_threads(threads)
         {
-#pragma omp critical(i_file)
-            {
-                //~ uint i(0);
-                lines = getLineFasta_buffer2(&query_file, 4000, k);
-            }
             uint i;
 #pragma omp for ordered
             for (i = (0); i < lines.size(); i += 2) {

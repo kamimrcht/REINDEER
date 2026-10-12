@@ -270,6 +270,22 @@ string get_file_name(string& path)
 }
 
 ///// parse bcalm headers //////////////
+double parse_unitig_abundance(const string& header)
+{
+    for (const char* tag : { "km:f:", "KM:f:", "ka:f:", "KA:f:" }) {
+        const auto pos = header.find(tag);
+        if (pos != string::npos) {
+            // stod stops at whitespace, including when the tag ends the header.
+            const double abundance = stod(header.substr(pos + 5));
+            if (!(abundance >= 0) || abundance > numeric_limits<double>::max()) {
+                throw runtime_error("Invalid unitig abundance: " + header);
+            }
+            return abundance;
+        }
+    }
+    return 1;
+}
+
 double parseCoverage_utils(const string& str)
 {
     size_t pos(str.find("km:f:"));

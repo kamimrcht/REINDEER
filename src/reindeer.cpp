@@ -99,9 +99,13 @@ void Reindeer_Index<T>::read_info()
         kmers_by_file[i]=(make_pair(line.substr(0, colon_pos),stoull(line.substr(colon_pos + 1))));
     }
 
-    if (record_option == 1) {
-        record_counts = true;
+    if (record_option > 3) {
+        throw runtime_error("Unsupported record_option in index metadata");
     }
+    color_mode = record_option;
+    record_counts = record_option != 0;
+    quantize = record_option == 2;
+    do_log = record_option == 3;
 }
 
 // constructor for query
@@ -128,7 +132,6 @@ void Reindeer_Index<T>::load_index(){
     cout << "\n#Loading index..." << endl;
     std::ofstream index_loading_semaphore(reindeer_index_files + "/index_loading"); // begin semaphore
     //~ long eq_class_nb(0);
-    bool quantize = false, log = false;
     this->ksl = load_rle_index();
     this->position_in_file = get_position_vector_query_disk();
     high_resolution_clock::time_point t12 = high_resolution_clock::now();

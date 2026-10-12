@@ -1,11 +1,13 @@
 #!/bin/bash
+set -eu
+cd "$(dirname "$0")"
 
-rm -rf Reindeer bin;
-mkdir bin;
+build_jobs="${JOBS:-4}"
+mkdir -p bin
+sh script/prepare_dependencies.sh --bcalm
 
-#( cd blight && git pull https://github.com/Malfoy/Blight.git )
-( cd bcalm2 && rm -rf build && mkdir build &&  cd build && cmake .. && make -j4 )
-mv bcalm2/build/bcalm bin;
-make -j4;
-
-rm -f *.o;
+# The pinned BCALM/GATB CMake files predate CMake 4's policy minimum.
+cmake -S bcalm2 -B bcalm2/build -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+cmake --build bcalm2/build --target bcalm --parallel "$build_jobs"
+cp bcalm2/build/bcalm bin/bcalm
+make -j"$build_jobs"

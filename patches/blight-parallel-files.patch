@@ -1,0 +1,16 @@
+diff --git a/blight.cpp b/blight.cpp
+index acbf6d5..134c4f2 100644
+--- a/blight.cpp
++++ b/blight.cpp
+@@ -247,7 +247,10 @@ string kmer_Set_Light::compaction(const string& seq1, const string& seq2, bool r
+ void kmer_Set_Light::create_super_buckets(const string& input_file) {
+ 	struct rlimit rl;
+ 	getrlimit(RLIMIT_NOFILE, &rl);
+-	rl.rlim_cur = number_superbuckets.value() + 10;
++	// Keep the inherited limit; parallel MPHF workers also need temporary
++	// output/input descriptors after the superbuckets have been created.
++	rl.rlim_cur = std::max(rl.rlim_cur, std::min(rl.rlim_max,
++		static_cast<rlim_t>(number_superbuckets.value() + 10 + 4ULL * coreNumber)));
+ 	setrlimit(RLIMIT_NOFILE, &rl);
+ 	uint64_t total_nuc_number(0);
+ 	istream* inUnitigs;
