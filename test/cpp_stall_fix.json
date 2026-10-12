@@ -1,0 +1,176 @@
+{
+  "verified_utc": "2026-10-10T10:43:06.585459+00:00",
+  "benchmark_stopped": true,
+  "source_sha256": "7b74aa0c978b48bd3094082bc1b856f5041d023d3543df072b66829b1c23b3ae",
+  "observed_stall": {
+    "datasets": 256,
+    "threads": 64,
+    "super_bucket": 730,
+    "original_build_interrupted_after_seconds": 46721.22,
+    "cpp_64_datasets_completed_seconds": 2447.26,
+    "cpp_128_datasets_completed_seconds": 5760.03
+  },
+  "root_cause": "The 100-million-distinct-k-mer fallback doubles the pass count and partitions by minimizer ID. A minimizer with 135,288,763 distinct k-mers cannot be split by that operation, so it repeatedly exceeds the same limit. A failed later pass also retries already emitted data, reopens and truncates its output while the old writer remains open, and increments index counters again.",
+  "minimal_fix": "Remove the hard-coded cutoff and recursive retry from merge_super_buckets_mem; finish each requested partition once with the existing graph, profile, and serialization algorithms.",
+  "memory_tradeoff": "The removed cutoff was a k-mer cardinality heuristic, not a RAM budget. Memory now follows the size of each loaded super-bucket; the real oversized bucket used 12.4946 GiB in this isolated replay. No bounded-memory fallback was added.",
+  "fixed_real_bucket": {
+    "command": [
+      "timeout",
+      "--signal=TERM",
+      "--kill-after=10s",
+      "900s",
+      "/DATA/alimasse/reindeer_cpp_rust_benchmark_20261009/cpp-stall-investigation/replay-fixed",
+      "/DATA/alimasse/reindeer_cpp_rust_benchmark_20261009/indexes/cpp-256/_super_k_mers730.gz",
+      "/DATA/alimasse/reindeer_cpp_rust_benchmark_20261009/cpp-stall-investigation/fixed-730/monotigs.gz"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 280.8508052295074,
+    "peak_construction_disk_bytes_sampled": 465860040,
+    "disk_sampling_interval_seconds": 20,
+    "resource_limit": null,
+    "temporary_roots_measured": [
+      "/DATA/alimasse/reindeer_cpp_rust_benchmark_20261009/cpp-stall-investigation/fixed-730"
+    ],
+    "construction_resource_samples": [
+      {
+        "elapsed_seconds": 0.0006383480504155159,
+        "disk_bytes": 0,
+        "rss_bytes": 151552,
+        "read_bytes": 0,
+        "write_bytes": 0
+      },
+      {
+        "elapsed_seconds": 20.001992530189455,
+        "disk_bytes": 0,
+        "rss_bytes": 4791230464,
+        "read_bytes": 134218740,
+        "write_bytes": 0
+      },
+      {
+        "elapsed_seconds": 40.004597808234394,
+        "disk_bytes": 0,
+        "rss_bytes": 9027575808,
+        "read_bytes": 243270644,
+        "write_bytes": 0
+      },
+      {
+        "elapsed_seconds": 60.0070508364588,
+        "disk_bytes": 0,
+        "rss_bytes": 13188280320,
+        "read_bytes": 339739636,
+        "write_bytes": 0
+      },
+      {
+        "elapsed_seconds": 80.0098784128204,
+        "disk_bytes": 29074225,
+        "rss_bytes": 13411995648,
+        "read_bytes": 355968415,
+        "write_bytes": 29074225
+      },
+      {
+        "elapsed_seconds": 100.01244362443686,
+        "disk_bytes": 64780813,
+        "rss_bytes": 13411995648,
+        "read_bytes": 355968415,
+        "write_bytes": 64780813
+      },
+      {
+        "elapsed_seconds": 120.0147145241499,
+        "disk_bytes": 100589715,
+        "rss_bytes": 13411995648,
+        "read_bytes": 355968415,
+        "write_bytes": 100589715
+      },
+      {
+        "elapsed_seconds": 140.01723818015307,
+        "disk_bytes": 137849599,
+        "rss_bytes": 13411995648,
+        "read_bytes": 355968415,
+        "write_bytes": 137849599
+      },
+      {
+        "elapsed_seconds": 160.01983987353742,
+        "disk_bytes": 177954845,
+        "rss_bytes": 13411995648,
+        "read_bytes": 355968415,
+        "write_bytes": 177954845
+      },
+      {
+        "elapsed_seconds": 180.02253866754472,
+        "disk_bytes": 222558117,
+        "rss_bytes": 13411995648,
+        "read_bytes": 355968415,
+        "write_bytes": 222558117
+      },
+      {
+        "elapsed_seconds": 200.02508891001344,
+        "disk_bytes": 277926575,
+        "rss_bytes": 13411995648,
+        "read_bytes": 355968415,
+        "write_bytes": 277926575
+      },
+      {
+        "elapsed_seconds": 220.02728351857513,
+        "disk_bytes": 353073349,
+        "rss_bytes": 13411995648,
+        "read_bytes": 355968415,
+        "write_bytes": 353073349
+      },
+      {
+        "elapsed_seconds": 240.0296457707882,
+        "disk_bytes": 450135594,
+        "rss_bytes": 13417877504,
+        "read_bytes": 355968415,
+        "write_bytes": 450135594
+      },
+      {
+        "elapsed_seconds": 260.03188967797905,
+        "disk_bytes": 465860040,
+        "rss_bytes": 5340839936,
+        "read_bytes": 355968415,
+        "write_bytes": 465860040
+      },
+      {
+        "elapsed_seconds": 280.03473232500255,
+        "disk_bytes": 465860040,
+        "rss_bytes": 5340839936,
+        "read_bytes": 355968415,
+        "write_bytes": 465860040
+      }
+    ],
+    "elapsed_seconds": 280.84,
+    "user_seconds": 274.13,
+    "system_seconds": 6.54,
+    "peak_rss_kib": 13101568
+  },
+  "real_bucket_correctness": {
+    "input_records": 27670574,
+    "input_kmer_windows": 176619246,
+    "output_monotigs": 24094478,
+    "output_nucleotides": 864261043,
+    "output_unique_kmers": 141426703,
+    "largest_minimizer": 747774,
+    "largest_minimizer_unique_kmers": 135288763,
+    "sampled_kmers_checked": 17197,
+    "sampled_abundance_cells_checked": 4402432,
+    "mismatches": 0,
+    "missing_sampled_kmers": 0
+  },
+  "validation": {
+    "make_test": "passed; includes CLI, socket, 6120 abundance assertions and 11932 BCALM solid-k-mer assertions",
+    "oversized_minimizer_regression": "2071 exact k-mer profiles and matching DNA, MPHF, and string counters, for explicit pass counts 1, 2, and 4",
+    "before_fix_regression": "old source timed out after 20 seconds with a temporarily reduced 1024-k-mer cutoff",
+    "after_fix_regression": "all three pass counts completed successfully",
+    "bwt_native_cpp_cli": "passed: 6120 raw, presence and log abundance assertions, disk and memory indexes, using cpp-stall-investigation/Reindeer-fixed"
+  },
+  "remote_directory": "/DATA/alimasse/reindeer_cpp_rust_benchmark_20261009/cpp-stall-investigation",
+  "evidence_logs": {
+    "retries": "MERGE_ENTER passes=1\nLARGEST_MIN idx=254 distinct=95272522\nMAP_END pass=0 passes=1 distinct=100000002 too_big=1\nMERGE_ENTER passes=2\nLARGEST_MIN idx=254 distinct=97474269\nMAP_END pass=0 passes=2 distinct=100000007 too_big=1\nLARGEST_MIN idx=0 distinct=0\nMAP_END pass=1 passes=2 distinct=0 too_big=1\nMERGE_ENTER passes=4\nLARGEST_MIN idx=384 distinct=118062\nMAP_END pass=0 passes=4 distinct=1801188 too_big=0\nMONOTIG_END pass=0\nLARGEST_MIN idx=865 distinct=108756\nMAP_END pass=1 passes=4 distinct=1391290 too_big=0\nMONOTIG_END pass=1\n",
+    "fixed_replay": "REPLAY_COMPLETE seconds=280.611 nucleotides=864261043"
+  },
+  "limitations": [
+    "The whole 256-dataset C++ construction was not rerun; the benchmark remains stopped.",
+    "Real-bucket abundances were independently checked for 17197 sampled k-mers across all 256 datasets; this does not exhaustively validate every k-mer profile."
+  ],
+  "patched_bwt_binary": "/DATA/alimasse/reindeer_cpp_rust_benchmark_20261009/cpp-stall-investigation/Reindeer-fixed"
+}

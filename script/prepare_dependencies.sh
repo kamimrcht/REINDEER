@@ -11,6 +11,7 @@ apply_patch() {
     git -C "$dependency" apply "$patch_file"
 }
 apply_patch blight blight-gcc15.patch
+apply_patch blight blight-parallel-files.patch
 if [ "${1:-}" = --bcalm ]; then
     apply_patch bcalm2/gatb-core gatb-gcc15.patch
 fi

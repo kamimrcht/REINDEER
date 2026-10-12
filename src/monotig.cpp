@@ -1,4 +1,7 @@
 #include "monotig.hpp"
+#if defined(__GLIBC__)
+#include <malloc.h>
+#endif
 
 using namespace std;
 using namespace chrono;
@@ -136,7 +139,9 @@ uint64_t min_size_superbucket(10000000000);
 // builds blight index from fof
 void kmer_Set_Light::construct_index_fof(const string& input_file, vector<pair<string,uint64_t>>& kmers_by_file, const string& tmp_dir, int colormode)
 {
-    omp_set_nested(2);
+    // The bucket pass already uses all requested threads. Nested MPHF
+    // teams otherwise launch threads squared and exhaust file descriptors.
+    omp_set_max_active_levels(1);
     if (not tmp_dir.empty()) {
         working_dir = tmp_dir + "/";
     }
@@ -231,13 +236,14 @@ vector<uint16_t> get_count_vector(const vector<pair<uint16_t, uint16_t>>& V, uin
 void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t number_color, string& out_name, uint64_t number_pass, int colormode)
 {
     zstr::ofstream* out = new zstr::ofstream(out_name); // todo lz4
-    bool toobig(false);
+    // Keep each minimizer intact. The former 100-million-k-mer cutoff
+    // retried by minimizer ID, so one oversized minimizer could never split.
+    // Retrying also truncated output and repeated already committed counters.
     for (uint pass(0); pass < number_pass; ++pass) {
         vector<robin_hood::unordered_node_map<kmer, kmer_context>> min2kmer2context(minimizer_number.value() / number_superbuckets.value());
         uint64_t mms = min2kmer2context.size();
         vector<int32_t> minimizers(mms, -1);
         zstr::ifstream in(input_file);
-        uint64_t inserted_elements(0);
 
         // #pragma omp parallel num_threads(coreNumber)
         {
@@ -247,7 +253,7 @@ void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t 
             uint32_t min_int;
             uint8_t sizel(0);
             bool stop(false);
-            while (not in.eof() and in.good() and not toobig) {
+            while (not in.eof() and in.good()) {
                 // #pragma omp critical
                 {
                     in.read(reinterpret_cast<char*>(&min_int), 4);
@@ -272,8 +278,6 @@ void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t 
                     positions_mutex[indice % 4096].lock();
                     if (min2kmer2context[indice].count(canon) == 0) {
                         min2kmer2context[indice][canon] = { false, {} };
-                        // #pragma omp atomic
-                        inserted_elements++;
                     }
                     min2kmer2context[indice][canon].count.push_back({ color, coverage });
                     uint64_t sks = sequence.size();
@@ -283,30 +287,23 @@ void kmer_Set_Light::merge_super_buckets_mem(const string& input_file, uint64_t 
                         canon = (min_k(seq, rcSeq));
                         if (min2kmer2context[indice].count(canon) == 0) {
                             min2kmer2context[indice][canon] = { false, {} };
-                            // #pragma omp atomic
-                            inserted_elements++;
                         }
                         min2kmer2context[indice][canon].count.push_back({ color, coverage });
-                    }
-                    if (inserted_elements > 100000000) {
-                        // #pragma omp critical
-                        toobig = true;
                     }
                     positions_mutex[indice % 4096].unlock();
                 }
             }
         }
-        if (not toobig) {
-
-            get_monocolor_minitigs_mem(min2kmer2context, out, minimizers, number_color, colormode);
-        }
-    }
-    number_pass *= 2;
-    if (toobig) {
-        merge_super_buckets_mem(input_file, number_color, out_name, number_pass, colormode);
+        get_monocolor_minitigs_mem(min2kmer2context, out, minimizers, number_color, colormode);
     }
     //~ out->close();
     delete out;
+#if defined(__GLIBC__)
+    // Map destruction frees millions of small nodes/count vectors, but
+    // worker arenas can retain their pages across subsequent buckets.
+    // Return those unused pages after all bucket allocations are destroyed.
+    malloc_trim(0);
+#endif
 }
 
 string nucleotides("ACGT");
@@ -493,7 +490,8 @@ void kmer_Set_Light::create_super_buckets_list(const vector<string>& input_files
     fill(kmers_by_file.begin(), kmers_by_file.end(), make_pair("",0));
     struct rlimit rl;
     getrlimit(RLIMIT_NOFILE, &rl);
-    rl.rlim_cur = number_superbuckets.value() + 10 + coreNumber;
+    rl.rlim_cur = std::max(rl.rlim_cur, std::min(rl.rlim_max,
+        static_cast<rlim_t>(number_superbuckets.value() + 10 + 4ULL * coreNumber)));
 
     int res = setrlimit(RLIMIT_NOFILE, &rl);
     if (res == -1) {

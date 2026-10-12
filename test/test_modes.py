@@ -2,6 +2,7 @@
 """Exercise the public CLI against an independently computed k-mer oracle."""
 import csv
 import math
+import os
 import random
 import subprocess
 import tempfile
@@ -9,6 +10,7 @@ from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+BINARY = Path(os.environ.get("REINDEER_BINARY", ROOT / "Reindeer")).resolve()
 K = 31
 
 
@@ -17,7 +19,7 @@ def canonical(sequence):
 
 
 def run(*args):
-    result = subprocess.run([str(ROOT / "Reindeer"), *map(str, args)],
+    result = subprocess.run([str(BINARY), *map(str, args)],
                             cwd=ROOT, capture_output=True, text=True, timeout=120)
     assert result.returncode == 0, result.stdout + result.stderr
 

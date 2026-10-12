@@ -107,6 +107,8 @@ update_reindeer_info.o: script/update_reindeer_info.cpp
 test: all
 	cd test && $(MAKE) all
 	python3 test/test_modes.py
+	python3 test/test_monotig_stall.py
+	python3 test/test_benchmark_memory.py
 
 .PHONY: test prepare-dependencies
 
